@@ -50,7 +50,7 @@ public:
                      CULM_SURPLUS_SUM, QTY, LL_BL, PLANT_STOCK, REALLOC_SUM_SUPPLY,
                      TA, DELTA_T, TT, BOOL_CROSSED_PLASTO, EDD, DD, PHENOSTAGE, SLA};
 
-    PlantModel():
+    PlantModel() :
         _thermal_time_model(new ThermalTimeModel),
         _water_balance_model(new WaterBalanceModel),
         _stock_model(new PlantStockModel),
@@ -104,13 +104,17 @@ public:
 
     virtual ~PlantModel()
     {
+        _root_model.reset(nullptr);
+        _thermal_time_model.reset(nullptr);
+        _water_balance_model.reset(nullptr);
+        _stock_model.reset(nullptr);
+        _assimilation_model.reset(nullptr);
 
-        //        std::vector < culm::CulmModel* >::const_iterator it = culm_models.begin();
-
-        //        while (it != culm_models.end()) {
-        //            delete *it;
-        //            ++it;
-        //        }
+        auto it = _culm_models.begin();
+        while (it != _culm_models.end()) {
+            delete *it;
+            ++it;
+        }
     }
 
 

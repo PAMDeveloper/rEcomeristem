@@ -91,8 +91,8 @@ public:
 
     virtual ~PhytomerModel()
     {
-//        if (_internode_model) delete _internode_model;
-//        if (_leaf_model) delete _leaf_model;
+        _internode_model.reset(nullptr);
+        _leaf_model.reset(nullptr);
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters)
@@ -134,7 +134,7 @@ public:
     void kill_leaf(double t)
     {
         _kill_leaf = true;
-//        _leaf_model.release();
+//        _leaf_model.reset(nullptr);
 //        change_internal(LEAF_BIOMASS, &PhytomerModel::_null);
 //        change_internal(LEAF_BLADE_AREA, &PhytomerModel::_null);
 //        change_internal(LEAF_DEMAND, &PhytomerModel::_null);

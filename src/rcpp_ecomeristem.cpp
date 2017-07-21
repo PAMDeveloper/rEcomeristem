@@ -149,7 +149,7 @@ List rcpp_reduceVobs(List vObs, List results) {
   vObsMap = mapFromDF(vObs);
   resultMap = mapFromDF(results);
   ResultParser parser;
-  auto ret = parser.filterVObs(vObsMap,resultMap);
+  auto ret = parser.filterVObs(vObsMap,resultMap, false);
   return mapOfVectorToDF(ret);
 }
 

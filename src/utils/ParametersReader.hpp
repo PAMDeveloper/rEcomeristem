@@ -104,7 +104,9 @@ public:
             //		    );
             //#endif
         }
-
+        for (int i = 0; i < 5; ++i) {
+            delete meteoFiles[i];
+        }
         parameters.set("EndDate", JulianDayConverter::toJulianDayNumber(date, DATE_FORMAT_DMY));
     }
 

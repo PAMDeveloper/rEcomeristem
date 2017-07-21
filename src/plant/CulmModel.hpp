@@ -139,11 +139,16 @@ public:
 
     virtual ~CulmModel()
     {
-        //        auto it = _phytomer_models.begin();
-        //        while (it != _phytomer_models.end()) {
-        //            delete *it;
-        //            ++it;
-        //        }
+        _culm_stock_model.reset(nullptr);
+        _culm_thermaltime_model.reset(nullptr);
+        _panicle_model.reset(nullptr);
+        _peduncle_model.reset(nullptr);
+
+        auto it = _phytomer_models.begin();
+        while (it != _phytomer_models.end()) {
+            delete *it;
+            ++it;
+        }
     }
 
 
