@@ -125,6 +125,7 @@ public:
             string * s = new string(h);
             transform(s->begin(), s->end(), s->begin(), ::tolower);
             obs.insert ( std::pair<string,vector<double> >(*s, vector<double>()) );
+            delete s;
         }
 
         while (std::getline(vObsFile, line))
@@ -142,6 +143,7 @@ public:
                 else {
                     obs[*h].push_back(converted);
                 }
+                delete h;
             }
         }
         return obs;

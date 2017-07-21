@@ -71,6 +71,7 @@ public:
             if(results.find(*s) != results.end() || (keepDay && *s == dayId)) {
                 filteredVObs.insert( pair<string,vector<double> >(*s, vector<double>()) );
             }
+            delete s;
         }
 
         for (int i = 0; i < vObs[dayId].size(); ++i) {
@@ -84,6 +85,7 @@ public:
                     if(constraints.find(*s) != constraints.end()) {
                         valid &= vObs[*s][i] == constraints[*s];
                     }
+                    delete s;
                 }
             }
 
@@ -93,13 +95,14 @@ public:
                     string * s = new string(token.first);
                     transform(s->begin(), s->end(), s->begin(), ::tolower);
                     filteredVObs[*s].push_back(vObs[*h][i]);
+                    delete s;
+                    delete h;
                 }
             }
         }
 
-
-            return filteredVObs;
-        }
+        return filteredVObs;
+    }
 
 
     map<string, vector<double>> reduceResults(map<string, vector<double> > results,
@@ -119,7 +122,7 @@ public:
         }
 
 
-       for(auto const &r : reducedResults) {
+        for(auto const &r : reducedResults) {
             for (int i = 0; i < filteredVObs[dayId].size(); ++i) {
                 int day = filteredVObs[dayId][i];
                 if(day <= results[r.first].size())
