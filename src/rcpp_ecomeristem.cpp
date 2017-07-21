@@ -127,10 +127,9 @@ List rcpp_run_from_dataframe(List dfParameters, List dfMeteo)
   simulator->init(begin, parameters);
   EcomeristemContext context(begin, end);
   simulator->run(context);
-
-  /** PARSE RESULTS **/
   ResultParser parser;
   std::map <std::string, std::vector<double> > resultMap = parser.resultsToMap(simulator);
+  delete simulator;
   return mapOfVectorToDF(resultMap);
 }
 
