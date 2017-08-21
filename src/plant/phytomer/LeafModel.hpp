@@ -37,7 +37,7 @@ public:
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      TIME_FROM_APP, LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS,
                      LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL, PLASTO, LIGULO, FIRST_DAY,
-                     BLADE_LEN
+                     BLADE_LEN, LAST_BLADE_AREA
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
@@ -86,6 +86,7 @@ public:
         Internal(LIGULO, &LeafModel::_ligulo);
         Internal(FIRST_DAY, &LeafModel::_first_day);
         Internal(BLADE_LEN, &LeafModel::_blade_len);
+        Internal(LAST_BLADE_AREA, &LeafModel::_last_blade_area);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);

@@ -38,11 +38,11 @@ public:
 
     enum internals { INTERNODE_PHASE, INTERNODE_PHASE_1, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
-                     VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP, CSTE_PLASTO, CSTE_LIGULO};
+                     VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP, CSTE_PLASTO, CSTE_LIGULO, DENSITY_IN};
 
     enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
                      DD, DELTA_T, PLASTO, LIGULO, NB_LIG, CULM_DEFICIT, CULM_STOCK,
-                     BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX };
+                     BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE };
 
     //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
     //    enum externals { DD, DELTA_T, FTSW, P, PHASE, STATE, PREDIM_LEAF,
@@ -67,6 +67,7 @@ public:
         Internal(TIME_FROM_APP, &InternodeModel::_time_from_app);
         Internal(CSTE_PLASTO, &InternodeModel::_cste_plasto);
         Internal(CSTE_LIGULO, &InternodeModel::_cste_ligulo);
+        Internal(DENSITY_IN, &InternodeModel::_density);
 
         External(PLANT_STATE, &InternodeModel::_plant_state);
         External(PLANT_PHASE, &InternodeModel::_plant_phase);
@@ -84,6 +85,8 @@ public:
         External(CULM_DEFICIT, &InternodeModel::_culm_deficit);
         External(BOOL_CROSSED_PLASTO, &InternodeModel::_bool_crossed_plasto);
         External(LAST_LEAF_INDEX, &InternodeModel::_last_leaf_index);
+        External(PREVIOUS_IN_PREDIM, &InternodeModel::_previous_inter_predim);
+        External(PHENOSTAGE, &InternodeModel::_phenostage);
     }
 
     virtual ~InternodeModel()
@@ -101,10 +104,10 @@ public:
         //InternodePredim
         if(_index < _nb_leaf_param2) {
             _LL_BL = _LL_BL_init;
+            _inter_predim = std::max(1e-4, _leaf_length_to_IN_length * _leaf_predim );
         } else {
-            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (_index + 1. - _nb_leaf_param2);
+            _inter_predim = std::max(1e-4, _previous_inter_predim * _slope_length_IN);
         }
-        _inter_predim = std::max(1e-4, _slope_length_IN * (1. - (_coeff_species*(1/_LL_BL))) * _leaf_predim - _leaf_length_to_IN_length);
 
         //ReductionINER
         if (_ftsw < _thresINER) {
@@ -139,11 +142,14 @@ public:
         }
 
         //DiameterPredim
-        _inter_diameter = _IN_length_to_IN_diam * _inter_predim + _coef_lin_IN_diam;
+        _inter_diameter = _IN_length_to_IN_diam * std::max(0.,(_index - _nb_leaf_stem_elong + 1)) + _coef_lin_IN_diam;
 
         //Volume
         double radius = _inter_diameter / 2;
         _inter_volume = _inter_len * M_PI * radius * radius;
+
+        //Density
+        _density = _density_IN1 + std::min(_density_IN2, std::max(0., (_phenostage - _nb_leaf_stem_elong)) * ((_density_IN2 - _density_IN1)/((_nb_leaf_pi + 1 + _nb_leaf_max_after_pi + _phenostage_pre_flo_to_flo) - _nb_leaf_stem_elong)));
 
         //Biomass
         double biomass_1 = _biomass;
@@ -226,8 +232,13 @@ public:
         _IN_length_to_IN_diam =
                 parameters.get("IN_length_to_IN_diam");
         _coef_lin_IN_diam = parameters.get("coef_lin_IN_diam");
-        _density = parameters.get("density_IN");
+        _density_IN1 = parameters.get("density_IN1");
+        _density_IN2 = parameters.get("density_IN2");
         _coeff_species = parameters.get("coeff_species");
+        _nb_leaf_stem_elong = parameters.get("nb_leaf_stem_elong");
+        _nb_leaf_pi = parameters.get("nbleaf_pi");
+        _nb_leaf_max_after_pi = parameters.get("nb_leaf_max_after_PI");
+        _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
 
         //internals
         _inter_phase = INITIAL;
@@ -247,6 +258,7 @@ public:
         _is_mature = false;
         _cste_ligulo = 0;
         _cste_plasto = 0;
+        _density = 0;
     }
 
 private:
@@ -257,6 +269,9 @@ private:
     bool _is_on_mainstem;
 
     // parameters
+    double _nb_leaf_pi;
+    double _nb_leaf_max_after_pi;
+    double _phenostage_pre_flo_to_flo;
     double _LL_BL_init;
     double _nb_leaf_param2;
     double _slope_LL_BL_at_PI;
@@ -267,10 +282,13 @@ private:
     double _slopeINER;
     double _IN_length_to_IN_diam;
     double _coef_lin_IN_diam;
-    double _density;
     double _coeff_species;
+    double _nb_leaf_stem_elong;
+    double _density_IN1;
+    double _density_IN2;
 
     // internals
+    double _density;
     double _LL_BL;
     internode_phase _inter_phase;
     internode_phase _inter_phase_1;
@@ -308,6 +326,8 @@ private:
     double _culm_stock;
     double _bool_crossed_plasto;
     double _last_leaf_index;
+    double _previous_inter_predim;
+    int _phenostage;
 
     //// external variables
     //    double _dd;

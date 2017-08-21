@@ -67,6 +67,24 @@ public:
                      PlantModel::EDD});
         selector("SLA", artis::kernel::DOUBLE, {
                      PlantModel::SLA});
+        selector("TILLERNB_1", artis::kernel::DOUBLE, {
+                     PlantModel::TILLERNB_1});
+       selector("NBLEAF", artis::kernel::DOUBLE, {
+                     PlantModel::NBLEAF});
+        selector("BIOMAERO2", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMAERO2});
+        selector("BIOMLEAFMAINSTEM", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMLEAFMAINSTEM});
+        selector("BIOMINMAINSTEM", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMINMAINSTEM});
+        selector("AREALFEL", artis::kernel::DOUBLE, {
+                     PlantModel::AREALFEL});
+        selector("BIOMINMAINSTEMSTRUCT", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMINMAINSTEMSTRUCT});
+        selector("BIOMLEAFMAINSTEMSTRUCT", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMLEAFMAINSTEMSTRUCT});
+        selector("MAINSTEM_STOCK_IN", artis::kernel::DOUBLE, {
+                     PlantModel::MAINSTEM_STOCK_IN});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {

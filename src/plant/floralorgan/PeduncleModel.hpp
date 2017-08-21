@@ -133,7 +133,7 @@ public:
         _peduncle_diam = _parameters.get("peduncle_diam");
         _thresINER = _parameters.get("thresINER");
         _respINER = _parameters.get("resp_LER");
-        _density = _parameters.get("density_IN");
+        _density = _parameters.get("density_IN2");
 
         // internals
         _is_mature = false;

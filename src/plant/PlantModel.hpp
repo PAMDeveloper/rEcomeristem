@@ -48,7 +48,9 @@ public:
                      LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, INTERNODE_STOCK_SUM,
                      REALLOC_BIOMASS_SUM, PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM,
                      CULM_SURPLUS_SUM, QTY, LL_BL, PLANT_STOCK, REALLOC_SUM_SUPPLY,
-                     TA, DELTA_T, TT, BOOL_CROSSED_PLASTO, EDD, DD, PHENOSTAGE, SLA};
+                     TA, DELTA_T, TT, BOOL_CROSSED_PLASTO, EDD, DD, PHENOSTAGE, SLA,
+                     TILLERNB_1, NBLEAF, BIOMAERO2, BIOMLEAFMAINSTEM, BIOMINMAINSTEM, AREALFEL,
+                     MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK };
 
     PlantModel() :
         _thermal_time_model(new ThermalTimeModel),
@@ -65,7 +67,7 @@ public:
         Submodels( ((ROOT, _root_model.get())) );
 
         // local internals
-        Internal(LIG, &PlantModel::_lig);
+        Internal( LIG, &PlantModel::_lig );
         Internal( LEAF_BIOMASS_SUM, &PlantModel::_leaf_biomass_sum );
         Internal( LEAF_DEMAND_SUM, &PlantModel::_leaf_demand_sum );
         Internal( LEAF_LAST_DEMAND_SUM, &PlantModel::_leaf_last_demand_sum );
@@ -100,6 +102,16 @@ public:
         Internal( DD, &PlantModel::_DD );
         Internal( PHENOSTAGE, &PlantModel::_phenostage );
         Internal( SLA, &PlantModel::_sla );
+        Internal( TILLERNB_1, &PlantModel::_tillerNb_1 );
+        Internal( NBLEAF, &PlantModel::_nbleaf );
+        Internal( BIOMAERO2, &PlantModel::_biomAero2 );
+        Internal( BIOMLEAFMAINSTEM, &PlantModel::_biomLeafMainstem );
+        Internal( BIOMINMAINSTEM, &PlantModel::_biomInMainstem );
+        Internal( AREALFEL, &PlantModel::_areaLFEL );
+        Internal( MAINSTEM_STOCK_IN, &PlantModel::_mainstem_stock_IN );
+        Internal( BIOMINMAINSTEMSTRUCT, &PlantModel::_biomInMainstemstruct );
+        Internal( BIOMLEAFMAINSTEMSTRUCT, &PlantModel::_biomLeafMainstemstruct );
+        Internal( MAINSTEM_STOCK, &PlantModel::_mainstem_stock );
     }
 
     virtual ~PlantModel()
@@ -269,11 +281,11 @@ public:
         (*_water_balance_model)(t);
 
         // Manager
-      /*  qDebug() << "BEFORE" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
+        /*  qDebug() << "BEFORE" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
         qDebug() << "NB CREATED CULMS:" << _culm_models.size();*/
 
         step_state(t);
-       // qDebug() << "AFTER" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
+        // qDebug() << "AFTER" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
 
         //LLBL - Plasto
         std::deque < CulmModel* >::const_iterator mainstem = _culm_models.begin();
@@ -314,7 +326,10 @@ public:
         if (_bool_crossed_plasto > 0 and _nb_tillers >= 1 and ic > _Ict * ((P * _resp_Ict) + 1)) {
             _nb_tillers = std::min(_nb_tillers, tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
-            create_culm(t, _nb_tillers);
+            // @TODO : retirer conditions et revoir le tallage !!
+            if(_tillerNb_1 + _nb_tillers < 10 and _plant_phase != plant::ELONG and _plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::MATURITY) { //@TODO : pour éviter de faire planter l'estim, à revoir
+                create_culm(t, _nb_tillers);
+            }
         }
 
         //CulmModel
@@ -357,10 +372,14 @@ public:
             _tmp_culm_deficit_sum = 0;
             _tmp_culm_surplus_sum = 0;
             _tmp_internode_stock_sum = 0;
+            _tmp_mainstem_stock_IN = 0;
+            _tmp_mainstem_stock = 0;
             _culm_stock_sum = 0;
             _culm_deficit_sum = 0;
             _culm_surplus_sum = 0;
             _internode_stock_sum = 0;
+            _mainstem_stock_IN = 0;
+            _mainstem_stock = 0;
             _plant_supply = _assimilation_model->get < double >(t, AssimilationModel::ASSIM) + _realloc_sum_supply;
             it = _culm_models.begin();
             while(it != _culm_models.end()) {
@@ -372,7 +391,10 @@ public:
                 _tmp_culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_STOCK);
                 _tmp_culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_DEFICIT);
                 _tmp_internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModelNG::INTERNODE_STOCK);
-                //_tmp_culm_surplus_sum += (*it)->stock_model()->get< double >(t, CulmStockModelNG::CULM_SURPLUS);
+                if(it == _culm_models.begin()) {
+                    _tmp_mainstem_stock = (*it)->stock_model()->get< double >(t, CulmStockModelNG::CULM_STOCK);
+                    _tmp_mainstem_stock_IN = (*it)->stock_model()->get< double >(t, CulmStockModelNG::INTERNODE_STOCK);
+                }
                 ++it;
             }
 
@@ -386,7 +408,10 @@ public:
                         _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_STOCK);
                         _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_DEFICIT);
                         _internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModelNG::INTERNODE_STOCK);
-                        //_culm_surplus_sum += (*it)->stock_model()->get< double >(t, CulmStockModelNG::CULM_SURPLUS);
+                        if(it == _culm_models.begin()) {
+                            _mainstem_stock = (*it)->stock_model()->get< double >(t, CulmStockModelNG::CULM_STOCK);
+                            _mainstem_stock_IN = (*it)->stock_model()->get< double >(t, CulmStockModelNG::INTERNODE_STOCK);
+                        }
                     }
                     ++it;
                 }
@@ -394,7 +419,8 @@ public:
                 _culm_stock_sum = _tmp_culm_stock_sum;
                 _culm_deficit_sum = _tmp_culm_deficit_sum;
                 _internode_stock_sum = _tmp_internode_stock_sum;
-                //_culm_surplus_sum = _tmp_culm_surplus_sum;
+                _mainstem_stock_IN = _tmp_mainstem_stock_IN;
+                _mainstem_stock = _tmp_mainstem_stock;
             }
             _culm_surplus_sum = _plant_supply;
         }
@@ -449,19 +475,33 @@ public:
         // PHT
         compute_height(t);
 
-        //NB Alive Culms
+        // NB Alive Culms
         double nbc = 0;
+        _biomAero2 = 0;
         std::deque < CulmModel* >::const_iterator itnbc = _culm_models.begin();
         while(itnbc != _culm_models.end()) {
             if(!((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM))) {
                 nbc++;
             }
+            _biomAero2 += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) +
+                          (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
+                          (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
+                          (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
             itnbc++;
         }
-        //qDebug() << QString::fromStdString(date) << " : NB ALIVE CULMS:" << nbc;
+        _biomAero2 = _biomAero2 +  _stock_model->get< double > (t, PlantStockModel::STOCK);
+
+         // VISU
+        _tillerNb_1 = nbc;
+        std::deque < CulmModel* >::const_iterator visumainstem = _culm_models.begin();
+        _biomLeafMainstemstruct = (*visumainstem)->get< double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM);
+        _biomLeafMainstem = (*visumainstem)->get< double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) + (_mainstem_stock - _mainstem_stock_IN);
+        _biomInMainstemstruct = (*visumainstem)->get< double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM);
+        _biomInMainstem = (*visumainstem)->get< double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) + _mainstem_stock_IN;
+        _areaLFEL = (*visumainstem)->get < double, CulmModel >(t, CulmModel::LAST_LEAF_BLADE_AREA);
+        _nbleaf = (*visumainstem)->get < double, CulmModel >(t, CulmModel::NBLEAF); // nombre de feuilles vertes (>= 50% blade area)
 
     }
-
 
     void create_culm(double t, int n)
     {
@@ -720,6 +760,18 @@ public:
         _phenostage = 0;
         _phenostage_cste = _phenostage;
         _sla = _FSLA;
+        _tillerNb_1 = 1;
+        _nbleaf = 1;
+        _biomAero2 = 0;
+        _biomLeafMainstem = 0;
+        _biomInMainstem = 0;
+        _areaLFEL = 0;
+       _mainstem_stock_IN = 0;
+       _tmp_mainstem_stock_IN = 0;
+       _biomInMainstemstruct = 0;
+       _biomLeafMainstemstruct = 0;
+       _mainstem_stock = 0;
+       _tmp_mainstem_stock = 0;
     }
 
 private:
@@ -810,7 +862,15 @@ private:
     double _tmp_internode_stock_sum;
     double _plant_supply;
     double _realloc_sum_supply;
-
+    double _tillerNb_1;
+    double _nbleaf;
+    double _biomAero2;
+    double _biomLeafMainstem;
+    double _biomInMainstem;
+    double _areaLFEL;
+    double _mainstem_stock_IN;
+    double _tmp_mainstem_stock_IN;
+    double _biomInMainstemstruct;
     double _Ta;
     double _deltaT;
     double _TT;
@@ -822,6 +882,9 @@ private:
     int _phenostage;
     double _sla;
     double _phenostage_cste;
+    double _mainstem_stock;
+    double _tmp_mainstem_stock;
+    double _biomLeafMainstemstruct;
 
     //internal states
     plant::plant_state _plant_state;
