@@ -108,6 +108,10 @@ public:
             delete meteoFiles[i];
         }
         parameters.set("EndDate", JulianDayConverter::toJulianDayNumber(date, DATE_FORMAT_DMY));
+        varietyParams.close();
+
+        for (int i = 0; i < 5; i++)
+          meteoFiles[i]->close();
     }
 
     map<string, vector<double>> loadVObsFromFile(const std::string &file_path) {
@@ -146,6 +150,8 @@ public:
                 delete h;
             }
         }
+        vObsFile.close();
+
         return obs;
     }
 
