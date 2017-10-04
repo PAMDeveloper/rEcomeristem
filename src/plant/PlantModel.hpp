@@ -44,7 +44,7 @@ public:
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
-                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
+                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, HEIGHT_P, PLASTO, TT_LIG, IH,
                      LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, INTERNODE_STOCK_SUM,
                      REALLOC_BIOMASS_SUM, PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM,
                      CULM_SURPLUS_SUM, QTY, LL_BL, PLANT_STOCK, REALLOC_SUM_SUPPLY,
@@ -78,6 +78,7 @@ public:
         Internal( SENESC_DW_SUM, &PlantModel::_senesc_dw_sum );
         Internal( PAI, &PlantModel::_leaf_blade_area_sum );
         Internal( HEIGHT, &PlantModel::_height );
+        Internal( HEIGHT_P, &PlantModel::_height_ped );
         Internal( PLANT_PHASE, &PlantModel::_plant_phase );
         Internal( PLANT_STATE, &PlantModel::_plant_state );
         Internal( PLASTO, &PlantModel::_plasto );
@@ -592,14 +593,17 @@ public:
 
         auto it = _culm_models.begin();
         _height += (*it)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM);
+        _height_ped = _height;
         if ((*it)->get_phytomer_number() == 1) {
             _height += (*it)->get < double, CulmModel >(t, CulmModel::FIRST_LEAF_LEN);
+            _height_ped = _height;
         } else {
             double tmp = (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_BLADE_LEN);
+            _height += (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_BLADE_LEN);
             if (tmp > (*it)->get< double, CulmModel >(t, CulmModel::PEDUNCLE_LEN)) {
-                _height += tmp;
+                _height_ped += tmp;
             } else {
-                _height += (*it)->get< double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
+                _height_ped += (*it)->get< double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
             }
         }
     }
@@ -723,6 +727,7 @@ public:
         _plant_phase = plant::VEGETATIVE;
         _plant_state = plant::NO_STATE;
         _height = 0;
+        _height_ped = 0;
         _MGR = parameters.get("MGR_init");
         _TT_lig = 0;
         _IH = 0;
@@ -837,6 +842,7 @@ private:
     double _culm_surplus_sum;
     double _panicle_demand_sum;
     double _height;
+    double _height_ped;
     double _lig_1;
     double _TT_lig;
     double _IH;

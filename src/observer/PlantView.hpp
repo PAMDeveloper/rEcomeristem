@@ -55,6 +55,8 @@ public:
                      PlantModel::SENESC_DW_SUM });
         selector("PHT", artis::kernel::DOUBLE, {
                      PlantModel::HEIGHT });
+        selector("PHT_P", artis::kernel::DOUBLE, {
+                     PlantModel::HEIGHT_P });
         selector("LIG", artis::kernel::DOUBLE, {
                      PlantModel::LIG });
         selector("TT_LIG", artis::kernel::DOUBLE, {
