@@ -6,17 +6,17 @@
 PPath <- "D:/Workspace/R/estim/estimlisa"
 MPath <- "D:/Workspace/R/estim/estimlisa"
 VPath <- "D:/Workspace/R/estim/estimlisa"
-VName <- "vobs_G7moyINT_C_BFF2015.txt"
-VECName <- "vobs_G7_C_BFF2015_ET_INT.txt"
+VName <- "vobs_G1moy_C_BFF2015.txt"
+VECName <- "vobs_G1_C_BFF2015_ET.txt"
 ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "SLAp", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2")
 MinValue <- c(1, 1, 1, 20, 10, 0.01, -0.5, 0.0, 0.0, 0.01, 0.1)
 MaxValue <- c(10, 10, 20, 60, 120, 0.5, 0.5, 2, 0.5, 0.1, 0.5)
 obsCoef <- c(1,1,1,1,1,1,1,1)
 Optimizer <- "D" #(D = DE, G = RGenoud, A = Simulated Annealing, GL = lexical RGenoud (ne marche que avec RmseM 'LEC'))
-RmseM <- "REC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef, LEC = Lexical-ET (ne marche que avec Optimizer 'GL'))
-MaxIter <- 2
+RmseM <- "RTEST" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef, LEC = Lexical-ET (ne marche que avec Optimizer 'GL'))
+MaxIter <- 100
 SolTol <- 0.05 #/length(obsCoef)
-ACluster <- FALSE  #Active la parallelisation pour les machines a minimum 4 coeurs
+ACluster <- TRUE  #Active la parallelisation pour les machines a minimum 4 coeurs
 ###End informations for parameter estimation###
 
 #Install and load packages
@@ -89,9 +89,11 @@ Optim_Ecomeristem_funct <- function(p){
            return(sum(rmse*obsCoef, na.rm=T))
          },
          "RTEST" = {
-           diff = ((abs(obsRed - res) - abs(obsETRed))/obsRed)^2
-           rmse = sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff))))
-           return(sum(rmse*obsCoef, na.rm=T))
+           diff1 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
+           diff2 <- diff1 * 10
+           diff3 <-  replace(diff2, diff2 == 0,1)
+           diff <- (((obsRed - res)/obsRed)^2)*diff3
+           return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
          }
   )
 }
@@ -348,7 +350,36 @@ saveAPlots <- function(name= Sys.Date()) {
   sapply(names(Res_ecomeristem), plotF)
   dev.off()
 }
-
+saveParF <- function() {
+  bestp <- as.vector(res$par)
+  paramInitTrans[ParamOfInterest] <- bestp
+  parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
+  write.table(parameters, "ECOMERISTEM_parameters.txt", sep="=", dec=".", row.names=F, col.names=F)
+}
+resPlotTest <- function() {
+  bestp <- as.vector(res$par)
+  paramInitTrans[ParamOfInterest] <- bestp
+  parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
+  Res_ecomeristem <- recomeristem::rcpp_run_from_dataframe(parameters,meteo)
+  resRed <- recomeristem::rcpp_reduceResults(Res_ecomeristem,vObs)
+  obsRed$day <- vObs$day
+  plotF <- function(x) {
+    if(RmseM != "RS" && RmseM != "RX") {
+      plot(Res_ecomeristem[[x]], type="l", xlab="DAS", ylab=x,ylim=c(min(min(Res_ecomeristem[[x]], na.rm=T),min(obsRed[[x]]-obsETRed[[x]], na.rm=T)),max(max(Res_ecomeristem[[x]], na.rm=T),max(obsRed[[x]]+obsETRed[[x]], na.rm=T))))
+      points(obsRed$day, obsRed[[x]], type="p", col="red")
+      if(!is.null(obsETRed[[x]])) {
+        arrows(obsRed$day,obsRed[[x]]-obsETRed[[x]],obsRed$day,obsRed[[x]]+obsETRed[[x]], code=3, length=0.02, angle = 90)
+      }
+    } else {
+      plot(Res_ecomeristem[[x]], type="l", xlab="DAS", ylab=x,ylim=c(min(Res_ecomeristem[[x]], obsRed[[x]], na.rm=T),max(Res_ecomeristem[[x]], obsRed[[x]], na.rm=T)))
+      points(obsRed$day, obsRed[[x]], type="p", col="red")
+      diff <- ((obsRed[[x]] - resRed[[x]])/obsRed[[x]])^2
+    }
+    diff <- ((obsRed[[x]] - resRed[[x]])/obsRed[[x]])^2
+    return(sqrt((sum(diff, na.rm=T))/(sum(!is.na(diff)))))
+  }
+  sapply(VarList, plotF)
+}
 
 #Optimisation run
 time <- system.time(resOptim <- optimisation(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDate, EDate))
