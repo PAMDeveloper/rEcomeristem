@@ -25,7 +25,7 @@ lapply(list.of.packages, library, character.only=TRUE)
 lct <- Sys.getlocale("LC_TIME"); Sys.setlocale("LC_TIME", "C")
 ###############################################################################
 #functions
-Dat2Jul <- function( yr=-4712, mo=1, dy=1, hr=12 ) { #
+Dat2Jul <- function( yr=-4712, mo=1, dy=1, hr=12 ) { #from package cwhmisc
   if ( mo <= 2 )  { yr <- yr-1; mo <-  mo+12 } # Jan, Feb
   H <-  hr/24
   if ( (yr*100 + mo )*100 + dy >= 15821015 ) {  # i.e. 1582-10-15
@@ -81,7 +81,6 @@ Optim_Ecomeristem_funct <- function(p){
 simulatedAnnealing <- function(func, start_par, lower, upper, itermax = 1000, step = 0.1, printlvl = 100) {
   best_par <- current_par <- neighbor_par <- start_par
   best_value <- current_value <- neighbor_value <- func(start_par)
-
   message("It\tBest\tCurrent")
   message(sprintf("%i\t%.4f\t%.4f", 0L, best_value, current_value))
 
@@ -111,7 +110,6 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, vobs) {
   paramInit[paramInit$Name=="BeginDate","Values"] <<- getBdate(i)
   paramInit[paramInit$Name=="EndDate","Values"] <<- getEdate(i)
   lapply(genPar, function(x) paramUpdate(x,i))
-  print(paramInit[paramInit$Name == "density", "Values"])
   assign("vObs", vobs, envir = .GlobalEnv)
   assign("obsET", vobsETList[[i]], envir = .GlobalEnv)
   assign("resulttmp", recomeristem::rcpp_run_from_dataframe(paramInit,meteo), envir = .GlobalEnv)
@@ -213,7 +211,10 @@ resPlot <- function(i) {
         arrows(obsRed$day,obsRed[[x]]-obsETRed[[x]],obsRed$day,obsRed[[x]]+obsETRed[[x]], code=3, length=0.02, angle = 90)
       }
       if(!is.null(obsRed[[x]])) {
-        return(paste((abs(sum((abs((obsRed[[x]] - resRed[[x]]))-abs(obsETRed[[x]]))/(obsRed[[x]]), na.rm=T))*100),"%", sep=""))
+        diff1 = abs(1-between(resRed[[x]],obsRed[[x]]-obsETRed[[x]],obsRed[[x]]+obsETRed[[x]]))
+        diff2 = ((abs(obsRed[[x]] + obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
+        diff3 = ((abs(obsRed[[x]] - obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
+        return(sum(pmin(diff1*999,diff2,diff3),na.rm=T))
       } else {
         return(NULL)
       }
@@ -252,6 +253,10 @@ saveRes <- function(i) {
   Res_ecomeristem <- recomeristem::rcpp_run_from_dataframe(parameters,meteo)
   write.csv(Res_ecomeristem, file=paste(paste("geno",i,sep="_"),"_res.csv",sep=""))
 }
+saveRMSE <- function(i) {
+  resRMSE <- res[[i]]$value
+  write.table(resRMSE, file="rmse.csv", sep=",", append=T, dec=".", col.names = F, row.names = paste("geno",i,sep="_"))
+}
 resAPlot <- function() {
   lapply(1:length(lineList), function(x) resPlot(x))
 }
@@ -269,6 +274,9 @@ simAPlot <- function() {
 }
 saveARes <- function() {
   lapply(1:length(lineList), function(x) saveRes(x))
+}
+saveARMSE <- function() {
+  lapply(1:length(lineList), function(x) saveRMSE(x))
 }
 
 ###############################################################################

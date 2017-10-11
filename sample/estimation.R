@@ -6,8 +6,8 @@
 PPath <- "D:/Workspace/R/estim/estimlisa"
 MPath <- "D:/Workspace/R/estim/estimlisa"
 VPath <- "D:/Workspace/R/estim/estimlisa"
-VName <- "vobs.txt"
-VECName <- "vobsET.txt"
+VName <- "vobs_G7moyINT_C_BFF2015.txt"
+VECName <- "vobs_G7_C_BFF2015_ET_INT.txt"
 ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "SLAp", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2")
 MinValue <- c(1, 1, 1, 20, 10, 0.01, -0.5, 0.0, 0.0, 0.01, 0.1)
 MaxValue <- c(10, 10, 20, 60, 120, 0.5, 0.5, 2, 0.5, 0.1, 0.5)
@@ -191,7 +191,10 @@ resPlot <- function() {
         arrows(obsRed$day,obsRed[[x]]-obsETRed[[x]],obsRed$day,obsRed[[x]]+obsETRed[[x]], code=3, length=0.02, angle = 90)
       }
       if(!is.null(obsRed[[x]])) {
-        return(paste((abs(sum((abs((obsRed[[x]] - resRed[[x]]))-abs(obsETRed[[x]]))/(obsRed[[x]]), na.rm=T))*100),"%", sep=""))
+        diff1 = abs(1-between(resRed[[x]],obsRed[[x]]-obsETRed[[x]],obsRed[[x]]+obsETRed[[x]]))
+        diff2 = ((abs(obsRed[[x]] + obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
+        diff3 = ((abs(obsRed[[x]] - obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
+        return(sum(pmin(diff1*999,diff2,diff3),na.rm=T))
       } else {
         return(NULL)
       }
@@ -285,7 +288,7 @@ resEPlot <- function(par = res$par) {
         diff1 = abs(1-between(resRed[[x]],obsRed[[x]]-obsETRed[[x]],obsRed[[x]]+obsETRed[[x]]))
         diff2 = ((abs(obsRed[[x]] + obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
         diff3 = ((abs(obsRed[[x]] - obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
-        return(sum(pmin(diff1*999,diff2,diff3)),na.rm=T)
+        return(sum(pmin(diff1*999,diff2,diff3),na.rm=T))
       } else {
         return(NULL)
       }
