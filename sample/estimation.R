@@ -2,20 +2,21 @@
 #Authors : Florian Larue, Gregory Beurier, Lauriane Rouan, Delphine Luquet
 #-- (PAM, AGAP, BIOS, CIRAD)
 
-###Set informations for parameter estimation###re
-PPath <- "D:/Workspace/R/estim/estimlisa"
-MPath <- "D:/Workspace/R/estim/estimlisa"
-VPath <- "D:/Workspace/R/estim/estimlisa"
-VName <- "vobs_G1moy_C_BFF2015.txt"
-VECName <- "vobs_G1_C_BFF2015_ET.txt"
+###Set informations for parameter estimation###
+PPath <- "D:/Workspace/PAM/estim/estimlisa"
+MPath <- "D:/Workspace/PAM/estim/estimlisa"
+VPath <- "D:/Workspace/PAM/estim/estimlisa"
+VName <- "vobs_G7moyINT_C_BFF2015.txt"
+VECName <- "vobs_G7_C_BFF2015_ET_INT.txt"
 ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "SLAp", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2")
 MinValue <- c(1, 1, 1, 20, 10, 0.01, -0.5, 0.0, 0.0, 0.01, 0.1)
 MaxValue <- c(10, 10, 20, 60, 120, 0.5, 0.5, 2, 0.5, 0.1, 0.5)
 obsCoef <- c(1,1,1,1,1,1,1,1)
 Optimizer <- "D" #(D = DE, G = RGenoud, A = Simulated Annealing, GL = lexical RGenoud (ne marche que avec RmseM 'LEC'))
-RmseM <- "RTEST" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef, LEC = Lexical-ET (ne marche que avec Optimizer 'GL'))
-MaxIter <- 100
-SolTol <- 0.05 #/length(obsCoef)
+RmseM <- "REC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef, LEC = Lexical-ET (ne marche que avec Optimizer 'GL'))
+MaxIter <- 3000
+Penalty <- 10 #Penalise les points en dehors de l'ET (RMSE * Penalty)
+SolTol <- 0.05 #sera multiplie par le nombre de variable d'obs
 ACluster <- TRUE  #Active la parallelisation pour les machines a minimum 4 coeurs
 ###End informations for parameter estimation###
 
@@ -48,6 +49,7 @@ obsETRed <- recomeristem::rcpp_reduceVobs(obsET, resulttmp)
 resRed <- recomeristem::rcpp_reduceResults(resulttmp, vObs)
 VarList <- names(obsRed)
 res <- list()
+SolTol <- SolTol * length(VarList)
 
 #Parallel
 if(ACluster && detectCores() >= 4) {
@@ -70,9 +72,9 @@ Optim_Ecomeristem_funct <- function(p){
          },
          "REC" = {
            diff1 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
-           diff2 <- (abs(obsRed+obsETRed-res)/obsRed)^2
-           diff3 <- (abs(obsRed-obsETRed-res)/obsRed)^2
-           diff <- pmin(as.matrix(diff1*999),as.matrix(diff2),as.matrix(diff3))
+           diff2 <- diff1 * Penalty
+           diff3 <-  replace(diff2, diff2 == 0,1)
+           diff <- (((obsRed - res)/obsRed)^2)*diff3
            return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
          },
          "RC" = {
@@ -88,12 +90,14 @@ Optim_Ecomeristem_funct <- function(p){
            rmse = sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff))))
            return(sum(rmse*obsCoef, na.rm=T))
          },
-         "RTEST" = {
+         "REC.old" = {
            diff1 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
-           diff2 <- diff1 * 10
-           diff3 <-  replace(diff2, diff2 == 0,1)
-           diff <- (((obsRed - res)/obsRed)^2)*diff3
+           diff2 <- (abs(obsRed+obsETRed-res)/obsRed)^2
+           diff3 <- (abs(obsRed-obsETRed-res)/obsRed)^2
+           diff <- pmin(as.matrix(diff1*999),as.matrix(diff2),as.matrix(diff3))
            return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
+         },
+         "RTEST" = {
          }
   )
 }
@@ -178,7 +182,7 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDa
   print("End of estimation, type res for optimisation results, type saveRes() to save output variables in csvfile, type resPlot() to see plots of observation variables, allPlot() to see plots of all computed variables and dePlot() for convergence plot (in case of optimizer = D)")
   return(list(res,resOptim))
 }
-resPlot <- function() {
+resPlot.old <- function() {
   bestp <- as.vector(res$par)
   paramInitTrans[ParamOfInterest] <- bestp
   parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
@@ -356,7 +360,7 @@ saveParF <- function() {
   parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
   write.table(parameters, "ECOMERISTEM_parameters.txt", sep="=", dec=".", row.names=F, col.names=F)
 }
-resPlotTest <- function() {
+resPlot <- function() {
   bestp <- as.vector(res$par)
   paramInitTrans[ParamOfInterest] <- bestp
   parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
