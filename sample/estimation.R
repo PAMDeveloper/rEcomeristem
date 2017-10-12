@@ -11,10 +11,11 @@ VECName <- "vobs_G7_C_BFF2015_ET_INT.txt"
 ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "SLAp", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2")
 MinValue <- c(1, 1, 1, 20, 10, 0.01, -0.5, 0.0, 0.0, 0.01, 0.1)
 MaxValue <- c(10, 10, 20, 60, 120, 0.5, 0.5, 2, 0.5, 0.1, 0.5)
-obsCoef <- c(1,1,1,1,1,1,1,1)
+obsCoef <- c(0.5,1,1,0.5,1,1,1,1)
+coefIncrease <- 10
 Optimizer <- "D" #(D = DE, G = RGenoud, A = Simulated Annealing, GL = lexical RGenoud (ne marche que avec RmseM 'LEC'))
-RmseM <- "REC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef, LEC = Lexical-ET (ne marche que avec Optimizer 'GL'))
-MaxIter <- 3000
+RmseM <- "RECC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef, LEC = Lexical-ET (ne marche que avec Optimizer 'GL'))
+MaxIter <- 2500
 Penalty <- 10 #Penalise les points en dehors de l'ET (RMSE * Penalty)
 SolTol <- 0.05 #sera multiplie par le nombre de variable d'obs
 ACluster <- TRUE  #Active la parallelisation pour les machines a minimum 4 coeurs
@@ -48,16 +49,9 @@ obsRed <- recomeristem::rcpp_reduceVobs(vObs, resulttmp)
 obsETRed <- recomeristem::rcpp_reduceVobs(obsET, resulttmp)
 resRed <- recomeristem::rcpp_reduceResults(resulttmp, vObs)
 VarList <- names(obsRed)
+obsLength <- nrow(obsRed)
 res <- list()
 SolTol <- SolTol * length(VarList)
-
-#Parallel
-if(ACluster && detectCores() >= 4) {
-  nbCores <- detectCores() - 2
-  cl <- makeCluster(nbCores, outfile="clusterlog.txt")
-  clusterEvalQ(cl, library(recomeristem,rgenoud))
-  clusterExport(cl, varlist = c("meteo","vObs","obsRed", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM", "obsETRed", "obsCoef"))
-}
 
 #Functions
 Optim_Ecomeristem_funct <- function(p){
@@ -78,11 +72,18 @@ Optim_Ecomeristem_funct <- function(p){
            return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
          },
          "RC" = {
-           diff <- ((obsRed - res)/obsRed)^2
+           diff <- (((obsRed - res)/obsRed)^2)*coeff
            rmse = sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff))))
            return(sum(rmse*obsCoef, na.rm=T))
          },
          "RECC" = {
+           diff1 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
+           diff2 <- diff1 * Penalty
+           diff3 <-  replace(diff2, diff2 == 0,1)
+           diff <- ((((obsRed - res)/obsRed)^2)*diff3)*coeff
+           return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
+         },
+         "RECC.old" = {
            diff1 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
            diff2 <- (abs(obsRed+obsETRed-res)/obsRed)^2
            diff3 <- (abs(obsRed-obsETRed-res)/obsRed)^2
@@ -133,7 +134,7 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDa
   switch(Optimizer,
          "D" = {
            if(ACluster && detectCores() >= 4) {
-             resOptim <- DEoptim(Optim_Ecomeristem_funct, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2, cluster=cl, packages=c("recomeristem"), parVar=c("meteo","vObs","obsRed", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM", "obsETRed","obsCoef")))
+             resOptim <- DEoptim(Optim_Ecomeristem_funct, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2, cluster=cl, packages=c("recomeristem"), parVar=c("meteo","vObs","obsRed", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM", "obsETRed","obsCoef","Penalty","coeff")))
 
            } else {
              resOptim <- DEoptim(Optim_Ecomeristem_funct, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2))
@@ -181,6 +182,13 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDa
   )
   print("End of estimation, type res for optimisation results, type saveRes() to save output variables in csvfile, type resPlot() to see plots of observation variables, allPlot() to see plots of all computed variables and dePlot() for convergence plot (in case of optimizer = D)")
   return(list(res,resOptim))
+}
+coefCompute <- function() {
+  tmp <- c()
+  for(i in 0:(obsLength-1)) {
+    tmp <- c(tmp, (obsCoef+(i*(obsCoef/(100/coefIncrease)))))
+  }
+  return(data.frame(matrix(unlist(tmp),nrow=obsLength,byrow=T)))
 }
 resPlot.old <- function() {
   bestp <- as.vector(res$par)
@@ -384,8 +392,15 @@ resPlot <- function() {
   }
   sapply(VarList, plotF)
 }
+coeff <- coefCompute()
 
 #Optimisation run
+if(ACluster && detectCores() >= 4) {
+  nbCores <- detectCores() - 2
+  cl <- makeCluster(nbCores, outfile="clusterlog.txt")
+  clusterEvalQ(cl, library(recomeristem,rgenoud))
+  clusterExport(cl, varlist = c("meteo","vObs","obsRed", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM", "obsETRed", "obsCoef","Penalty","coeff"))
+} #parallel
 time <- system.time(resOptim <- optimisation(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDate, EDate))
 res <- resOptim[[1]]
 res$time <- time
