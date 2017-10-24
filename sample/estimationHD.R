@@ -107,7 +107,7 @@ simulatedAnnealing <- function(func, start_par, lower, upper, itermax = 1000, st
   return(list(iterations = itermax, value = best_value, par = best_par))
 }
 optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, vobs) {
-  writeLines(paste("\nEstimation de",genList[[i]],sep=" "))
+  writeLines(paste("\nEstimation of",genList[[i]],sep=" "))
   paramInit[paramInit$Name=="BeginDate","Values"] <<- getBdate(i)
   paramInit[paramInit$Name=="EndDate","Values"] <<- getEdate(i)
   lapply(genPar, function(x) paramUpdate(x,i))
@@ -165,7 +165,7 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, vobs) {
            res$iter <- MaxIter
          }
   )
-  writeLines(paste("\nFin estimation de",genList[[i]],sep=" "))
+  writeLines(paste("\nEnd estimation of",genList[[i]],sep=" "))
   assign("i", i + 1, envir = .GlobalEnv)
   return(resT)
 }
@@ -182,6 +182,19 @@ getEdate <- function(i) {
 }
 getPValue <- function(x,i) {
   return(vobsGlobal[vobsGlobal$ligne==i,x][1])
+}
+fnList <- function() {
+  flist <- c("resE(i) : Show result for genotype i",
+             "resPlot(i) : Plot estimated simulation restults and observations for genotype i",
+             "saveRes(i) : Save estimated simulation results in csv file for genotype i",
+             "dePlot(i) : Plot DE convergence and estimation plots for genotype i",
+             "savePar(i) : Save estimated parameter values in csv file for genotype i",
+             "saveParF(i) : Save all parameter (fixed + estimated) in ECOMERISTEM_parameters.txt for genotype i",
+             "savePlot(i) : Save resPlot() in pdf file for genotype i",
+             "saveRMSE(i) : Save RMSE value in csv file for genotype i",
+             "simPlot(i) : Plot all output variables of model (without observations)"
+            )
+  print(list(sort(flist), "resAPlot(), deAPlot(), saveAPlot(), saveAPar(), simAPlot(), saveARes(), saveARMSE(), saveAParF() : same as functions above but for all genotypes"))
 }
 #result functions
 resE <- function(i) {return(res[[i]])}
@@ -255,7 +268,7 @@ saveRes <- function(i) {
   write.csv(Res_ecomeristem, file=paste(paste("geno",i,sep="_"),"_res.csv",sep=""))
 }
 saveRMSE <- function(i) {
-  resRMSE <- res[[i]]$value
+  resRMSE <- sum(resPlot(i))
   write.table(resRMSE, file="rmse.csv", sep=",", append=T, dec=".", col.names = F, row.names = paste("geno",i,sep="_"))
 }
 resAPlot <- function() {
@@ -322,5 +335,5 @@ if(ACluster && detectCores() >= 4) {
 #Estimation run
 res <- lapply(vobsList, function(x) optimisation(Optimizer, MaxIter, SolTol, NbParam, Bounds, x))
 stopCluster(cl)
-writeLines("\nFin d'estimation des differents geno, tapez resE(i) pour les resultats d'estimation du geno i (remplacer i par le numero du geno)")
+writeLines("\nEnd of estimation for all genotypes, type fnList() to see function possibilities")
 ###############################################################################

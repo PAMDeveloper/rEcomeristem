@@ -393,7 +393,16 @@ resPlot <- function() {
   sapply(VarList, plotF)
 }
 fnList <- function() {
-  flist <- c("resPlot()", "resEPlot(''vector of parameters'')", "saveRes()","recoverR()","dePlot()","savePar()","saveParF()","savePlots()","runModel()","allPlot()")
+  flist <- c("resPlot() : Plot estimated simulation restults and observations",
+             "resEPlot(''vector of parameters'') : Plot simulation results and observations with redefined estimated parameter values",
+             "saveRes() : Save estimated simulation results in csv file",
+             "recoverR() : Recover best estimation after intentional RGENOUD stop",
+             "dePlot() : Plot DE convergence and estimation plots",
+             "savePar() : Save estimated parameter values in csv file",
+             "saveParF() : Save all parameter (fixed + estimated) in ECOMERISTEM_parameters.txt",
+             "savePlots() : Save resPlot() in pdf file",
+             "runModel() : Run model with estimated parameters",
+             "allPlot() : Plot all output variables of model (without observations)")
   print(sort(flist))
 }
 coeff <- coefCompute()
