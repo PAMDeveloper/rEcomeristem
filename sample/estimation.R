@@ -11,11 +11,11 @@ VECName <- "vobs_G7_C_BFF2015_ET_INT.txt"
 ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "SLAp", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2")
 MinValue <- c(1, 1, 1, 20, 10, 0.01, -0.5, 0.0, 0.0, 0.01, 0.1)
 MaxValue <- c(10, 10, 20, 60, 120, 0.5, 0.5, 2, 0.5, 0.1, 0.5)
-obsCoef <- c(0.5,1,1,0.5,1,1,1,1)
-coefIncrease <- 10
+obsCoef <- c(1,1,1,1,1,1,1,1)
+coefIncrease <- 20
 Optimizer <- "D" #(D = DE, G = RGenoud, A = Simulated Annealing, GL = lexical RGenoud (ne marche que avec RmseM 'LEC'))
 RmseM <- "RECC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef, LEC = Lexical-ET (ne marche que avec Optimizer 'GL'))
-MaxIter <- 2500
+MaxIter <- 1
 Penalty <- 10 #Penalise les points en dehors de l'ET (RMSE * Penalty)
 SolTol <- 0.05 #sera multiplie par le nombre de variable d'obs
 ACluster <- TRUE  #Active la parallelisation pour les machines a minimum 4 coeurs
@@ -54,7 +54,7 @@ res <- list()
 SolTol <- SolTol * length(VarList)
 
 #Functions
-Optim_Ecomeristem_funct <- function(p){
+optimEcomeristem <- function(p){
   paramInitTrans[ParamOfInterest] <- p
   parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]))
   Res_ecomeristem <- recomeristem::rcpp_run_from_dataframe(parameters,meteo)
@@ -134,10 +134,10 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDa
   switch(Optimizer,
          "D" = {
            if(ACluster && detectCores() >= 4) {
-             resOptim <- DEoptim(Optim_Ecomeristem_funct, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2, cluster=cl, packages=c("recomeristem"), parVar=c("meteo","vObs","obsRed", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM", "obsETRed","obsCoef","Penalty","coeff")))
+             resOptim <- DEoptim(optimEcomeristem, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2, cluster=cl, packages=c("recomeristem"), parVar=c("meteo","vObs","obsRed", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM", "obsETRed","obsCoef","Penalty","coeff")))
 
            } else {
-             resOptim <- DEoptim(Optim_Ecomeristem_funct, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2))
+             resOptim <- DEoptim(optimEcomeristem, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2))
            }
            res$optimizer <- "Diffential Evolution Optimization"
            res$par <- resOptim$optim$bestmem
@@ -146,9 +146,9 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDa
          },
          "G" = {
            if(ACluster && detectCores() >= 4) {
-             resOptim <- genoud(Optim_Ecomeristem_funct, NbParam, max=FALSE, pop.size=100, max.generations=MaxIter, wait.generations=max(10,MaxIter/10), hard.generation.limit=TRUE, MemoryMatrix=TRUE, starting.values=NULL, Domains=Bounds, print.level=1, boundary.enforcement=2, gradient.check=FALSE, solution.tolerance=SolTol,cluster=cl)
+             resOptim <- genoud(optimEcomeristem, NbParam, max=FALSE, pop.size=100, max.generations=MaxIter, wait.generations=max(10,MaxIter/10), hard.generation.limit=TRUE, MemoryMatrix=TRUE, starting.values=NULL, Domains=Bounds, print.level=1, boundary.enforcement=2, gradient.check=FALSE, solution.tolerance=SolTol,cluster=cl)
            } else {
-             resOptim <- genoud(Optim_Ecomeristem_funct, NbParam, max=FALSE, pop.size=100, max.generations=MaxIter, wait.generations=max(10,MaxIter/10), hard.generation.limit=TRUE, MemoryMatrix=TRUE, starting.values=NULL, Domains=Bounds, print.level=1, boundary.enforcement=2, gradient.check=FALSE, solution.tolerance=SolTol)
+             resOptim <- genoud(optimEcomeristem, NbParam, max=FALSE, pop.size=100, max.generations=MaxIter, wait.generations=max(10,MaxIter/10), hard.generation.limit=TRUE, MemoryMatrix=TRUE, starting.values=NULL, Domains=Bounds, print.level=1, boundary.enforcement=2, gradient.check=FALSE, solution.tolerance=SolTol)
            }
            res$optimizer <- "Genetic Optimization Using Derivatives"
            TPath <- gsub("\\","/",tempdir(), fixed=TRUE)
@@ -160,9 +160,9 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDa
          },
          "GL" = {
            if(ACluster && detectCores() >= 4) {
-             resOptim <- genoud(Optim_Ecomeristem_funct, NbParam, max=FALSE, pop.size=1000, max.generations=MaxIter, wait.generations=max(10,MaxIter/10), hard.generation.limit=TRUE, MemoryMatrix=TRUE, starting.values=NULL, Domains=Bounds, print.level=1, boundary.enforcement=2, gradient.check=FALSE, solution.tolerance=SolTol, lexical=TRUE, cluster=cl)
+             resOptim <- genoud(optimEcomeristem, NbParam, max=FALSE, pop.size=1000, max.generations=MaxIter, wait.generations=max(10,MaxIter/10), hard.generation.limit=TRUE, MemoryMatrix=TRUE, starting.values=NULL, Domains=Bounds, print.level=1, boundary.enforcement=2, gradient.check=FALSE, solution.tolerance=SolTol, lexical=TRUE, cluster=cl)
            } else {
-             resOptim <- genoud(Optim_Ecomeristem_funct, NbParam, max=FALSE, pop.size=1000, max.generations=MaxIter, wait.generations=max(10,MaxIter/10), hard.generation.limit=TRUE, MemoryMatrix=TRUE, starting.values=NULL, Domains=Bounds, print.level=1, boundary.enforcement=2, gradient.check=FALSE, solution.tolerance=SolTol, lexical=TRUE)
+             resOptim <- genoud(optimEcomeristem, NbParam, max=FALSE, pop.size=1000, max.generations=MaxIter, wait.generations=max(10,MaxIter/10), hard.generation.limit=TRUE, MemoryMatrix=TRUE, starting.values=NULL, Domains=Bounds, print.level=1, boundary.enforcement=2, gradient.check=FALSE, solution.tolerance=SolTol, lexical=TRUE)
            }
            res$optimizer <- "Genetic Optimization Using Derivatives"
            TPath <- gsub("\\","/",tempdir(), fixed=TRUE)
@@ -173,14 +173,14 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDa
            res$iter <- nrow(best)
          },
          "A" = {
-           resOptim <- simulatedAnnealing(Optim_Ecomeristem_funct, start_par=Bounds[,1], lower=Bounds[,1], upper=Bounds[,2], itermax=MaxIter, step=SolTol, printlvl=max(1,MaxIter/20))
+           resOptim <- simulatedAnnealing(optimEcomeristem, start_par=Bounds[,1], lower=Bounds[,1], upper=Bounds[,2], itermax=MaxIter, step=SolTol, printlvl=max(1,MaxIter/20))
            res$optimizer <- "Simulated Annealing"
            res$par <- resOptim$par
            res$value <- resOptim$value
            res$iter <- MaxIter
          }
   )
-  print("End of estimation, type res for optimisation results, type saveRes() to save output variables in csvfile, type resPlot() to see plots of observation variables, allPlot() to see plots of all computed variables and dePlot() for convergence plot (in case of optimizer = D)")
+  print("End of estimation, type fnList() to see function possibilities")
   return(list(res,resOptim))
 }
 coefCompute <- function() {
@@ -366,7 +366,7 @@ saveParF <- function() {
   bestp <- as.vector(res$par)
   paramInitTrans[ParamOfInterest] <- bestp
   parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
-  write.table(parameters, "ECOMERISTEM_parameters.txt", sep="=", dec=".", row.names=F, col.names=F)
+  write.table(parameters, "ECOMERISTEM_parameters.txt", sep="=", dec=".", quote=F, row.names=F, col.names=F)
 }
 resPlot <- function() {
   bestp <- as.vector(res$par)
@@ -391,6 +391,10 @@ resPlot <- function() {
     return(sqrt((sum(diff, na.rm=T))/(sum(!is.na(diff)))))
   }
   sapply(VarList, plotF)
+}
+fnList <- function() {
+  flist <- c("resPlot()", "resEPlot(''vector of parameters'')", "saveRes()","recoverR()","dePlot()","savePar()","saveParF()","savePlots()","runModel()","allPlot()")
+  print(sort(flist))
 }
 coeff <- coefCompute()
 

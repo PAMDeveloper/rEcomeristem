@@ -3,17 +3,19 @@
 #-- (PAM, AGAP, BIOS, CIRAD)
 
 ###############################################################################
-Path <- "D:/Workspace/R/estim/estimlisa"
+Path <- "D:/Workspace/PAM/estim/estimlisa"
 VName <- "vobs.txt"
 VETName <- "vobsET.txt"
 ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "SLAp", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2")
 MinValue <- c(1, 1, 1, 20, 10, 0.01, -0.5, 0.0, 0.0, 0.01, 0.1)
 MaxValue <- c(10, 10, 20, 60, 120, 0.5, 0.5, 2, 0.5, 0.1, 0.5)
 obsCoef <- c(1,1,1,1,1,1,1,1)
+coefIncrease <- 20
 Optimizer <- "D" #(D = DE, G = RGenoud, A = Simulated Annealing)
 RmseM <- "RET" #(RS = RSME-sum, RET = RMSE-ET, RC = RMSE-coef, RETC = RMSE-ET-coef)
 MaxIter <- 1
 SolTol <- 0.05
+Penalty <- 10
 ACluster <- TRUE  #Active la parallelisation pour les machines a minimum 4 coeurs
 genPar <- c("density")
 ###############################################################################
@@ -58,9 +60,9 @@ Optim_Ecomeristem_funct <- function(p){
          },
          "RET" = {
            diff1 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
-           diff2 <- (abs(obsRed+obsETRed-res)/obsRed)^2
-           diff3 <- (abs(obsRed-obsETRed-res)/obsRed)^2
-           diff <- pmin(as.matrix(diff1*999),as.matrix(diff2),as.matrix(diff3))
+           diff2 <- diff1 * Penalty
+           diff3 <-  replace(diff2, diff2 == 0,1)
+           diff <- (((obsRed - res)/obsRed)^2)*diff3
            return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
          },
          "RC" = {
@@ -70,11 +72,10 @@ Optim_Ecomeristem_funct <- function(p){
          },
          "RETC" = {
            diff1 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
-           diff2 <- (abs(obsRed+obsETRed-res)/obsRed)^2
-           diff3 <- (abs(obsRed-obsETRed-res)/obsRed)^2
-           diff <- pmin(as.matrix(diff1*999),as.matrix(diff2),as.matrix(diff3))
-           rmse = sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff))))
-           return(sum(rmse*obsCoef, na.rm=T))
+           diff2 <- diff1 * Penalty
+           diff3 <-  replace(diff2, diff2 == 0,1)
+           diff <- ((((obsRed - res)/obsRed)^2)*diff3)*coeff
+           return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
          }
   )
 }
@@ -118,7 +119,7 @@ optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, vobs) {
   switch(Optimizer,
          "D" = {
            if(ACluster && detectCores() >= 4) {
-             resOptim[[genList[[i]]]] <<- DEoptim(Optim_Ecomeristem_funct, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2, cluster=cl, packages=c("recomeristem"), parVar=c("meteo","vObs","obsRed", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM", "obsETRed","obsCoef")))
+             resOptim[[genList[[i]]]] <<- DEoptim(Optim_Ecomeristem_funct, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2, cluster=cl, packages=c("recomeristem"), parVar=c("meteo","vObs","obsRed", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM", "obsETRed","obsCoef","Penalty","coefIncrease")))
 
            } else {
              resOptim[[genList[[i]]]] <<- DEoptim(Optim_Ecomeristem_funct, lower=Bounds[,1], upper=Bounds[,2], DEoptim.control(VTR=SolTol,itermax=MaxIter, strategy=2))
@@ -210,19 +211,13 @@ resPlot <- function(i) {
       if(!is.null(obsETRed[[x]])) {
         arrows(obsRed$day,obsRed[[x]]-obsETRed[[x]],obsRed$day,obsRed[[x]]+obsETRed[[x]], code=3, length=0.02, angle = 90)
       }
-      if(!is.null(obsRed[[x]])) {
-        diff1 = abs(1-between(resRed[[x]],obsRed[[x]]-obsETRed[[x]],obsRed[[x]]+obsETRed[[x]]))
-        diff2 = ((abs(obsRed[[x]] + obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
-        diff3 = ((abs(obsRed[[x]] - obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
-        return(sum(pmin(diff1*999,diff2,diff3),na.rm=T))
-      } else {
-        return(NULL)
-      }
     } else {
       plot(Res_ecomeristem[[x]], type="l", xlab="DAS", ylab=x,ylim=c(min(Res_ecomeristem[[x]], obsRed[[x]], na.rm=T),max(Res_ecomeristem[[x]], obsRed[[x]], na.rm=T)))
       points(obsRed$day, obsRed[[x]], type="p", col="red")
-      return(paste((sum((abs(obsRed[[x]]-resRed[[x]]))/(obsRed[[x]]),na.rm=T))*100,"%", sep=""))
+      diff <- ((obsRed[[x]] - resRed[[x]])/obsRed[[x]])^2
     }
+    diff <- ((obsRed[[x]] - resRed[[x]])/obsRed[[x]])^2
+    return(sqrt((sum(diff, na.rm=T))/(sum(!is.na(diff)))))
   }
   sapply(VarList, plotF)
 }
@@ -233,7 +228,13 @@ savePlot <- function(i) {
 }
 savePar <- function(i) {
   resPar <- matrix(as.vector(res[[i]]$par), ncol=11)
-  write.table(resPar, file="par.csv", sep=",", append=T, dec=".", col.names = F, row.names = paste("geno",i,sep="_"))
+  write.table(resPar, file="par.csv", sep=",", append=T, dec=".", quote=F, col.names = F, row.names = paste("geno",i,sep="_"))
+}
+saveParF <- function(i) {
+  bestp <- as.vector(res[[i]]$par)
+  paramInitTrans[ParamOfInterest] <- bestp
+  parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
+  write.table(parameters, paste("ECOMERISTEM_parametersG_", paste(i,".txt",sep=""),sep=""), sep="=", dec=".", quote=F, row.names=F, col.names=F)
 }
 simPlot <- function(i) {
   bestp <- as.vector(res[[i]]$par)
@@ -278,6 +279,9 @@ saveARes <- function() {
 saveARMSE <- function() {
   lapply(1:length(lineList), function(x) saveRMSE(x))
 }
+saveAParF <- function() {
+  lapply(1:length(lineList), function(x) saveParF(x))
+}
 
 ###############################################################################
 
@@ -312,7 +316,7 @@ if(ACluster && detectCores() >= 4) {
   nbCores <- detectCores() - 2
   cl <- makeCluster(nbCores, outfile="clusterlog.txt")
   clusterEvalQ(cl, library(recomeristem,rgenoud))
-  clusterExport(cl, varlist = c("meteo", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM","obsETRed", "obsCoef"))
+  clusterExport(cl, varlist = c("meteo", "paramInitTrans", "ParamOfInterest", "ParamList", "RmseM","obsETRed", "obsCoef","Penalty","coefIncrease"))
 }
 ###############################################################################
 #Estimation run
