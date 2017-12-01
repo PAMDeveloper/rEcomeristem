@@ -87,11 +87,23 @@ public:
                      PlantModel::BIOMLEAFMAINSTEMSTRUCT});
         selector("MAINSTEM_STOCK_IN", artis::kernel::DOUBLE, {
                      PlantModel::MAINSTEM_STOCK_IN});
+        selector("DEADLEAFNB", artis::kernel::INT, {
+                     PlantModel::DEAD_LEAF_NB});
+		selector("INTERNODE_LENGTH_MAINSTEM", artis::kernel::DOUBLE, {
+                     PlantModel::INTERNODE_LENGTH_MAINSTEM});
+		selector("PANICLEMAINSTEMDW", artis::kernel::DOUBLE, {
+                     PlantModel::PANICLE_MAINSTEM_DW});
+		selector("PANICLEDW", artis::kernel::DOUBLE, {
+                     PlantModel::PANICLE_DW});
+		selector("PHENOSTAGE", artis::kernel::INT, {
+                     PlantModel::PHENOSTAGE});
+		selector("STOCKIN", artis::kernel::DOUBLE, {
+                     PlantModel::INTERNODE_STOCK_SUM});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
-                     AssimilationModel::ASSIM}); 
+                     AssimilationModel::ASSIM});
         selector("LAI", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::LAI});
@@ -129,6 +141,9 @@ public:
         selector("R_D", artis::kernel::DOUBLE, {
                      PlantModel::ROOT,
                      RootModel::ROOT_DEMAND_COEF});
+		selector("ROOTBIOMASS", artis::kernel::DOUBLE, {
+                     PlantModel::ROOT,
+                     RootModel::ROOT_BIOMASS});
 
         //WaterBalanceModel
         //CulmStockModel

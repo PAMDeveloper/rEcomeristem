@@ -50,7 +50,8 @@ public:
                      CULM_SURPLUS_SUM, QTY, LL_BL, PLANT_STOCK, REALLOC_SUM_SUPPLY,
                      TA, DELTA_T, TT, BOOL_CROSSED_PLASTO, EDD, DD, PHENOSTAGE, SLA,
                      TILLERNB_1, NBLEAF, BIOMAERO2, BIOMLEAFMAINSTEM, BIOMINMAINSTEM, AREALFEL,
-                     MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK };
+                     MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK,
+					 DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW, PANICLE_DW};
 
     PlantModel() :
         _thermal_time_model(new ThermalTimeModel),
@@ -113,6 +114,10 @@ public:
         Internal( BIOMINMAINSTEMSTRUCT, &PlantModel::_biomInMainstemstruct );
         Internal( BIOMLEAFMAINSTEMSTRUCT, &PlantModel::_biomLeafMainstemstruct );
         Internal( MAINSTEM_STOCK, &PlantModel::_mainstem_stock );
+		Internal( DEAD_LEAF_NB, &PlantModel::_deadleafNb );
+		Internal( INTERNODE_LENGTH_MAINSTEM, &PlantModel::_internode_length_mainstem );
+		Internal( PANICLE_MAINSTEM_DW, &PlantModel::_panicleMainstemDW );
+		Internal( PANICLE_DW, &PlantModel::_panicleDW );
     }
 
     virtual ~PlantModel()
@@ -225,10 +230,6 @@ public:
             _stock = _stock_model->get < double >(t-1, PlantStockModel::STOCK);
             _deficit = _stock_model->get < double >(t-1, PlantStockModel::DEFICIT);
         }
-
-        /*if(_plant_phase == plant::DEAD) {
-            qDebug() << "La plante est morte";
-        }*/
 
         //Compute IC
         _stock_model->compute_IC(t);
@@ -479,6 +480,8 @@ public:
         // NB Alive Culms
         double nbc = 0;
         _biomAero2 = 0;
+		_deadleafNb = 0;
+		_panicleDW = 0;
         std::deque < CulmModel* >::const_iterator itnbc = _culm_models.begin();
         while(itnbc != _culm_models.end()) {
             if(!((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM))) {
@@ -488,10 +491,11 @@ public:
                           (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
                           (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
                           (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
+			_deadleafNb += (*itnbc)->get_dead_phytomer_number();
+			_panicleDW += (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
             itnbc++;
         }
         _biomAero2 = _biomAero2 +  _stock_model->get< double > (t, PlantStockModel::STOCK);
-
          // VISU
         _tillerNb_1 = nbc;
         std::deque < CulmModel* >::const_iterator visumainstem = _culm_models.begin();
@@ -501,6 +505,8 @@ public:
         _biomInMainstem = (*visumainstem)->get< double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) + _mainstem_stock_IN;
         _areaLFEL = (*visumainstem)->get < double, CulmModel >(t, CulmModel::LAST_LEAF_BLADE_AREA);
         _nbleaf = (*visumainstem)->get < double, CulmModel >(t, CulmModel::NBLEAF); // nombre de feuilles vertes (>= 50% blade area)
+		_internode_length_mainstem = (*visumainstem)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM) + (*visumainstem)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
+		_panicleMainstemDW = (*visumainstem)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
 
     }
 
@@ -777,6 +783,10 @@ public:
        _biomLeafMainstemstruct = 0;
        _mainstem_stock = 0;
        _tmp_mainstem_stock = 0;
+	   _deadleafNb = 0;
+	   _internode_length_mainstem = 0;
+	   _panicleMainstemDW = 0;
+	   _panicleDW = 0;
     }
 
 private:
@@ -891,6 +901,10 @@ private:
     double _mainstem_stock;
     double _tmp_mainstem_stock;
     double _biomLeafMainstemstruct;
+	int _deadleafNb;
+	double _internode_length_mainstem;
+	double _panicleMainstemDW;
+	double _panicleDW;
 
     //internal states
     plant::plant_state _plant_state;

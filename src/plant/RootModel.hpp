@@ -33,7 +33,7 @@ class RootModel : public AtomicModel < RootModel >
 {
 
 public:
-    enum internals { ROOT_DEMAND_COEF, ROOT_DEMAND, SURPLUS, LAST_ROOT_DEMAND };
+    enum internals { ROOT_DEMAND_COEF, ROOT_DEMAND, SURPLUS, LAST_ROOT_DEMAND, ROOT_BIOMASS };
 
     enum externals { LEAF_DEMAND_SUM, LEAF_LAST_DEMAND_SUM, INTERNODE_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, PLANT_PHASE, PLANT_STATE,
@@ -46,6 +46,7 @@ public:
         Internal(ROOT_DEMAND, &RootModel::_root_demand);
         Internal(SURPLUS, &RootModel::_surplus);
         Internal(LAST_ROOT_DEMAND, &RootModel::_last_root_demand);
+        Internal(ROOT_BIOMASS, &RootModel::_root_biomass);
 
 
         //    external variables

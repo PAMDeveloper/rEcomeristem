@@ -1,24 +1,23 @@
 #Script estimating parameters for EcoMeristem model
 #Authors : Florian Larue, Gregory Beurier, Lauriane Rouan, Delphine Luquet
 #-- (PAM, AGAP, BIOS, CIRAD)
-
 ###Set informations for parameter estimation###
-PPath <- "D:/Workspace/PAM/estim/estimlisa"
-MPath <- "D:/Workspace/PAM/estim/estimlisa"
-VPath <- "D:/Workspace/PAM/estim/estimlisa"
-VName <- "vobs_G7moyINT_C_BFF2015.txt"
-VECName <- "vobs_G7_C_BFF2015_ET_INT.txt"
-ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "SLAp", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2")
-MinValue <- c(1, 1, 1, 20, 10, 0.01, -0.5, 0.0, 0.0, 0.01, 0.1)
-MaxValue <- c(10, 10, 20, 60, 120, 0.5, 0.5, 2, 0.5, 0.1, 0.5)
-obsCoef <- c(1,1,1,1,1,1,1,1)
-coefIncrease <- 20
-Optimizer <- "D" #(D = DE, G = RGenoud, A = Simulated Annealing, GL = lexical RGenoud (ne marche que avec RmseM 'LEC'))
-RmseM <- "RECC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef, LEC = Lexical-ET (ne marche que avec Optimizer 'GL'))
-MaxIter <- 1
-Penalty <- 10 #Penalise les points en dehors de l'ET (RMSE * Penalty)
-SolTol <- 0.05 #sera multiplie par le nombre de variable d'obs
-ACluster <- TRUE  #Active la parallelisation pour les machines a minimum 4 coeurs
+PPath <- "D:/Workspace/PAM/estim/graphesValidCalib/graphesCalib2015"
+MPath <- "D:/Workspace/PAM/estim/graphesValidCalib/graphesCalib2015"
+VPath <- "D:/Workspace/PAM/estim/graphesValidCalib/graphesCalib2015"
+VName <- "vobs_G1moyINT_C_BFF2015woleaf.txt"
+VECName <- "vobs_G1_C_BFF2015_ET_INTwoleaf.txt"
+ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2")
+MinValue <- c(1, 1, 1, 20, 0.01, -0.5, 0.0, 0.0, 0.005, 0.1)
+MaxValue <- c(10, 10, 20, 60, 0.5, 0.5, 2, 0.5, 0.1, 0.5)
+obsCoef <- c(1,1,1,1,1,1,1)
+coefIncrease <- 50
+Optimizer <- "D" #(D = DE, G = RGenoud)
+RmseM <- "RECC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef)
+MaxIter <- 10000
+Penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
+SolTol <- 0.05 #will be multiplied by the number of observed variables
+ACluster <- TRUE  #parallel for machines with at least 4 cores
 ###End informations for parameter estimation###
 
 #Install and load packages
@@ -51,6 +50,7 @@ resRed <- recomeristem::rcpp_reduceResults(resulttmp, vObs)
 VarList <- names(obsRed)
 obsLength <- nrow(obsRed)
 res <- list()
+coeff <- c()
 SolTol <- SolTol * length(VarList)
 
 #Functions
@@ -83,22 +83,14 @@ optimEcomeristem <- function(p){
            diff <- ((((obsRed - res)/obsRed)^2)*diff3)*coeff
            return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
          },
-         "RECC.old" = {
-           diff1 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
-           diff2 <- (abs(obsRed+obsETRed-res)/obsRed)^2
-           diff3 <- (abs(obsRed-obsETRed-res)/obsRed)^2
-           diff <- pmin(as.matrix(diff1*999),as.matrix(diff2),as.matrix(diff3))
-           rmse = sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff))))
-           return(sum(rmse*obsCoef, na.rm=T))
-         },
-         "REC.old" = {
-           diff1 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
-           diff2 <- (abs(obsRed+obsETRed-res)/obsRed)^2
-           diff3 <- (abs(obsRed-obsETRed-res)/obsRed)^2
-           diff <- pmin(as.matrix(diff1*999),as.matrix(diff2),as.matrix(diff3))
-           return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
-         },
          "RTEST" = {
+           diff1 <- abs(1-(data.table::between(res,obsRed-(2*obsETRed),obsRed+(2*obsETRed))))
+           diff2 <- diff1 * Penalty
+           diff3 <- abs(1-(data.table::between(res,obsRed-obsETRed,obsRed+obsETRed)))
+           diff4 <-  replace(diff3, diff3 == 0,0.5)
+           diff5 <- pmax(diff2,diff4)
+           diff <- ((((obsRed - res)/obsRed)^2)*diff5)*coeff
+           return(sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T))
          }
   )
 }
@@ -131,6 +123,7 @@ simulatedAnnealing <- function(func, start_par, lower, upper, itermax = 1000, st
   return(list(iterations = itermax, value = best_value, par = best_par))
 }
 optimisation <- function(Optimizer, MaxIter, SolTol, NbParam, Bounds, NbEnv, SDate, EDate) {
+  coeff <<- coefCompute()
   switch(Optimizer,
          "D" = {
            if(ACluster && detectCores() >= 4) {
@@ -189,36 +182,6 @@ coefCompute <- function() {
     tmp <- c(tmp, (obsCoef+(i*(obsCoef/(100/coefIncrease)))))
   }
   return(data.frame(matrix(unlist(tmp),nrow=obsLength,byrow=T)))
-}
-resPlot.old <- function() {
-  bestp <- as.vector(res$par)
-  paramInitTrans[ParamOfInterest] <- bestp
-  parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
-  Res_ecomeristem <- recomeristem::rcpp_run_from_dataframe(parameters,meteo)
-  resRed <- recomeristem::rcpp_reduceResults(Res_ecomeristem,vObs)
-  obsRed$day <- vObs$day
-  plotF <- function(x) {
-    if(RmseM != "RS" && RmseM != "RX") {
-      plot(Res_ecomeristem[[x]], type="l", xlab="DAS", ylab=x,ylim=c(min(min(Res_ecomeristem[[x]], na.rm=T),min(obsRed[[x]]-obsETRed[[x]], na.rm=T)),max(max(Res_ecomeristem[[x]], na.rm=T),max(obsRed[[x]]+obsETRed[[x]], na.rm=T))))
-      points(obsRed$day, obsRed[[x]], type="p", col="red")
-      if(!is.null(obsETRed[[x]])) {
-        arrows(obsRed$day,obsRed[[x]]-obsETRed[[x]],obsRed$day,obsRed[[x]]+obsETRed[[x]], code=3, length=0.02, angle = 90)
-      }
-      if(!is.null(obsRed[[x]])) {
-        diff1 = abs(1-between(resRed[[x]],obsRed[[x]]-obsETRed[[x]],obsRed[[x]]+obsETRed[[x]]))
-        diff2 = ((abs(obsRed[[x]] + obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
-        diff3 = ((abs(obsRed[[x]] - obsETRed[[x]] - resRed[[x]]))/obsRed[[x]])^2
-        return(sum(pmin(diff1*999,diff2,diff3),na.rm=T))
-      } else {
-        return(NULL)
-      }
-    } else {
-      plot(Res_ecomeristem[[x]], type="l", xlab="DAS", ylab=x,ylim=c(min(Res_ecomeristem[[x]], obsRed[[x]], na.rm=T),max(Res_ecomeristem[[x]], obsRed[[x]], na.rm=T)))
-      points(obsRed$day, obsRed[[x]], type="p", col="red")
-      return(paste((sum((abs(obsRed[[x]]-resRed[[x]]))/(obsRed[[x]]),na.rm=T))*100,"%", sep=""))
-    }
-  }
-  sapply(VarList, plotF)
 }
 dePlot <- function() {
   if(Optimizer == "D") {
@@ -283,6 +246,10 @@ runEModel <- function(par = res$par) {
   parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
   assign("resultEModel", recomeristem::rcpp_run_from_dataframe(parameters,meteo), envir=.GlobalEnv)
   print("Done, check resultEModel for simulation results")
+}
+saveEModel <- function(par = res$par) {
+  runEModel(par)
+  write.table(resultEModel, "resultEModel.csv", sep=",", dec=".", quote=F, row.names=F, col.names=T)
 }
 resEPlot <- function(par = res$par) {
   bestp <- as.vector(par)
@@ -401,11 +368,11 @@ fnList <- function() {
              "savePar() : Save estimated parameter values in csv file",
              "saveParF() : Save all parameter (fixed + estimated) in ECOMERISTEM_parameters.txt",
              "savePlots() : Save resPlot() in pdf file",
-             "runModel() : Run model with estimated parameters",
+             "runModel() : Run model with parameter and weither files",
+             "runEModel() : Run model with estimated parameters (also possible to give parameter values as argument)",
              "allPlot() : Plot all output variables of model (without observations)")
   print(sort(flist))
 }
-coeff <- coefCompute()
 
 #Optimisation run
 if(ACluster && detectCores() >= 4) {
@@ -419,3 +386,4 @@ res <- resOptim[[1]]
 res$time <- time
 resOptim <- resOptim[[2]]
 stopCluster(cl)
+print(paste("Elapsed time :", paste(time[[3]],"s")))

@@ -54,7 +54,8 @@ public:
                      PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND,
                      FIRST_LEAF_LEN, DELETED_SENESC_DW, PEDUNCLE_LEN, KILL_CULM,
                      LAST_LIGULATED_LEAF_BLADE_LEN, DELETED_REALLOC_BIOMASS, CULM_TEST_IC,
-                     CULM_DEFICIT, CULM_STOCK, LAST_LEAF_INDEX, REALLOC_SUPPLY, PANICLE_WEIGHT, LAST_LEAF_BLADE_AREA, NBLEAF };
+                     CULM_DEFICIT, CULM_STOCK, LAST_LEAF_INDEX, REALLOC_SUPPLY, PANICLE_WEIGHT, LAST_LEAF_BLADE_AREA, NBLEAF,
+                     DELETED_LEAF_NUMBER };
 
     enum externals { BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
@@ -114,6 +115,7 @@ public:
         Internal(PANICLE_WEIGHT, &CulmModel::_panicle_weight);
         Internal(LAST_LEAF_BLADE_AREA, &CulmModel::_last_leaf_blade_area);
         Internal(NBLEAF, &CulmModel::_nb_leaf);
+		Internal(DELETED_LEAF_NUMBER, &CulmModel::_deleted_leaf_number);
 
         //    externals
         External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -265,7 +267,6 @@ public:
         }
 
         //thermaltimevalues update
-        //qDebug() << "test0";
         if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE or _is_first_day_pi or _creation_date == t) {
             _culm_EDD = _edd;
             _culm_DD = _dd;
@@ -275,12 +276,10 @@ public:
                 _culm_phenostage_cste = _culm_phenostage;
             }
         } else {
-            //qDebug() << "test1";
             _culm_DD = _culm_thermaltime_model->get < double >(t, ThermalTimeModelNG::CULM_DD);
             _culm_EDD = _culm_thermaltime_model->get < double >(t, ThermalTimeModelNG::EDD);
             _culm_bool_crossed_plasto = _culm_thermaltime_model->get < double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_PLASTO);
             _culm_phenostage = _culm_phenostage_cste + _culm_thermaltime_model->get < int >(t, ThermalTimeModelNG::PHENO_STAGE);
-            //qDebug() << "test2";
         }
 
         //phytomer creation
@@ -567,6 +566,18 @@ public:
 
     int get_alive_phytomer_number() const
     { return _phytomer_models.size() - _deleted_leaf_number; }
+	
+	int get_dead_phytomer_number() const { 
+		std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
+			int i = 0;
+			while (it != _phytomer_models.end()) {
+				if ((*it)->is_leaf_dead()) {
+					++i;
+				}
+				++it;
+			}
+		return i;
+	}
 
     CulmStockModelNG * stock_model() const
     { return _culm_stock_model.get(); }
