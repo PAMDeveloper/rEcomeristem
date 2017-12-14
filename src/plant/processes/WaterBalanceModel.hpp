@@ -33,7 +33,7 @@ namespace model {
 class WaterBalanceModel : public AtomicModel < WaterBalanceModel >
 {
 public:
-    enum internals { CSTR, FCSTR, FTSW, TRANSPIRATION, SWC };
+    enum internals { CSTR, FCSTR, FTSW, TRANSPIRATION, SWC, PSIB };
     enum externals { INTERC };
 
 
@@ -44,6 +44,7 @@ public:
         Internal(FTSW, &WaterBalanceModel::_ftsw);
         Internal(TRANSPIRATION, &WaterBalanceModel::_transpiration);
         Internal(SWC, &WaterBalanceModel::_swc);
+        Internal(PSIB, &WaterBalanceModel::_psib);
 
         External(INTERC, &WaterBalanceModel::_interc);
     }
@@ -55,26 +56,40 @@ public:
     void compute(double t, bool /* update */) {
         //parameters
         _etp = _parameters.get(t).Etp;
-        _water_supply = _parameters.get(t).Irrigation;
+        _water_supply = 0;
+        if(_wbmodel == 1) {
+            //Waterbalance model
+            //FTSW
+            _ftsw = _swc / RU1;
 
-        //FTSW
-        _ftsw = _swc / RU1;
+            //cstr
+            _cstr = (_ftsw < ThresTransp) ? std::max(1e-4, _ftsw * 1. / ThresTransp) : 1;
 
-        //cstr
-        _cstr = (_ftsw < ThresTransp) ?
-                    std::max(1e-4, _ftsw * 1. / ThresTransp) : 1;
+            //fcstr
+            _fcstr = std::sqrt(_cstr);
 
-        //fcstr
-        _fcstr = std::sqrt(_cstr);
+            //transpiration
+            _transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) * _interc * _cstr) / Density);
 
-        //transpiration
-        _transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) *
-                                        _interc * _cstr) / Density);
+            //SWC
+            _swc = _swc - _transpiration + _water_supply;
+        } else {
+            _water_supply = _parameters.get(t).Irrigation;
 
-        //SWC
-        _swc = _swc - _transpiration + _water_supply;
+            //Field waterbalance model
+            _cstr = 1;
+            _transpiration = _swc;
+            _ftsw = 1;
+            if(_water_supply == 1) {
+                _stressdays = std::min(10.,_stressdays + 1);
+                _psib = (pot/10)*_stressdays;
+                _fcstr = std::min(1.,(18-_psib)/(18-stressBP));
+            } else {
+                _fcstr = 1;
+                _stressdays = 0;
+            }
+        }
     }
-
 
 
     void init(double /*t*/, const ecomeristem::ModelParameters& parameters) {
@@ -86,35 +101,50 @@ public:
         ETPmax = parameters.get("ETPmax");
         Kcpot = parameters.get("Kcpot");
         Density = parameters.get("density");
+        thresLER = parameters.get("thresLER");
+        stressBP = parameters.get("stressBP");
+        pot = parameters.get("psib");
 
+        _wbmodel = parameters.get("wbmodel");
         //    computed variables
         _cstr = 1;
         _fcstr = 1;
         _ftsw = 1;
         _swc = RU1;
         _transpiration = 0;
+        _psib = 0;
+        _stressdays = 0;
     }
 
 private:
     ecomeristem::ModelParameters _parameters;
     // parameters
-        double ETPmax;
-        double Kcpot;
-        double Density;
-        double RU1;
-        double ThresTransp;
+    double ETPmax;
+    double Kcpot;
+    double Density;
+    double RU1;
+    double ThresTransp;
+    //Field WB
+    double thresLER;
+    double pot;
+    double _wbmodel;
+    double stressBP;
+    //meteo
+    double _etp;
+    double _water_supply;
 
     //    internals (computed)
-        double _transpiration;
-        double _ftsw;
-        double _swc;
-        double _cstr;
-        double _fcstr;
+    double _transpiration;
+    double _ftsw;
+    double _swc;
+    double _cstr;
+    double _fcstr;
+    //Field WB
+    double _psib;
+    double _stressdays;
 
-        //  externals
-        double _etp;
-        double _interc;
-        double _water_supply;
+    //  externals
+    double _interc;
 };
 
 } // namespace model

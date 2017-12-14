@@ -33,8 +33,7 @@ class InternodeModel : public AtomicModel < InternodeModel >
 {
 public:
     enum internode_phase {  INITIAL, VEGETATIVE, REALIZATION,
-                            REALIZATION_NOGROWTH, MATURITY,
-                            MATURITY_NOGROWTH, DEAD };
+                            MATURITY, DEAD };
 
     enum internals { INTERNODE_PHASE, INTERNODE_PHASE_1, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
@@ -42,7 +41,7 @@ public:
 
     enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
                      DD, DELTA_T, PLASTO, LIGULO, NB_LIG, CULM_DEFICIT, CULM_STOCK,
-                     BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE };
+                     BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE, TEST_IC, FCSTR };
 
     //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
     //    enum externals { DD, DELTA_T, FTSW, P, PHASE, STATE, PREDIM_LEAF,
@@ -87,6 +86,8 @@ public:
         External(LAST_LEAF_INDEX, &InternodeModel::_last_leaf_index);
         External(PREVIOUS_IN_PREDIM, &InternodeModel::_previous_inter_predim);
         External(PHENOSTAGE, &InternodeModel::_phenostage);
+        External(TEST_IC, &InternodeModel::_test_ic);
+        External(FCSTR, &InternodeModel::_fcstr);
     }
 
     virtual ~InternodeModel()
@@ -110,17 +111,21 @@ public:
         }
 
         //ReductionINER
-        if (_ftsw < _thresINER) {
-            _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw) * (1. + (_p * _respINER)));
+        if(_wbmodel == 2) {
+            _reduction_iner = std::max(1e-4, (std::min(1.,(_fcstr * (1. + (_p * _respINER))))) * _test_ic);
         } else {
-            _reduction_iner = 1. + _p * _respINER;
+            if (_ftsw < _thresINER) {
+                _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw) * (1. + (_p * _respINER)) * _test_ic);
+            } else {
+                _reduction_iner = 1. + _p * _respINER * _test_ic;
+            }
         }
 
         //INER
         if (_inter_phase == REALIZATION) {
-            _iner = _inter_predim * _reduction_iner / (_cste_plasto + _index * (_cste_ligulo - _cste_plasto));
+            _iner = _inter_predim * _reduction_iner / (3*_cste_ligulo);
         } else {
-            _iner = _inter_predim * _reduction_iner / (_plasto + _index * (_ligulo - _plasto));
+            _iner = _inter_predim * _reduction_iner / (3*_ligulo);
         }
         //InternodeManager
         step_state(t);
@@ -133,7 +138,7 @@ public:
             if (_inter_phase_1 == VEGETATIVE and _inter_phase == REALIZATION) {
                 _inter_len = _iner * _dd;
                 _exp_time = (_inter_predim - _inter_len) / _iner;
-            } else if(_culm_deficit + _culm_stock >= 0){ //@TODO : vérifier pertinence
+            } else {
                 if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0) and (_plant_phase == plant::ELONG or _plant_phase == plant::PI or _plant_phase == plant::PRE_FLO or _plant_phase == plant::FLO)) {
                     _exp_time = (_inter_predim - _inter_len) / _iner;
                     _inter_len = std::min(_inter_predim, _inter_len + _iner * std::min(_delta_t, _exp_time));
@@ -146,7 +151,7 @@ public:
 
         //Volume
         double radius = _inter_diameter / 2;
-        _inter_volume = _inter_len * M_PI * radius * radius;
+        _inter_volume = _inter_len * 3.141592653589793238462643383280 * radius * radius;
 
         //Density
         _density = _density_IN1 + std::min(_density_IN2, std::max(0., (_phenostage - _nb_leaf_stem_elong)) * ((_density_IN2 - _density_IN1)/((_nb_leaf_pi + 1 + _nb_leaf_max_after_pi + _phenostage_pre_flo_to_flo) - _nb_leaf_stem_elong)));
@@ -239,6 +244,7 @@ public:
         _nb_leaf_pi = parameters.get("nbleaf_pi");
         _nb_leaf_max_after_pi = parameters.get("nb_leaf_max_after_PI");
         _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
+        _wbmodel = parameters.get("wbmodel");
 
         //internals
         _inter_phase = INITIAL;
@@ -286,6 +292,7 @@ private:
     double _nb_leaf_stem_elong;
     double _density_IN1;
     double _density_IN2;
+    double _wbmodel;
 
     // internals
     double _density;
@@ -328,6 +335,8 @@ private:
     double _last_leaf_index;
     double _previous_inter_predim;
     int _phenostage;
+    double _test_ic;
+    double _fcstr;
 
     //// external variables
     //    double _dd;

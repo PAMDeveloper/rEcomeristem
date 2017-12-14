@@ -69,11 +69,14 @@ public:
         _interc = 1. - std::exp(-_kdf * _lai);
 
         //  assimPot
-        _assim_pot = std::pow(_cstr, _power_for_cstr) * _interc * _epsib * _radiation * _kpar;
+        if(_wbmodel == 1) {
+            _assim_pot = std::pow(_cstr, _power_for_cstr) * _interc * _epsib * _radiation * _kpar;
+        } else {
+            _assim_pot = _fcstr * _interc * _epsib * _radiation * _kpar;
+        }
 
         //  respMaint
-        _resp_maint = (_Kresp_leaf * _LeafBiomass + _Kresp_internode * _InternodeBiomass) *
-                std::pow(2., (_Ta - _Tresp) / 10.);
+        _resp_maint = (_Kresp_leaf * _LeafBiomass + _Kresp_internode * _InternodeBiomass) * std::pow(2., (_Ta - _Tresp) / 10.);
 
         //  assim
         _assim = std::max(0., (_assim_pot / _density) - _resp_maint);
@@ -97,8 +100,8 @@ public:
         _Kresp_leaf = parameters.get("Kresp");
         _Kresp_internode = parameters.get("Kresp_internode");
         _Tresp = parameters.get("Tresp");
-
-        //  parameters variables (t)
+        _thresAssim = parameters.get("thresAssim");
+        _wbmodel = parameters.get("wbmodel");
 
         //  computed variables (internal)
         _assim = 0;
@@ -106,9 +109,6 @@ public:
         _assim_pot = 0;
         _interc = 0;
         _lai = 0;
-
-        //  external variables
-
     }
 
 private:
@@ -125,6 +125,9 @@ private:
     double _Kresp_leaf;
     double _Kresp_internode;
     double _Tresp;
+
+    double _thresAssim;
+    double _wbmodel;
 
     //  parameters(t)
     double _radiation;

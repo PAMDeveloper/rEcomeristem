@@ -38,7 +38,7 @@ public:
     enum internals { LENGTH_PREDIM, DIAMETER_PREDIM, REDUCTION_INER, INER,
                      LENGTH, VOLUME, EXP_TIME, BIOMASS, DEMAND, LAST_DEMAND };
     enum externals { PLANT_PHASE, CULM_PHASE, INTER_PREDIM, INTER_DIAM, FTSW,
-                     EDD, DELTA_T, PLASTO, LIGULO };
+                     EDD, DELTA_T, PLASTO, LIGULO, FCSTR, TEST_IC };
 
 
     PeduncleModel(int index, bool is_on_mainstem):
@@ -65,7 +65,8 @@ public:
         External(DELTA_T, &PeduncleModel::_delta_t);
         External(PLASTO, &PeduncleModel::_plasto);
         External(LIGULO, &PeduncleModel::_ligulo);
-
+        External(FCSTR, &PeduncleModel::_fcstr);
+        External(TEST_IC, &PeduncleModel::_test_ic);
     }
 
     virtual ~PeduncleModel()
@@ -84,15 +85,19 @@ public:
 
         if(!_is_mature and _plant_phase != plant::MATURITY and _culm_phase != culm::FLO) {
 
-            //Reduction INER
-            if (_ftsw < _thresINER) {
-                _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw) * (1. + (_p * _respINER)));
+            //ReductionINER
+            if(_wbmodel == 2) {
+                _reduction_iner = std::max(1e-4, (std::min(1.,(((1. / _thresINER) * _fcstr) * (1. + (_p * _respINER)))))) * _test_ic;
             } else {
-                _reduction_iner = 1. + _p * _respINER;
+                if (_ftsw < _thresINER) {
+                    _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw) * (1. + (_p * _respINER))) * _test_ic;
+                } else {
+                    _reduction_iner = 1. + _p * _respINER * _test_ic;
+                }
             }
 
             //INER //@TODO: quel index ? à corriger pour les simu ou ligulo =/= plasto
-            _iner = _length_predim * _reduction_iner / (_plasto + _index * (_ligulo - _plasto));
+            _iner = _length_predim * _reduction_iner / (3 * _ligulo);
 
             //Length and Exp time
             if (t == _first_day) {
@@ -105,7 +110,7 @@ public:
 
             //Volume
             double radius = _diameter_predim / 2;
-            _volume = _length * M_PI * radius * radius;
+            _volume = _length * 3.141592653589793238462643383280 * radius * radius;
 
             //Biomass and Demand
             if(t == _first_day) {
@@ -134,6 +139,7 @@ public:
         _thresINER = _parameters.get("thresINER");
         _respINER = _parameters.get("resp_LER");
         _density = _parameters.get("density_IN2");
+        _wbmodel = _parameters.get("wbmodel");
 
         // internals
         _is_mature = false;
@@ -164,6 +170,7 @@ private:
     double _thresINER;
     double _respINER;
     double _density;
+    double _wbmodel;
 
     // internals
     bool _is_mature;
@@ -189,6 +196,8 @@ private:
     double _delta_t;
     double _plasto;
     double _ligulo;
+    double _fcstr;
+    double _test_ic;
 
 };
 

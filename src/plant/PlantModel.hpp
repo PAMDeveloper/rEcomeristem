@@ -24,6 +24,7 @@
 
 #ifndef PLANT_MODEL_HPP
 #define PLANT_MODEL_HPP
+//#include <QDebug>
 #include <defines.hpp>
 #include <plant/processes/ThermalTimeModel.hpp>
 #include <plant/processes/WaterBalanceModel.hpp>
@@ -44,14 +45,15 @@ public:
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
-                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, HEIGHT_P, PLASTO, TT_LIG, IH,
+                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, HEIGHT_P, PLASTO, PHYLLO, LIGULO, TT_LIG, IH,
                      LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, INTERNODE_STOCK_SUM,
                      REALLOC_BIOMASS_SUM, PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM,
                      CULM_SURPLUS_SUM, QTY, LL_BL, PLANT_STOCK, REALLOC_SUM_SUPPLY,
-                     TA, DELTA_T, TT, BOOL_CROSSED_PLASTO, EDD, DD, PHENOSTAGE, SLA,
+                     TA, DELTA_T, TT, BOOL_CROSSED_PLASTO, BOOL_CROSSED_PHYLLO, BOOL_CROSSED_LIGULO,
+                     EDD, DD, PHENOSTAGE, APPSTAGE, LIGSTAGE, SLA, DD_PHYLLO, DD_LIGULO, PHYLLO_VISU,
                      TILLERNB_1, NBLEAF, BIOMAERO2, BIOMLEAFMAINSTEM, BIOMINMAINSTEM, AREALFEL,
                      MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK,
-					 DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW, PANICLE_DW};
+                     DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW, PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO};
 
     PlantModel() :
         _thermal_time_model(new ThermalTimeModel),
@@ -83,6 +85,8 @@ public:
         Internal( PLANT_PHASE, &PlantModel::_plant_phase );
         Internal( PLANT_STATE, &PlantModel::_plant_state );
         Internal( PLASTO, &PlantModel::_plasto );
+        Internal( PHYLLO, &PlantModel::_phyllo );
+        Internal( LIGULO, &PlantModel::_ligulo );
         Internal( TT_LIG, &PlantModel::_TT_lig );
         Internal( IH, &PlantModel::_IH );
         Internal( LEAF_BIOM_STRUCT, &PlantModel::_leaf_biom_struct );
@@ -100,9 +104,13 @@ public:
         Internal( DELTA_T, &PlantModel::_deltaT );
         Internal( TT, &PlantModel::_TT );
         Internal( BOOL_CROSSED_PLASTO, &PlantModel::_bool_crossed_plasto );
+        Internal( BOOL_CROSSED_PHYLLO, &PlantModel::_bool_crossed_phyllo );
+        Internal( BOOL_CROSSED_LIGULO, &PlantModel::_bool_crossed_ligulo );
         Internal( EDD, &PlantModel::_EDD );
         Internal( DD, &PlantModel::_DD );
         Internal( PHENOSTAGE, &PlantModel::_phenostage );
+        Internal( APPSTAGE, &PlantModel::_appstage );
+        Internal( LIGSTAGE, &PlantModel::_ligstage );
         Internal( SLA, &PlantModel::_sla );
         Internal( TILLERNB_1, &PlantModel::_tillerNb_1 );
         Internal( NBLEAF, &PlantModel::_nbleaf );
@@ -114,10 +122,15 @@ public:
         Internal( BIOMINMAINSTEMSTRUCT, &PlantModel::_biomInMainstemstruct );
         Internal( BIOMLEAFMAINSTEMSTRUCT, &PlantModel::_biomLeafMainstemstruct );
         Internal( MAINSTEM_STOCK, &PlantModel::_mainstem_stock );
-		Internal( DEAD_LEAF_NB, &PlantModel::_deadleafNb );
-		Internal( INTERNODE_LENGTH_MAINSTEM, &PlantModel::_internode_length_mainstem );
-		Internal( PANICLE_MAINSTEM_DW, &PlantModel::_panicleMainstemDW );
-		Internal( PANICLE_DW, &PlantModel::_panicleDW );
+        Internal( DEAD_LEAF_NB, &PlantModel::_deadleafNb );
+        Internal( INTERNODE_LENGTH_MAINSTEM, &PlantModel::_internode_length_mainstem );
+        Internal( PANICLE_MAINSTEM_DW, &PlantModel::_panicleMainstemDW );
+        Internal( PANICLE_DW, &PlantModel::_panicleDW );
+        Internal( LEAF_DELAY, &PlantModel::_leaf_delay );
+        Internal( DD_PHYLLO, &PlantModel::_DD_phyllo );
+        Internal( DD_LIGULO, &PlantModel::_DD_ligulo );
+        Internal( PHYLLO_VISU, &PlantModel::_phyllo_visu );
+        Internal( PHENOSTAGE_AT_FLO, &PlantModel::_phenostage_at_flo);
     }
 
     virtual ~PlantModel()
@@ -169,10 +182,10 @@ public:
             break;
         }
         case plant::VEGETATIVE: {
-            if ( _phenostage == _nb_leaf_stem_elong and _phenostage < _nb_leaf_pi) {
+            if(_appstage == _nb_leaf_stem_elong and _appstage < _nb_leaf_pi) {
                 _plant_phase = plant::ELONG;
                 _is_first_day_pi = true;
-            } else if (_phenostage == _nb_leaf_pi) {
+            } else if (_appstage == _nb_leaf_pi) {
                 _plant_phase = plant::PI;
                 _is_first_day_pi = true;
             }
@@ -180,32 +193,32 @@ public:
         }
         case plant::ELONG: {
             _is_first_day_pi = false;
-            if (_phenostage == _nb_leaf_pi) {
+            if(_appstage == _nb_leaf_pi) {
                 _plant_phase = plant::PI;
             }
-            break;
         }
         case plant::PI: {
             _is_first_day_pi = false;
-            if (_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1) {
+            if (_ligstage == _maxleaves + 1) {
                 _plant_phase = plant::PRE_FLO;
             }
             break;
         }
         case plant::PRE_FLO: {
-            if (_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo) {
+            if (_ligstage == _maxleaves + 4) { //+1 to pre_flo; +3 to end peduncle growth
                 _plant_phase = plant::FLO;
+                _phenostage_at_flo = _phenostage;
             }
             break;
         }
         case plant::FLO: {
-            if (_phenostage == _phenostage_to_end_filling) {
+            if (_phenostage == _phenostage_at_flo + _phenostage_to_end_filling) {
                 _plant_phase = plant::END_FILLING;
             }
             break;
         }
         case plant::END_FILLING: {
-            if (_phenostage == _phenostage_to_maturity) {
+            if (_phenostage == _phenostage_at_flo + _phenostage_to_end_filling + _phenostage_to_maturity) {
                 _plant_phase = plant::MATURITY;
             }
             break;
@@ -219,7 +232,6 @@ public:
 
     void compute(double t, bool /* update */) {
         std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
-
         //Delete leaf
         delete_leaf(t);
         if (_deleted_leaf_biomass > 0) {
@@ -233,24 +245,34 @@ public:
 
         //Compute IC
         _stock_model->compute_IC(t);
-
         //Thermal time
         _Ta = _parameters.get(t).Temperature;
         _deltaT = _Ta - _Tb;
         _TT = _TT + _deltaT;
         if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
             _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO, _plasto);
-            _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0); //@TODO voir le plasto delay
+            _thermal_time_model->put < double >(t, ThermalTimeModel::PHYLLO, _phyllo);
+            _thermal_time_model->put < double >(t, ThermalTimeModel::LIGULO, _ligulo);
+            _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, _leaf_delay);
             _thermal_time_model->put < double >(t, ThermalTimeModel::STOCK, _stock);
             _thermal_time_model->put < double >(t, ThermalTimeModel::DELTA_T, _deltaT);
             (*_thermal_time_model)(t);
             _bool_crossed_plasto = _thermal_time_model->get< double >(t, ThermalTimeModel::BOOL_CROSSED_PLASTO);
+            _bool_crossed_phyllo = _thermal_time_model->get< double >(t, ThermalTimeModel::BOOL_CROSSED_PHYLLO);
+            _bool_crossed_ligulo = _thermal_time_model->get< double >(t, ThermalTimeModel::BOOL_CROSSED_LIGULO);
             _EDD = _thermal_time_model->get< double >(t, ThermalTimeModel::EDD);
             _DD = _thermal_time_model->get< double >(t, ThermalTimeModel::DD);
+            _DD_phyllo = _thermal_time_model->get< double >(t, ThermalTimeModel::DD_PHYLLO);
+            _DD_ligulo = _thermal_time_model->get< double >(t, ThermalTimeModel::DD_LIGULO);
             _ligulo_visu = _thermal_time_model->get< double >(t, ThermalTimeModel::LIGULO_VISU);
             _plasto_visu = _thermal_time_model->get< double >(t, ThermalTimeModel::PLASTO_VISU);
+            _phyllo_visu = _thermal_time_model->get< double >(t, ThermalTimeModel::PHYLLO_VISU);
             _phenostage = _thermal_time_model->get < int >(t, ThermalTimeModel::PHENO_STAGE);
+            _appstage = _thermal_time_model->get < int >(t, ThermalTimeModel::APP_STAGE);
+            _ligstage = _thermal_time_model->get < int >(t, ThermalTimeModel::LIG_STAGE);
             _phenostage_cste = _phenostage;
+            _appstage_cste = _appstage;
+            _ligstage_cste = _ligstage;
         } else {
             //culmthermaltimemodel
             std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
@@ -259,16 +281,25 @@ public:
                 if(!(*it)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM)) {
                     (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::DELTA_T, _deltaT);
                     (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::DD, _DD);
+                    (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::DD_PHYLLO, _DD_phyllo);
+                    (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::DD_LIGULO, _DD_ligulo);
                     (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::PLASTO_VISU, _plasto_visu);
+                    (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::PHYLLO_VISU, _phyllo_visu);
                     (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::LIGULO_VISU, _ligulo_visu);
                     (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::BOOL_CROSSED_PLASTO, _bool_crossed_plasto);
+                    (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::BOOL_CROSSED_PHYLLO, _bool_crossed_phyllo);
+                    (*it)->thermaltime_model()->put < double >(t, ThermalTimeModelNG::BOOL_CROSSED_LIGULO, _bool_crossed_ligulo);
                     (*it)->compute_thermaltime(t);
                     if(i == 0) {
                         _bool_crossed_plasto = (*it)->thermaltime_model()->get< double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_PLASTO);
+                        _bool_crossed_phyllo = (*it)->thermaltime_model()->get< double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_PHYLLO);
+                        _bool_crossed_ligulo = (*it)->thermaltime_model()->get< double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_LIGULO);
                         _EDD = (*it)->thermaltime_model()->get< double >(t, ThermalTimeModelNG::EDD);
                         _DD = (*it)->thermaltime_model()->get< double >(t, ThermalTimeModelNG::CULM_DD);
                         _ligulo_visu = (*it)->thermaltime_model()->get< double >(t, ThermalTimeModelNG::CULM_LIGULO_VISU);
                         _phenostage = _phenostage_cste + (*it)->thermaltime_model()->get< int >(t, ThermalTimeModelNG::PHENO_STAGE);
+                        _appstage = _appstage_cste + (*it)->thermaltime_model()->get< int >(t, ThermalTimeModelNG::APP_STAGE);
+                        _ligstage = _ligstage_cste + (*it)->thermaltime_model()->get< int >(t, ThermalTimeModelNG::LIG_STAGE);
                     }
                 }
                 ++it;
@@ -283,11 +314,9 @@ public:
         (*_water_balance_model)(t);
 
         // Manager
-        /*  qDebug() << "BEFORE" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
-        qDebug() << "NB CREATED CULMS:" << _culm_models.size();*/
-
+        //qDebug() << "BEFORE" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
+        //qDebug() << "NB CREATED CULMS:" << _culm_models.size();
         step_state(t);
-        // qDebug() << "AFTER" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
 
         //LLBL - Plasto
         std::deque < CulmModel* >::const_iterator mainstem = _culm_models.begin();
@@ -298,6 +327,7 @@ public:
         {
 
             _plasto = _plasto * _coeff_Plasto_PI;
+            _phyllo = _phyllo * _coeff_Phyllo_PI;
             _ligulo = _ligulo * _coeff_Ligulo_PI;
             _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves + 2 - _nb_leaf_param2);
             _MGR = _MGR * _coeff_MGR_PI;
@@ -315,8 +345,9 @@ public:
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
         double tae = 0;
         while(it != _culm_models.end()) {
-            int nb_potential_phytomer = (*it)->is_phytomer_creatable() ? 1 : 0;
-            if ((*it)->get_phytomer_number() + nb_potential_phytomer >= _nbleaf_enabling_tillering and (*it)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM) == false) {
+            //@TODO : gérer le cas ou on bool_cross_phyllo ce jour là
+            //int nb_potential_phytomer = (*it)->is_phytomer_creatable() ? 1 : 0;
+            if ((*it)->get_app_phytomer_number(t) >= _nbleaf_enabling_tillering and (*it)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM) == false) {
                 ++tae;
             }
             it++;
@@ -329,7 +360,7 @@ public:
             _nb_tillers = std::min(_nb_tillers, tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
             // @TODO : retirer conditions et revoir le tallage !!
-            if(_tillerNb_1 + _nb_tillers < 10 and _plant_phase != plant::ELONG and _plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::MATURITY) { //@TODO : pour éviter de faire planter l'estim, à revoir
+            if(_tillerNb_1 + _nb_tillers < 30 and _plant_phase != plant::ELONG and _plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::MATURITY) {
                 create_culm(t, _nb_tillers);
             }
         }
@@ -480,23 +511,23 @@ public:
         // NB Alive Culms
         double nbc = 0;
         _biomAero2 = 0;
-		_deadleafNb = 0;
-		_panicleDW = 0;
+        _deadleafNb = 0;
+        _panicleDW = 0;
         std::deque < CulmModel* >::const_iterator itnbc = _culm_models.begin();
         while(itnbc != _culm_models.end()) {
             if(!((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM))) {
                 nbc++;
             }
             _biomAero2 += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) +
-                          (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
-                          (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
-                          (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
-			_deadleafNb += (*itnbc)->get_dead_phytomer_number();
-			_panicleDW += (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
+                    (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
+                    (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
+                    (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
+            _deadleafNb += (*itnbc)->get_dead_phytomer_number();
+            _panicleDW += (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
             itnbc++;
         }
         _biomAero2 = _biomAero2 +  _stock_model->get< double > (t, PlantStockModel::STOCK);
-         // VISU
+        // VISU
         _tillerNb_1 = nbc;
         std::deque < CulmModel* >::const_iterator visumainstem = _culm_models.begin();
         _biomLeafMainstemstruct = (*visumainstem)->get< double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM);
@@ -505,8 +536,8 @@ public:
         _biomInMainstem = (*visumainstem)->get< double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) + _mainstem_stock_IN;
         _areaLFEL = (*visumainstem)->get < double, CulmModel >(t, CulmModel::LAST_LEAF_BLADE_AREA);
         _nbleaf = (*visumainstem)->get < double, CulmModel >(t, CulmModel::NBLEAF); // nombre de feuilles vertes (>= 50% blade area)
-		_internode_length_mainstem = (*visumainstem)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM) + (*visumainstem)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
-		_panicleMainstemDW = (*visumainstem)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
+        _internode_length_mainstem = (*visumainstem)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM) + (*visumainstem)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
+        _panicleMainstemDW = (*visumainstem)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
 
     }
 
@@ -517,6 +548,7 @@ public:
             setsubmodel(CULMS, meristem);
             meristem->put(t, CulmModel::LL_BL, _LL_BL);
             meristem->put(t, CulmModel::PLASTO, _plasto);
+            meristem->put(t, CulmModel::PHYLLO, _phyllo);
             meristem->put(t, CulmModel::LIGULO, _ligulo);
             meristem->init(t, _parameters);
             _culm_models.push_back(meristem);
@@ -528,6 +560,9 @@ public:
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
         while (it != _culm_models.end()) {
             (*it)->put(t, CulmModel::BOOL_CROSSED_PLASTO, _bool_crossed_plasto);
+            (*it)->put(t, CulmModel::BOOL_CROSSED_PHYLLO, _bool_crossed_phyllo);
+            (*it)->put(t, CulmModel::BOOL_CROSSED_LIGULO, _bool_crossed_ligulo);
+            (*it)->put(t, CulmModel::MS_SHEATH_LLL, _sheath_LLL);
             (*it)->put(t, CulmModel::DD, _DD);
             (*it)->put(t, CulmModel::EDD, _EDD);
             (*it)->put(t, CulmModel::DELTA_T, _deltaT);
@@ -544,6 +579,7 @@ public:
             (*it)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
             (*it)->put(t, CulmModel::MGR, _MGR);
             (*it)->put(t, CulmModel::PLASTO, _plasto);
+            (*it)->put(t, CulmModel::PHYLLO, _phyllo);
             (*it)->put(t, CulmModel::LIGULO, _ligulo);
             (*it)->put(t, CulmModel::LL_BL, _LL_BL);
             (*it)->put(t, CulmModel::IS_FIRST_DAY_PI, _is_first_day_pi);
@@ -568,7 +604,9 @@ public:
         _realloc_sum_supply = 0;
 
         it = _culm_models.begin();
-        _predim_leaf_on_mainstem = (*it)->get <double, CulmModel> (t, CulmModel::STEM_LEAF_PREDIM);
+        _predim_leaf_on_mainstem = (*it)->get < double, CulmModel > (t, CulmModel::STEM_LEAF_PREDIM);
+        _sheath_LLL = (*it)->get < double, CulmModel >(t, CulmModel::SHEATH_LLL);
+
         while (it != _culm_models.end()) {
             _panicle_demand_sum += (*it)->get < double, CulmModel >(t, CulmModel::PANICLE_DAY_DEMAND);
             _peduncle_demand_sum += (*it)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_DAY_DEMAND);
@@ -585,6 +623,7 @@ public:
             _realloc_biomass_sum += (*it)->get < double, CulmModel>(t, CulmModel::REALLOC_BIOMASS_SUM);
             _senesc_dw_sum += (*it)->get < double, CulmModel>(t, CulmModel::SENESC_DW_SUM) + (*it)->get < double, CulmModel>(t, CulmModel::DELETED_SENESC_DW);
             _realloc_sum_supply += (*it)->get < double, CulmModel >(t, CulmModel::REALLOC_SUPPLY);
+            _leaf_delay = (*it)->get< double, CulmModel>(t, CulmModel::LEAF_DELAY);
             ++it;
         }
     }
@@ -620,7 +659,6 @@ public:
             _culm_models[_culm_index]->delete_leaf(t, _leaf_index, _deleted_leaf_biomass, _deleted_internode_biomass);
             _leaf_blade_area_sum -= _deleted_leaf_blade_area;
             std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
-            //qDebug() << "Le : " << QString::fromStdString(date) << "on tue la feuille : " << _leaf_index + 1 << " de la talle : " << _culm_index << "et on récupère : " << _deleted_leaf_biomass;
         }
     }
 
@@ -672,8 +710,8 @@ public:
         _nb_leaf_pi = parameters.get("nbleaf_pi");
         _nb_leaf_max_after_pi = parameters.get("nb_leaf_max_after_PI");
         _nb_leaf_enabling_tillering = parameters.get("nb_leaf_enabling_tillering");
-        _coef_ligulo = parameters.get("coef_ligulo1");
         _coeff_Plasto_PI = parameters.get("coef_plasto_PI");
+        _coeff_Phyllo_PI = parameters.get("coef_phyllo_PI");
         _coeff_Ligulo_PI = parameters.get("coef_ligulo_PI");
         _coeff_MGR_PI = parameters.get("coef_MGR_PI");
         _nb_leaf_stem_elong = _parameters.get("nb_leaf_stem_elong");
@@ -686,12 +724,16 @@ public:
         _realocationCoeff = _parameters.get("realocationCoeff");
         _FSLA = _parameters.get("FSLA");
         _plasto_init = _parameters.get("plasto_init");
+        _ligulo_init = _parameters.get("ligulo_init");
+        _phyllo_init = _parameters.get("phyllo_init");
         _SLAp = _parameters.get("SLAp");
         _Tb = _parameters.get("Tb");
+        _maxleaves = _parameters.get("maxleaves");
 
         //Attributes for culmmodel
         _plasto = parameters.get("plasto_init");
-        _ligulo = _plasto * _coef_ligulo;
+        _ligulo = parameters.get("ligulo_init");
+        _phyllo = parameters.get("phyllo_init");
         _LL_BL = _LL_BL_init;
 
         //local init
@@ -699,6 +741,7 @@ public:
         setsubmodel(CULMS, meristem);
         meristem->put(t, CulmModel::LL_BL, _LL_BL);
         meristem->put(t, CulmModel::PLASTO, _plasto);
+        meristem->put(t, CulmModel::PHYLLO, _phyllo);
         meristem->put(t, CulmModel::LIGULO, _ligulo);
         meristem->init(t, parameters);
         _culm_models.push_back(meristem);
@@ -764,10 +807,13 @@ public:
         _deltaT = 0;
         _TT = 0;
         _bool_crossed_plasto = 0;
+        _bool_crossed_phyllo = 0;
+        _bool_crossed_ligulo = 0;
         _EDD = 0;
         _DD = 0;
-        _ligulo_visu = _plasto_init * _coef_ligulo;
+        _ligulo_visu = _ligulo_init;
         _plasto_visu = _plasto_init;
+        _phyllo_visu = _phyllo_init;
         _phenostage = 0;
         _phenostage_cste = _phenostage;
         _sla = _FSLA;
@@ -777,16 +823,21 @@ public:
         _biomLeafMainstem = 0;
         _biomInMainstem = 0;
         _areaLFEL = 0;
-       _mainstem_stock_IN = 0;
-       _tmp_mainstem_stock_IN = 0;
-       _biomInMainstemstruct = 0;
-       _biomLeafMainstemstruct = 0;
-       _mainstem_stock = 0;
-       _tmp_mainstem_stock = 0;
-	   _deadleafNb = 0;
-	   _internode_length_mainstem = 0;
-	   _panicleMainstemDW = 0;
-	   _panicleDW = 0;
+        _mainstem_stock_IN = 0;
+        _tmp_mainstem_stock_IN = 0;
+        _biomInMainstemstruct = 0;
+        _biomLeafMainstemstruct = 0;
+        _mainstem_stock = 0;
+        _tmp_mainstem_stock = 0;
+        _deadleafNb = 0;
+        _internode_length_mainstem = 0;
+        _panicleMainstemDW = 0;
+        _panicleDW = 0;
+        _leaf_delay = 0;
+        _DD_phyllo = 0;
+        _DD_ligulo = 0;
+        _sheath_LLL = 0;
+        _phenostage_at_flo = 0;
     }
 
 private:
@@ -804,6 +855,7 @@ private:
 
     // parameters
     double _coeff_Plasto_PI;
+    double _coeff_Phyllo_PI;
     double _coeff_Ligulo_PI;
     double _coeff_MGR_PI;
     double _nbleaf_enabling_tillering;
@@ -824,8 +876,11 @@ private:
     double _realocationCoeff;
     double _FSLA;
     double _plasto_init;
+    double _ligulo_init;
+    double _phyllo_init;
     double _SLAp;
     double _Tb;
+    double _maxleaves;
 
 
     // vars
@@ -834,6 +889,7 @@ private:
     double _nb_tillers;
     double _nbExistingTillers;
     double _plasto;
+    double _phyllo;
     double _ligulo;
     double _MGR;
     double _LL_BL;
@@ -891,6 +947,8 @@ private:
     double _deltaT;
     double _TT;
     double _bool_crossed_plasto;
+    double _bool_crossed_phyllo;
+    double _bool_crossed_ligulo;
     double _EDD;
     double _DD;
     double _ligulo_visu;
@@ -901,10 +959,20 @@ private:
     double _mainstem_stock;
     double _tmp_mainstem_stock;
     double _biomLeafMainstemstruct;
-	int _deadleafNb;
-	double _internode_length_mainstem;
-	double _panicleMainstemDW;
-	double _panicleDW;
+    int _deadleafNb;
+    double _internode_length_mainstem;
+    double _panicleMainstemDW;
+    double _panicleDW;
+    double _leaf_delay;
+    double _DD_phyllo;
+    double _DD_ligulo;
+    double _phyllo_visu;
+    double _sheath_LLL;
+    double _appstage;
+    double _appstage_cste;
+    double _ligstage;
+    double _ligstage_cste;
+    double _phenostage_at_flo;
 
     //internal states
     plant::plant_state _plant_state;
