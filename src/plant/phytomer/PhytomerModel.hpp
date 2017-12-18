@@ -161,16 +161,17 @@ public:
     int get_index() const
     { return _index; }
 
-    bool is_leaf_dead() const
-    { return _kill_leaf; }
+    bool is_leaf_dead(double t) const
+    { return _kill_leaf ||
+                _leaf_model->get < bool >(t, LeafModel::IS_DEAD) ; }
 
     bool is_leaf_lig(double t) const {
-        return !is_leaf_dead() &&
+        return !is_leaf_dead(t) &&
                 _leaf_model->get < bool > (t, LeafModel::IS_LIG);
     }
 
     bool is_leaf_app(double t) const {
-        return !is_leaf_dead() &&
+        return !is_leaf_dead(t) &&
                 _leaf_model->get < bool > (t, LeafModel::IS_APP);
     }
 

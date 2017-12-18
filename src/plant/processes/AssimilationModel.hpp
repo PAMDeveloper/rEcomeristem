@@ -72,7 +72,7 @@ public:
         if(_wbmodel == 1) {
             _assim_pot = std::pow(_cstr, _power_for_cstr) * _interc * _epsib * _radiation * _kpar;
         } else {
-            _assim_pot = _fcstr * _interc * _epsib * _radiation * _kpar;
+            _assim_pot = (1-((1-_fcstr) * _thresAssim)) * _interc * _epsib * _radiation * _kpar;
         }
 
         //  respMaint

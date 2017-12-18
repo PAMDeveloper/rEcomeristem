@@ -112,7 +112,7 @@ public:
 
         //ReductionINER
         if(_wbmodel == 2) {
-            _reduction_iner = std::max(1e-4, (std::min(1.,(_fcstr * (1. + (_p * _respINER))))) * _test_ic);
+            _reduction_iner = std::max(1e-4, (std::min(1.,((1-((1-_fcstr) * _thresINER)) * (1. + (_p * _respINER))))) * _test_ic);
         } else {
             if (_ftsw < _thresINER) {
                 _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw) * (1. + (_p * _respINER)) * _test_ic);

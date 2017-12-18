@@ -53,7 +53,8 @@ public:
                      EDD, DD, PHENOSTAGE, APPSTAGE, LIGSTAGE, SLA, DD_PHYLLO, DD_LIGULO, PHYLLO_VISU,
                      TILLERNB_1, NBLEAF, BIOMAERO2, BIOMLEAFMAINSTEM, BIOMINMAINSTEM, AREALFEL,
                      MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK,
-                     DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW, PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO};
+                     DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW,
+                     PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX };
 
     PlantModel() :
         _thermal_time_model(new ThermalTimeModel),
@@ -131,6 +132,7 @@ public:
         Internal( DD_LIGULO, &PlantModel::_DD_ligulo );
         Internal( PHYLLO_VISU, &PlantModel::_phyllo_visu );
         Internal( PHENOSTAGE_AT_FLO, &PlantModel::_phenostage_at_flo);
+        Internal( LIG_INDEX, &PlantModel::_lig_index);
     }
 
     virtual ~PlantModel()
@@ -162,8 +164,9 @@ public:
         double FTSW  = _water_balance_model->get<double> (t, WaterBalanceModel::FTSW);
 
         if (FTSW <= 0 or ic <= -1) {
-            _plant_state = plant::KILL;
-            _plant_phase = plant::DEAD;
+            //_plant_state = plant::KILL;
+            //_plant_phase = plant::DEAD;
+            _plant_state << plant::NOGROWTH;
             return;
         }
 
@@ -347,8 +350,10 @@ public:
         while(it != _culm_models.end()) {
             //@TODO : gérer le cas ou on bool_cross_phyllo ce jour là
             //int nb_potential_phytomer = (*it)->is_phytomer_creatable() ? 1 : 0;
-            if ((*it)->get_app_phytomer_number(t) >= _nbleaf_enabling_tillering and (*it)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM) == false) {
-                ++tae;
+            if(!(*it)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM)) {
+                if ((*it)->get_app_phytomer_number(t) >= _nbleaf_enabling_tillering) {
+                    ++tae;
+                }
             }
             it++;
         }
@@ -522,7 +527,7 @@ public:
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
-            _deadleafNb += (*itnbc)->get_dead_phytomer_number();
+            _deadleafNb += (*itnbc)->get_dead_phytomer_number(t);
             _panicleDW += (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
             itnbc++;
         }
@@ -606,6 +611,7 @@ public:
         it = _culm_models.begin();
         _predim_leaf_on_mainstem = (*it)->get < double, CulmModel > (t, CulmModel::STEM_LEAF_PREDIM);
         _sheath_LLL = (*it)->get < double, CulmModel >(t, CulmModel::SHEATH_LLL);
+        _lig_index = (*it)->get < double, CulmModel >(t, CulmModel::LIG_INDEX);
 
         while (it != _culm_models.end()) {
             _panicle_demand_sum += (*it)->get < double, CulmModel >(t, CulmModel::PANICLE_DAY_DEMAND);
@@ -693,7 +699,9 @@ public:
                 _deleted_leaf_blade_area =
                         _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
                 if (_culm_models[_culm_index]->get_alive_phytomer_number() < 2 and _culm_index == 0) {
-                    _plant_phase = plant::DEAD;
+                    //_plant_phase = plant::DEAD;
+                     _plant_state << plant::NOGROWTH;
+                     _stock = 0;
                 }
             }
         }
@@ -814,7 +822,7 @@ public:
         _ligulo_visu = _ligulo_init;
         _plasto_visu = _plasto_init;
         _phyllo_visu = _phyllo_init;
-        _phenostage = 0;
+        _phenostage = 4;
         _phenostage_cste = _phenostage;
         _sla = _FSLA;
         _tillerNb_1 = 1;
@@ -838,6 +846,10 @@ public:
         _DD_ligulo = 0;
         _sheath_LLL = 0;
         _phenostage_at_flo = 0;
+        _lig_index = 0;
+        _realloc_biomass_sum = 0;
+        _appstage = 1;
+        _ligstage = 0;
     }
 
 private:
@@ -973,6 +985,7 @@ private:
     double _ligstage;
     double _ligstage_cste;
     double _phenostage_at_flo;
+    double _lig_index;
 
     //internal states
     plant::plant_state _plant_state;

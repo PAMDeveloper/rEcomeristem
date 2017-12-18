@@ -58,7 +58,7 @@ public:
                      LAST_LEAF_BLADE_AREA, NBLEAF,
                      DELETED_LEAF_NUMBER, LEAF_DELAY, SHEATH_LLL, REDUCTION_LER,
                      NB_INIT_LEAVES, NB_APP_LEAVES, BCPHY_CST, BCLIG_CST,
-                     CULM_PHENO_STAGE, CULM_APP_STAGE, CULM_LIG_STAGE };
+                     CULM_PHENO_STAGE, CULM_APP_STAGE, CULM_LIG_STAGE, LIG_INDEX };
 
     enum externals { BOOL_CROSSED_PLASTO, BOOL_CROSSED_PHYLLO, BOOL_CROSSED_LIGULO, DD, EDD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
@@ -118,6 +118,7 @@ public:
         Internal(CULM_PHENO_STAGE, &CulmModel::_culm_phenostage);
         Internal(CULM_APP_STAGE, &CulmModel::_culm_appstage);
         Internal(CULM_LIG_STAGE, &CulmModel::_culm_ligstage);
+        Internal(LIG_INDEX, &CulmModel::_lig_index);
 
         //    externals
         External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -268,10 +269,15 @@ public:
             _nb_leaf = 0;
             _culm_phase = culm::DEAD;
             _leaf_delay = 0;
+            auto it = _phytomer_models.begin();
+            while (it != _phytomer_models.end()) {
+                if(!(*it)->is_leaf_dead(t-1)) {
+                    (*it)->kill_leaf(t);
+                }
+                ++it;
+            }
             return;
         }
-
-
 
         //thermaltimevalues update
         if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE or _is_first_day_pi or _creation_date == t) {
@@ -384,7 +390,7 @@ public:
             //GetLastINnonVegetative
             get_nonvegetative_in(it, t);
 
-            if(i == 0 and not (*it)->is_leaf_dead()) {
+            if(i == 0 and not (*it)->is_leaf_dead(t)) {
                 _first_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
                 if ((*it)->is_leaf_lig(t) and t == (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
                     _last_ligulated_leaf = i;
@@ -533,7 +539,10 @@ public:
     }
 
     void compute_vars(std::deque < PhytomerModel* >::iterator it, std::deque < PhytomerModel* >::iterator previous_it, int i, double t) {
-        if (not (*it)->is_leaf_dead()) {
+        if((*it)->is_leaf_lig(t)) {
+            _lig_index = i+1;
+        }
+        if (!(*it)->is_leaf_dead(t)) {
             if((*it)->is_leaf_lig(t)) {
                 ++ _nb_lig;
                 ++ _nb_lig_tot;
@@ -553,7 +562,7 @@ public:
 
             if (_index == 1) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
-                if((*it)->is_leaf_lig(t) and not( (*it)->is_leaf_dead())) {
+                if(!((*it)->is_leaf_dead(t)) and (*it)->is_leaf_lig(t)) {
                     _last_leaf_blade_area = (*it)->leaf()->get < double >(t, LeafModel::LAST_BLADE_AREA);
                 }
             }
@@ -627,7 +636,7 @@ public:
         int i = 0;
         while (it != _phytomer_models.end()) {
             //@TODO : vérifier qu'on peut aussi considérer les feuilles mortes (pour tallage)
-            if ((*it)->is_leaf_dead() or (*it)->is_leaf_lig(t-1) or (*it)->is_leaf_app(t-1)) {
+            if ((*it)->is_leaf_dead(t-1) or (*it)->is_leaf_lig(t-1) or (*it)->is_leaf_app(t-1)) {
                 ++i;
             }
             ++it;
@@ -638,11 +647,11 @@ public:
     int get_alive_phytomer_number() const
     { return _phytomer_models.size() - _deleted_leaf_number; }
 
-    int get_dead_phytomer_number() const {
+    int get_dead_phytomer_number(double t) const {
         std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
         int i = 0;
         while (it != _phytomer_models.end()) {
-            if ((*it)->is_leaf_dead()) {
+            if ((*it)->is_leaf_dead(t)) {
                 ++i;
             }
             ++it;
@@ -719,7 +728,7 @@ public:
         std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
         int i = 0;
         while (it != _phytomer_models.end()) {
-            if (not (*it)->is_leaf_dead() and (*it)->is_leaf_lig(t)) {
+            if (not (*it)->is_leaf_dead(t) and (*it)->is_leaf_lig(t)) {
                 break;
             }
             ++it;
@@ -738,7 +747,7 @@ public:
         int i = 0;
         int index = -1;
         while (it != _phytomer_models.end()) {
-            if (not (*it)->is_leaf_dead() and ((*it)->leaf()->get < double >(t, LeafModel::BIOMASS) > 0)) {
+            if (not (*it)->is_leaf_dead(t) and ((*it)->leaf()->get < double >(t, LeafModel::BIOMASS) > 0)) {
                 index = i;
                 break;
             }
@@ -754,7 +763,7 @@ public:
         int i = 0;
         int index = -1;
         while (it != _phytomer_models.end()) {
-            if (not (*it)->is_leaf_dead() and ((*it)->leaf()->get < double >(t-1, LeafModel::BIOMASS) > 0)) {
+            if (not (*it)->is_leaf_dead(t-1) and ((*it)->leaf()->get < double >(t-1, LeafModel::BIOMASS) > 0)) {
                 index = i;
                 break;
             }
@@ -770,7 +779,7 @@ public:
         double creation_date = -1;
         int i = 1;
         while (it != _phytomer_models.end()) {
-            if (not (*it)->is_leaf_dead() and ((*it)->leaf()->get < double >(t, LeafModel::BIOMASS) > 0)) {
+            if (not (*it)->is_leaf_dead(t) and ((*it)->leaf()->get < double >(t, LeafModel::BIOMASS) > 0)) {
                 creation_date = (*it)->leaf()->get < double >(t, LeafModel::FIRST_DAY);
                 break;
             }
@@ -781,7 +790,7 @@ public:
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
-        PhytomerModel* first_phytomer = new PhytomerModel(1, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL);     
+        PhytomerModel* first_phytomer = new PhytomerModel(1, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL);
         setsubmodel(PHYTOMERS, first_phytomer);
         first_phytomer->init(t, parameters);
         _phytomer_models.push_back(first_phytomer);
@@ -889,6 +898,7 @@ public:
         _bool_crossed_ligulo = -1;
         _culm_bool_crossed_phyllo = -1;
         _culm_bool_crossed_ligulo = -1;
+        _lig_index = 0;
     }
 
 private:
@@ -982,6 +992,7 @@ private:
     double _bool_crossed_ligulo_cst;
     double _culm_bool_crossed_phyllo;
     double _culm_bool_crossed_ligulo;
+    double _lig_index;
 
     //    externals
     int _plant_phenostage;

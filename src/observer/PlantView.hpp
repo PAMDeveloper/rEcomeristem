@@ -57,7 +57,7 @@ public:
                      PlantModel::HEIGHT });
         selector("PHT_P", artis::kernel::DOUBLE, {
                      PlantModel::HEIGHT_P });
-        selector("LIG", artis::kernel::DOUBLE, {
+        selector("ALIG", artis::kernel::DOUBLE, {
                      PlantModel::LIG });
         selector("TT_LIG", artis::kernel::DOUBLE, {
                      PlantModel::TT_LIG });
@@ -99,6 +99,8 @@ public:
                      PlantModel::PHENOSTAGE});
 		selector("STOCKIN", artis::kernel::DOUBLE, {
                      PlantModel::INTERNODE_STOCK_SUM});
+        selector("LIG", artis::kernel::DOUBLE, {
+                     PlantModel::LIG_INDEX});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {

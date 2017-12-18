@@ -37,7 +37,7 @@ public:
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      TIME_FROM_APP, LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS,
                      LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL, PLASTO, PHYLLO, LIGULO, FIRST_DAY,
-                     BLADE_LEN, LAST_BLADE_AREA, SHEATH_LLL_CST, IS_APP };
+                     BLADE_LEN, LAST_BLADE_AREA, SHEATH_LLL_CST, IS_APP, IS_DEAD };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
@@ -90,6 +90,7 @@ public:
         Internal(LAST_BLADE_AREA, &LeafModel::_last_blade_area);
         Internal(SHEATH_LLL_CST, &LeafModel::_sheath_LLL_cst);
         Internal(IS_APP, &LeafModel::_is_app);
+        Internal(IS_DEAD, &LeafModel::_is_dead);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);
@@ -116,6 +117,7 @@ public:
     {
         if(_kill_leaf or _leaf_phase == LeafModel::DEAD) {
             _leaf_phase = LeafModel::DEAD;
+            _is_dead = true;
             _realloc_biomass = 0;
             _life_span = 0;
             _reduction_ler = 1.;
@@ -132,6 +134,8 @@ public:
             _time_from_app = 0;
             _last_blade_area = 0;
             _last_leaf_biomass = 0;
+            _is_lig = _is_lig;
+            _is_app = _is_app;
             return;
         }
         _p = _parameters.get(t).P;
@@ -165,7 +169,7 @@ public:
             _reduction_ler = 1.;
         } else {
             if(_wbmodel == 2) {
-                _reduction_ler = std::max(1e-4, (std::min(1.,(_fcstr * (1. + (_p * _respLER)))))* _test_ic);
+                _reduction_ler = std::max(1e-4, (std::min(1.,((1-((1-_fcstr) * _thresLER)) * (1. + (_p * _respLER)))))* _test_ic);
             } else {
                 if (_ftsw < _thresLER) {
                     _reduction_ler = std::max(1e-4, ((1. / _thresLER) * _ftsw) * (1. + (_p * _respLER))* _test_ic);
@@ -300,6 +304,7 @@ public:
         _blade_len = (1 - (1 / _LL_BL)) * _len;
 
         if(_biomass == 0) {
+            _is_dead = true;
             _leaf_phase = LeafModel::DEAD;
         }
 
@@ -379,6 +384,7 @@ public:
         _sla_cste = 0;
         _blade_len = 0;
         _sheath_LLL_cst = 0;
+        _is_dead = false;
     }
 
     //    double get_blade_area() const
@@ -437,6 +443,7 @@ private:
     double _last_leaf_biomass;
     double _blade_len;
     double _sheath_LLL_cst;
+    bool _is_dead;
 
     // external variables
     double _MGR;
