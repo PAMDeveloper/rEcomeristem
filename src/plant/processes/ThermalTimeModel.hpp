@@ -37,8 +37,7 @@ public:
                      PLASTO_VISU, PHYLLO_VISU, LIGULO_VISU, PHENO_STAGE, APP_STAGE, LIG_STAGE,
                      SLA, TEMP_DD, TEMP_DD_PHYLLO, TEMP_DD_LIGULO, DD, EDD, DD_PHYLLO, DD_LIGULO, EDD_PHYLLO, EDD_LIGULO };
 
-    enum externals {  DELTA_T, PLASTO_DELAY, PLASTO, PHYLLO, LIGULO, STOCK };
-
+    enum externals {  DELTA_T, PLASTO_DELAY, PLASTO, PHYLLO, LIGULO, STOCK, IS_FIRST_CULM };
 
     ThermalTimeModel() {
         //    computed variables
@@ -68,6 +67,7 @@ public:
         External(LIGULO, &ThermalTimeModel::_ligulo);
         External(STOCK, &ThermalTimeModel::_stock);
         External(DELTA_T, &ThermalTimeModel::_deltaT);
+        External(IS_FIRST_CULM, &ThermalTimeModel::_is_first_culm);
     }
 
     virtual ~ThermalTimeModel()
@@ -125,7 +125,7 @@ public:
 
 
 
-    void init(double /*t*/, const ecomeristem::ModelParameters& parameters) {
+    void init(double t, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
         //    paramaters variables
         _plasto_init = _parameters.get("plasto_init");
@@ -142,9 +142,15 @@ public:
         _phylloVisu = _phyllo_init;
         _liguloVisu = _ligulo_init;
 
-        _phenoStage = 4;
-        _appStage = 1;
-        _ligStage = 0;
+        if(_is_first_culm) {
+            _phenoStage = 4;
+            _appStage = 1;
+            _ligStage = 0;
+        } else {
+            _phenoStage = 1;
+            _appStage = 0;
+            _ligStage = 0;
+        }
 
         _DD = 0;
         _EDD = 0;
@@ -196,6 +202,7 @@ private:
     double _plasto_delay;
     double _stock;
     double _deltaT;
+    bool _is_first_culm;
 };
 
 } // namespace model

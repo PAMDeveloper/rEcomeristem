@@ -96,7 +96,7 @@ public:
     void compute(double t, bool /* update */){
         _p = _parameters.get(t).P;
 
-        //@TODO : vérifier condition bool_crosed_plasto, _index et lig : erreur dans delphi
+        //@TODO : récupérer is_lig de la feuille
         if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _bool_crossed_plasto > 0 and (_index >= _last_leaf_index - 1) and _plant_phase != plant::FLO and _nb_lig > 0 and _inter_phase == VEGETATIVE) {
             _cste_ligulo = _ligulo;
             _cste_plasto = _plasto;
@@ -154,7 +154,7 @@ public:
         _inter_volume = _inter_len * 3.141592653589793238462643383280 * radius * radius;
 
         //Density
-        _density = _density_IN1 + std::min(_density_IN2, std::max(0., (_phenostage - _nb_leaf_stem_elong)) * ((_density_IN2 - _density_IN1)/((_nb_leaf_pi + 1 + _nb_leaf_max_after_pi + _phenostage_pre_flo_to_flo) - _nb_leaf_stem_elong)));
+        _density = _density_IN1 + std::min(_density_IN2, std::max(0., (_phenostage - _nb_leaf_stem_elong)) * ((_density_IN2 - _density_IN1)/((_maxleaves + 1 + _phenostage_pre_flo_to_flo) - _nb_leaf_stem_elong)));
 
         //Biomass
         double biomass_1 = _biomass;
@@ -209,7 +209,7 @@ public:
             _inter_phase = VEGETATIVE;
             break;
         case VEGETATIVE:
-            //@TODO : vérifier condition bool_crosed_plasto, _index et lig : erreur dans delphi
+            //@TODO : récupérer is_lig de la feuille
             if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _bool_crossed_plasto > 0 and (_index >= _last_leaf_index - 1) and _plant_phase != plant::FLO and _nb_lig > 0) {
                 _inter_phase = REALIZATION;
             }
@@ -241,10 +241,10 @@ public:
         _density_IN2 = parameters.get("density_IN2");
         _coeff_species = parameters.get("coeff_species");
         _nb_leaf_stem_elong = parameters.get("nb_leaf_stem_elong");
-        _nb_leaf_pi = parameters.get("nbleaf_pi");
         _nb_leaf_max_after_pi = parameters.get("nb_leaf_max_after_PI");
         _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
         _wbmodel = parameters.get("wbmodel");
+        _maxleaves = parameters.get("maxleaves");
 
         //internals
         _inter_phase = INITIAL;
@@ -275,7 +275,6 @@ private:
     bool _is_on_mainstem;
 
     // parameters
-    double _nb_leaf_pi;
     double _nb_leaf_max_after_pi;
     double _phenostage_pre_flo_to_flo;
     double _LL_BL_init;
@@ -293,6 +292,7 @@ private:
     double _density_IN1;
     double _density_IN2;
     double _wbmodel;
+    double _maxleaves;
 
     // internals
     double _density;
@@ -310,7 +310,7 @@ private:
     double _demand;
     double _last_demand;
     double _time_from_app;
-    double _first_day; //@TODO unused
+    double _first_day;
     bool _is_mature;
     double _cste_ligulo;
     double _cste_plasto;

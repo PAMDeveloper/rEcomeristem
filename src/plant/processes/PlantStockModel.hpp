@@ -40,7 +40,7 @@ public:
                      INTERNODE_LAST_DEMAND_SUM, PLANT_PHASE, LEAF_BIOMASS_SUM,
                      DELETED_LEAF_BIOMASS, REALLOC_BIOMASS_SUM, ASSIM,
                      PLANT_STATE, CULM_STOCK, CULM_DEFICIT, CULM_SURPLUS_SUM,
-                     PEDUNCLE_LAST_DEMAND_SUM};
+                     PEDUNCLE_LAST_DEMAND_SUM, BOOL_CROSSED_PLASTO };
 
 
     PlantStockModel() {
@@ -70,6 +70,7 @@ public:
         External(CULM_DEFICIT, &PlantStockModel::_culm_deficit);
         External(CULM_SURPLUS_SUM, &PlantStockModel::_culm_surplus_sum);
         External(PEDUNCLE_LAST_DEMAND_SUM, &PlantStockModel::_peduncle_last_demand_sum);
+        External(BOOL_CROSSED_PLASTO, &PlantStockModel::_bool_crossed_plasto);
     }
 
     virtual ~PlantStockModel()
@@ -77,7 +78,6 @@ public:
 
     void compute_IC(double t)
     {
-        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
         if (t != _parameters.beginDate) {
             double resDiv, mean;
             double total = 0.;
@@ -134,16 +134,17 @@ public:
                 _day_demand = _demand_sum +  _leaf_last_demand_sum + _internode_last_demand_sum + _peduncle_last_demand_sum;
             }
         }
+
         _day_demand_[2] = _day_demand_[1];
         _day_demand_[1] = _day_demand_[0];
         _day_demand_[0] = _day_demand;
 
         //  supply
         _supply = _assim;
+
         _supply_[2] = _supply_[1];
         _supply_[1] = _supply_[0];
         _supply_[0] = _supply;
-
 
         //  reservoir_dispo
         if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
@@ -189,6 +190,18 @@ public:
         _seed_res_[1] = _seed_res_[0];
         _seed_res_[0] = _seed_res;
 
+        //@TODO : exemple du nouveau calcul IC :
+        //if(_bool_crossed_plasto) {
+
+        // for(vector<double>::size_t i = 0; i < _seed_res_.size(); i++) {
+        //    _seed_res_.pop_back();
+        // }
+        // _seed_res_.push_back(_seed_res);
+
+        //} else {
+        //@TODO : exemple du nouveau calcul IC :
+        // _seed_res_.push_back(_seed_res);
+        //}
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
@@ -205,12 +218,12 @@ public:
 
         //    computed variables (internal)
         _day_demand = 0;
-        _ic = 0; //@TODO check initialization value
-        _ic_1 = 0; //@TODO check initialization value
-        _test_ic = 0; //@TODO check initialization value
+        _ic = 0;
+        _ic_1 = 0;
+        _test_ic = 0;
         _reservoir_dispo = 0;
         _seed_res = _gdw;
-        _stock = 1e-10; //@TODO check initialization value
+        _stock = 1e-10;
         _deficit = 0;
         _supply = 0;
         _surplus = 0;
@@ -234,6 +247,9 @@ private:
     double _seed_res_[3];
     double _supply_[3];
     double _day_demand_[3];
+
+    //@TODO : exmple pour IC over plasto
+    // vector<double> _seed_res_;
 
     //    internals - computed
     double _day_demand;
@@ -263,6 +279,7 @@ private:
     double _culm_surplus_sum;
     double _assim;
     double _peduncle_last_demand_sum;
+    double _bool_crossed_plasto;
 
 };
 

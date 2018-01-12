@@ -42,7 +42,7 @@ public:
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
                      SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF, CULM_DEFICIT, CULM_STOCK, SHEATH_LLL,
-                     BOOL_CROSSED_PHYLLO, BOOL_CROSSED_LIGULO };
+                     CULM_NBLEAF_PARAM2 };
 
 
     virtual ~LeafModel()
@@ -107,11 +107,8 @@ public:
         External(CULM_DEFICIT, &LeafModel::_culm_deficit);
         External(CULM_STOCK, &LeafModel::_culm_stock);
         External(SHEATH_LLL, &LeafModel::_sheath_LLL);
-        External(BOOL_CROSSED_PHYLLO, &LeafModel::_bool_crossed_phyllo);
-        External(BOOL_CROSSED_LIGULO, &LeafModel::_bool_crossed_ligulo);
+        External(CULM_NBLEAF_PARAM2, &LeafModel::_culm_nbleaf_param2);
     }
-
-
 
     void compute(double t, bool /* update */)
     {
@@ -180,36 +177,17 @@ public:
         }
 
         //LER & exp time
-        if(_is_on_mainstem) {
-            if (_leaf_phase == LeafModel::INITIAL) {
-                _exp_time = (_sheath_LLL_cst-_len)/_ler;
-                _ler = ((_sheath_LLL_cst)/(((_index-1)*_phyllo)-((std::max(0.,_index-_nbinitleaves))*_plasto)))*_reduction_ler;
-            } else {
-                _exp_time = (_predim-_len)/_ler;
-                _ler = ((_predim-_sheath_LLL_cst)/((_index*_ligulo)-((_index-1)*_phyllo)))*_reduction_ler;
-            }
+        //il faut considérer les feuilles ayant des plasto/phyllo/ligulo/_init et les feuilles avec ces valeurs modifiées
+        double tmp = std::max(0., _index-(_culm_nbleaf_param2-1));
+        if (_leaf_phase == LeafModel::INITIAL) {
+            double time = (((_index-tmp-1)*_phyllo_init)+(tmp*_phyllo))-(((std::max(0.,_index-tmp-_nbinitleaves))*_plasto_init)+(tmp*_plasto));
+            _ler = (_sheath_LLL_cst/time)*_reduction_ler;
+            _exp_time = (_sheath_LLL_cst-_len)/_ler;
         } else {
-            if(_is_first_leaf) {
-                if(_leaf_phase == LeafModel::INITIAL) {
-                    _exp_time = (_sheath_LLL_cst-_len)/_ler;
-                    _ler = (_sheath_LLL_cst)/(-_bool_crossed_phyllo);
-
-                } else {
-                    _exp_time = (_predim-_len)/_ler;
-                    _ler = (_predim-_sheath_LLL_cst)/(-_bool_crossed_ligulo);
-                }
-            } else {
-                if(_leaf_phase == LeafModel::INITIAL) {
-                    _exp_time = (_sheath_LLL_cst-_len)/_ler;
-                    _ler = ((_sheath_LLL_cst)/((((_index-1)*_phyllo)-_bool_crossed_phyllo)-(((_index-1)*_plasto))))*_reduction_ler;
-
-                } else {
-                    _exp_time = (_predim-_len)/_ler;
-                    _ler = ((_predim-_sheath_LLL_cst)/((((_index-1)*_ligulo)-_bool_crossed_ligulo)-((((_index-1)*_phyllo)-_bool_crossed_phyllo))))*_reduction_ler;
-                }
-            }
+            double time = (((_index-tmp)*_ligulo_init)+(tmp*_ligulo))-(((_index-tmp-1)*_phyllo_init)+(tmp*_phyllo));
+            _ler = ((_predim-_sheath_LLL_cst)/time)*_reduction_ler;
+            _exp_time = (_predim-_len)/_ler;
         }
-
 
         //LeafLen
         if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
@@ -349,6 +327,9 @@ public:
         _realocationCoeff = parameters.get("realocationCoeff");
         _nbinitleaves = parameters.get("nbinitleaves");
         _wbmodel = parameters.get("wbmodel");
+        _phyllo_init = parameters.get("phyllo_init");
+        _plasto_init = parameters.get("plasto_init");
+        _ligulo_init = parameters.get("ligulo_init");
 
         //internals
         _realloc_biomass = 0;
@@ -404,6 +385,9 @@ private:
     double _realocationCoeff;
     double _nbinitleaves;
     double _wbmodel;
+    double _phyllo_init;
+    double _plasto_init;
+    double _ligulo_init;
 
     // attributes
     int _index;
@@ -461,8 +445,8 @@ private:
     double _culm_deficit;
     double _culm_stock;
     double _sheath_LLL;
-    double _bool_crossed_phyllo;
-    double _bool_crossed_ligulo;
+    int _ms_index;
+    double _culm_nbleaf_param2;
 };
 
 } // namespace model

@@ -89,18 +89,28 @@ public:
                      PlantModel::MAINSTEM_STOCK_IN});
         selector("DEADLEAFNB", artis::kernel::INT, {
                      PlantModel::DEAD_LEAF_NB});
-		selector("INTERNODE_LENGTH_MAINSTEM", artis::kernel::DOUBLE, {
+        selector("INTERNODE_LENGTH_MAINSTEM", artis::kernel::DOUBLE, {
                      PlantModel::INTERNODE_LENGTH_MAINSTEM});
-		selector("PANICLEMAINSTEMDW", artis::kernel::DOUBLE, {
+        selector("PANICLEMAINSTEMDW", artis::kernel::DOUBLE, {
                      PlantModel::PANICLE_MAINSTEM_DW});
-		selector("PANICLEDW", artis::kernel::DOUBLE, {
+        selector("PANICLEDW", artis::kernel::DOUBLE, {
                      PlantModel::PANICLE_DW});
-		selector("PHENOSTAGE", artis::kernel::INT, {
+        selector("PHENOSTAGE", artis::kernel::INT, {
                      PlantModel::PHENOSTAGE});
-		selector("STOCKIN", artis::kernel::DOUBLE, {
+        selector("APPSTAGE", artis::kernel::DOUBLE, {
+                     PlantModel::APPSTAGE});
+        selector("LIGSTAGE", artis::kernel::DOUBLE, {
+                     PlantModel::LIGSTAGE});
+        selector("STOCKIN", artis::kernel::DOUBLE, {
                      PlantModel::INTERNODE_STOCK_SUM});
         selector("LIG", artis::kernel::DOUBLE, {
                      PlantModel::LIG_INDEX});
+        selector("BOOL_CROSSED_PLASTO", artis::kernel::DOUBLE, {
+                     PlantModel::BOOL_CROSSED_PLASTO});
+        selector("BOOL_CROSSED_LIGULO", artis::kernel::DOUBLE, {
+                     PlantModel::BOOL_CROSSED_LIGULO});
+        selector("BOOL_CROSSED_PHYLOO", artis::kernel::DOUBLE, {
+                     PlantModel::BOOL_CROSSED_PHYLLO});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {
@@ -143,7 +153,7 @@ public:
         selector("R_D", artis::kernel::DOUBLE, {
                      PlantModel::ROOT,
                      RootModel::ROOT_DEMAND_COEF});
-		selector("ROOTBIOMASS", artis::kernel::DOUBLE, {
+        selector("ROOTBIOMASS", artis::kernel::DOUBLE, {
                      PlantModel::ROOT,
                      RootModel::ROOT_BIOMASS});
 

@@ -27,6 +27,7 @@
 #define THERMAL_TIME_MODEL_NG_HPP
 
 #include <defines.hpp>
+#include <QDebug>
 
 namespace model {
 
@@ -71,15 +72,12 @@ public:
         External(CULM_STOCK, &ThermalTimeModelNG::_stock);
         External(CULM_DEFICIT, &ThermalTimeModelNG::_deficit);
         External(DELTA_T, &ThermalTimeModelNG::_deltaT);
-        External(BOOL_CROSSED_PLASTO, &ThermalTimeModelNG::_bool_crossed_plasto);
         External(DD, &ThermalTimeModelNG::_DD);
         External(PLASTO_VISU, &ThermalTimeModelNG::_plastoVisu);
         External(LIGULO_VISU, &ThermalTimeModelNG::_liguloVisu);
         External(IS_FIRST_DAY_OF_INDIVIDUALIZATION, &ThermalTimeModelNG::_is_first_day_of_individualization);
         External(PHYLLO, &ThermalTimeModelNG::_phyllo);
         External(LIGULO, &ThermalTimeModelNG::_ligulo);
-        External(BOOL_CROSSED_PHYLLO, &ThermalTimeModelNG::_bool_crossed_phyllo);
-        External(BOOL_CROSSED_LIGULO, &ThermalTimeModelNG::_bool_crossed_ligulo);
         External(DD_PHYLLO, &ThermalTimeModelNG::_DD_phyllo);
         External(DD_LIGULO, &ThermalTimeModelNG::_DD_ligulo);
         External(PHYLLO_VISU, &ThermalTimeModelNG::_phylloVisu);
@@ -87,8 +85,6 @@ public:
 
     virtual ~ThermalTimeModelNG()
     {}
-
-
 
     void compute(double t, bool /* update */) {
         if(_is_first_day_of_individualization) {
@@ -209,8 +205,8 @@ public:
         _EDD_phyllo = 0;
         _tempDD_phyllo = 0;
         _culm_DD_ligulo = 0;
-        _EDD_ligulo=0;
-        _tempDD_ligulo=0;
+        _EDD_ligulo = 0;
+        _tempDD_ligulo = 0;
     }
 
 private:
@@ -255,9 +251,6 @@ private:
     double _stock;
     double _deficit;
     double _deltaT;
-    double _bool_crossed_plasto;
-    double _bool_crossed_phyllo;
-    double _bool_crossed_ligulo;
 
     double _DD;
     double _DD_phyllo;

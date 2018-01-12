@@ -96,7 +96,6 @@ public:
                 }
             }
 
-            //INER //@TODO: quel index ? à corriger pour les simu ou ligulo =/= plasto
             _iner = _length_predim * _reduction_iner / (3 * _ligulo);
 
             //Length and Exp time

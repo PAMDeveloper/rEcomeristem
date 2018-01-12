@@ -187,7 +187,6 @@ private:
     double _coeff_remob;
     double _coeff_active_storage_IN;
     double _nb_leaf_stem_elong;
-    double _nb_leaf_pi;
     double _maximum_reserve_in_internode;
     double _leaf_stock_max;
 
