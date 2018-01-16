@@ -2,21 +2,21 @@
 #Authors : Florian Larue, Gregory Beurier, Lauriane Rouan, Delphine Luquet
 #-- (PAM, AGAP, BIOS, CIRAD)
 ###Set informations for parameter estimation###
-PPath <- "D:/Workspace/PAM/estim/graphesValidCalib/graphesCalib2015"
-MPath <- "D:/Workspace/PAM/estim/graphesValidCalib/graphesCalib2015"
-VPath <- "D:/Workspace/PAM/estim/graphesValidCalib/graphesCalib2015"
+PPath <- "D:/Workspace/estimlisa_fvobs/2015"
+MPath <- "D:/Workspace/estimlisa_fvobs/2015"
+VPath <- "D:/Workspace/estimlisa_fvobs/2015"
 VName <- "vobs_G1moyINT_C_BFF2015woleaf.txt"
 VECName <- "vobs_G1_C_BFF2015_ET_INTwoleaf.txt"
-ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2")
-MinValue <- c(1, 1, 1, 20, 0.01, -0.5, 0.0, 0.0, 0.005, 0.1)
-MaxValue <- c(10, 10, 20, 60, 0.5, 0.5, 2, 0.5, 0.1, 0.5)
+ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init", "ligulo_init", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2", "coef_plasto_PI", "coef_phyllo_PI", "coef_ligulo_PI", "SLAp")
+MinValue <- c(3, 0.5, 5, 20, 20, 20,  0.01, -0.5, 0.0, 0.0, 0.005, 0.1, 1.0, 1.0, 1.0, 20)
+MaxValue <- c(8, 2.5, 15, 50, 50, 50 , 0.5, 0.5, 1, 0.5, 0.1, 0.3, 3.5, 3.5, 3.5, 60)
 obsCoef <- c(1,1,1,1,1,1,1)
-coefIncrease <- 50
+coefIncrease <- 1
 Optimizer <- "D" #(D = DE, G = RGenoud)
-RmseM <- "RECC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef)
-MaxIter <- 10000
+RmseM <- "RTEST" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef)
+MaxIter <- 5000
 Penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
-SolTol <- 0.05 #will be multiplied by the number of observed variables
+SolTol <- 0.01 #will be multiplied by the number of observed variables
 ACluster <- TRUE  #parallel for machines with at least 4 cores
 ###End informations for parameter estimation###
 
@@ -55,8 +55,20 @@ SolTol <- SolTol * length(VarList)
 
 #Functions
 optimEcomeristem <- function(p){
+  if("phyllo_init" %in% ParamOfInterest && "plasto_init" %in% ParamOfInterest && "ligulo_init" %in% ParamOfInterest) {
+    if(p[match("phyllo_init",ParamOfInterest)] < p[match("plasto_init",ParamOfInterest)]) {
+      return(99999)
+    } else if(p[match("ligulo_init",ParamOfInterest)] < p[match("phyllo_init",ParamOfInterest)]) {
+      return(99999)
+    } else if(p[match("phyllo_init",ParamOfInterest)]*p[match("coef_phyllo_PI",ParamOfInterest)] < p[match("plasto_init",ParamOfInterest)]*p[match("coef_plasto_PI",ParamOfInterest)]) {
+      return(99999)
+    } else if(p[match("ligulo_init",ParamOfInterest)]*p[match("coef_ligulo_PI",ParamOfInterest)] < p[match("phyllo_init",ParamOfInterest)]*p[match("coef_phyllo_PI",ParamOfInterest)]) {
+      return(99999)
+    }
+  }
   paramInitTrans[ParamOfInterest] <- p
   parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]))
+  lastp <<- p
   Res_ecomeristem <- recomeristem::rcpp_run_from_dataframe(parameters,meteo)
   res <- recomeristem::rcpp_reduceResults(Res_ecomeristem, vObs)
   switch(RmseM,
@@ -334,6 +346,10 @@ saveParF <- function() {
   paramInitTrans[ParamOfInterest] <- bestp
   parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
   write.table(parameters, "ECOMERISTEM_parameters.txt", sep="=", dec=".", quote=F, row.names=F, col.names=F)
+}
+
+saveErrParF <- function(parameters) {
+  write.table(parameters, "ECOMERISTEM_parameters_err.txt", sep="=", dec=".", quote=F, row.names=F, col.names=F)
 }
 resPlot <- function() {
   bestp <- as.vector(res$par)

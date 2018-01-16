@@ -29,6 +29,7 @@
 //#include <QDebug>
 #include <defines.hpp>
 #include <plant/processes/CulmStockModel.hpp>
+#include <plant/processes/IctModel.hpp>
 #include <plant/processes/ThermalTimeModelNG.hpp>
 #include <plant/processes/ThermalTimeModel.hpp>
 #include <plant/processes/CulmStockModelNG.hpp>
@@ -75,6 +76,7 @@ public:
         _index(index), _is_first_culm(index == 1),
         _culm_stock_model(new CulmStockModelNG),
         _culm_thermaltime_model(new ThermalTimeModel),
+        _culm_ictmodel(new IctModel),
         _culm_thermaltime_modelNG(new ThermalTimeModelNG)
     {
 
@@ -163,6 +165,7 @@ public:
     virtual ~CulmModel()
     {
         _culm_stock_model.reset(nullptr);
+        _culm_ictmodel.reset(nullptr);
         _culm_thermaltime_modelNG.reset(nullptr);
         _culm_thermaltime_model.reset(nullptr);
         _panicle_model.reset(nullptr);
@@ -510,6 +513,11 @@ public:
         _culm_stock = _culm_stock_model->get < double >(t, CulmStockModelNG::CULM_STOCK);
     }
 
+    void compute_ictmodel(double t) {
+        _culm_ictmodel->put(t, IctModel::BOOL_CROSSED_PHYLLO, _culm_bool_crossed_phyllo);
+        (*_culm_ictmodel)(t);
+    }
+
     void compute_thermaltime(double t) {
         _culm_thermaltime_model->put(t, ThermalTimeModel::IS_FIRST_CULM, _is_first_culm);
         _culm_thermaltime_model->put(t, ThermalTimeModel::PLASTO, _tt_plasto);
@@ -717,6 +725,10 @@ public:
         return _culm_stock_model.get();
     }
 
+    IctModel * ictmodel() const {
+            return _culm_ictmodel.get();
+    }
+
     ThermalTimeModel * thermaltime_model() const {
         return _culm_thermaltime_model.get();
     }
@@ -886,6 +898,7 @@ public:
             _phytomer_models.push_back(fourth_phytomer);
         }
         _culm_stock_model->init(t, parameters);
+        _culm_ictmodel->init(t, parameters);
         _culm_thermaltime_model->put(t, ThermalTimeModel::IS_FIRST_CULM, _is_first_culm);
         _culm_thermaltime_model->init(t, parameters);
         _culm_thermaltime_modelNG->init(t, parameters);
@@ -987,6 +1000,7 @@ private:
 
     //  submodels
     std::unique_ptr < CulmStockModelNG > _culm_stock_model;
+    std::unique_ptr < IctModel > _culm_ictmodel;
     std::unique_ptr < ThermalTimeModel > _culm_thermaltime_model;
     std::unique_ptr < ThermalTimeModelNG > _culm_thermaltime_modelNG;
     std::deque < PhytomerModel* > _phytomer_models;
