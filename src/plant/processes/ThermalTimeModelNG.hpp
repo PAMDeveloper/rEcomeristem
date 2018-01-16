@@ -27,7 +27,6 @@
 #define THERMAL_TIME_MODEL_NG_HPP
 
 #include <defines.hpp>
-#include <QDebug>
 
 namespace model {
 

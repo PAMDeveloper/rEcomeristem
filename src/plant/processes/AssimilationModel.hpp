@@ -83,7 +83,6 @@ public:
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
-        //permet le passage du get à t0 en mimant un isComputed au temps t
         last_time = t-1;
 
         //parameters
@@ -117,7 +116,7 @@ private:
     //  parameters
     double _density;
     double _power_for_cstr;
-    double _kpar; // pas encore un paramètre dans le fichier txt
+    double _kpar;
     double _epsib;
     double _kdf;
     double _rolling_A;

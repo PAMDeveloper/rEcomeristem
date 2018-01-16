@@ -130,27 +130,11 @@ public:
         _internode_model->put(t, InternodeModel::LEAF_PREDIM, _leaf_model->get < double > (t, LeafModel::LEAF_PREDIM));
         _internode_model->put(t, InternodeModel::IS_LIG, _leaf_model->get < bool > (t, LeafModel::IS_LIG));
         _internode_model->put(t, InternodeModel::TEST_IC, _test_ic);
-
         (*_internode_model)(t);
     }
 
     void kill_leaf(double t)
-    {
-        _kill_leaf = true;
-//        _leaf_model.reset(nullptr);
-//        change_internal(LEAF_BIOMASS, &PhytomerModel::_null);
-//        change_internal(LEAF_BLADE_AREA, &PhytomerModel::_null);
-//        change_internal(LEAF_DEMAND, &PhytomerModel::_null);
-//        change_internal(LEAF_LAST_DEMAND, &PhytomerModel::_null);
-//        change_internal(PREDIM, &PhytomerModel::_null);
-//        change_internal(PLASTO_DELAY, &PhytomerModel::_null);
-//        change_internal(REALLOC_BIOMASS, &PhytomerModel::_null);
-//        change_internal(SENESC_DW, &PhytomerModel::_null);
-//        change_internal(SENESC_DW_SUM, &PhytomerModel::_null);
-//        change_internal(LEAF_CORRECTED_BIOMASS, &PhytomerModel::_null);
-//        change_internal(LEAF_CORRECTED_BLADE_AREA, &PhytomerModel::_null);
-//        change_internal(LEAF_LEN, &PhytomerModel::_null);
-    }
+    { _kill_leaf = true; }
 
     LeafModel * leaf() const
     { return _leaf_model.get(); }
@@ -173,6 +157,14 @@ public:
     bool is_leaf_app(double t) const {
         return !is_leaf_dead(t) &&
                 _leaf_model->get < bool > (t, LeafModel::IS_APP);
+    }
+
+    bool is_leaf_ligged(double t) const {
+        return _leaf_model->get < bool >(t, LeafModel::IS_LIG);
+    }
+
+    bool is_leaf_apped(double t) const {
+        return _leaf_model->get < bool >(t, LeafModel::IS_APP);
     }
 
 

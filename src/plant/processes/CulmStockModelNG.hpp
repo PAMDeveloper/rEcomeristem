@@ -144,7 +144,6 @@ public:
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
-        //permet le passage du get à t0 en mimant un isComputed au temps t
         last_time = t-1;
 
         // parameters

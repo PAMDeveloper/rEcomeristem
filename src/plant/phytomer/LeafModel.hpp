@@ -36,8 +36,8 @@ public:
                      TT_LIG, BLADE_AREA, BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      TIME_FROM_APP, LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS,
-                     LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL, PLASTO, PHYLLO, LIGULO, FIRST_DAY,
-                     BLADE_LEN, LAST_BLADE_AREA, SHEATH_LLL_CST, IS_APP, IS_DEAD };
+                     LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL_, PLASTO, PHYLLO, LIGULO, FIRST_DAY,
+                     BLADE_LEN, LAST_BLADE_AREA, SHEATH_LLL_CST, IS_APP, IS_DEAD, IS_FIRST };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
@@ -81,7 +81,7 @@ public:
         Internal(OLD_BIOMASS, &LeafModel::_old_biomass);
         Internal(LAST_LEAF_BIOMASS, &LeafModel::_last_leaf_biomass);
         Internal(SLA_CSTE, &LeafModel::_sla_cste);
-        Internal(LL_BL, &LeafModel::_LL_BL);
+        Internal(LL_BL_, &LeafModel::_LL_BL);
         Internal(PLASTO, &LeafModel::_plasto);
         Internal(PHYLLO, &LeafModel::_phyllo);
         Internal(LIGULO, &LeafModel::_ligulo);
@@ -91,6 +91,7 @@ public:
         Internal(SHEATH_LLL_CST, &LeafModel::_sheath_LLL_cst);
         Internal(IS_APP, &LeafModel::_is_app);
         Internal(IS_DEAD, &LeafModel::_is_dead);
+        Internal(IS_FIRST, &LeafModel::_firstl);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);
@@ -138,6 +139,9 @@ public:
         _p = _parameters.get(t).P;
 
         if(t == _first_day) {
+            if(_is_first_leaf) {
+                _firstl = true;
+            }
             //life span
             _life_span = _coeffLifespan * std::exp(_mu * _index);
             if(_is_first_leaf && _is_on_mainstem) {
@@ -177,12 +181,21 @@ public:
         }
 
         //LER & exp time
-        //il faut considérer les feuilles ayant des plasto/phyllo/ligulo/_init et les feuilles avec ces valeurs modifiées
+        //leaves already grown with a specific plasto/phyllo/ligulo or the initial plasto/phyllo/ligulo
         double tmp = std::max(0., _index-(_culm_nbleaf_param2-1));
         if (_leaf_phase == LeafModel::INITIAL) {
-            double time = (((_index-tmp-1)*_phyllo_init)+(tmp*_phyllo))-(((std::max(0.,_index-tmp-_nbinitleaves))*_plasto_init)+(tmp*_plasto));
-            _ler = (_sheath_LLL_cst/time)*_reduction_ler;
-            _exp_time = (_sheath_LLL_cst-_len)/_ler;
+            if(_is_first_leaf) {
+                if(_index <= _culm_nbleaf_param2) {
+                    _ler = (_sheath_LLL_cst/_phyllo_init)*_reduction_ler;
+                } else {
+                    _ler = (_sheath_LLL_cst/_phyllo)*_reduction_ler;
+                }
+                _exp_time = (_sheath_LLL_cst-_len)/_ler;
+            } else {
+                double time = (((_index-tmp-1)*_phyllo_init)+(tmp*_phyllo))-(((std::max(0.,_index-tmp-_nbinitleaves))*_plasto_init)+(tmp*_plasto));
+                _ler = (_sheath_LLL_cst/time)*_reduction_ler;
+                _exp_time = (_sheath_LLL_cst-_len)/_ler;
+            }
         } else {
             double time = (((_index-tmp)*_ligulo_init)+(tmp*_ligulo))-(((_index-tmp-1)*_phyllo_init)+(tmp*_phyllo));
             _ler = ((_predim-_sheath_LLL_cst)/time)*_reduction_ler;
@@ -366,10 +379,8 @@ public:
         _blade_len = 0;
         _sheath_LLL_cst = 0;
         _is_dead = false;
+        _firstl = (_index == 1);
     }
-
-    //    double get_blade_area() const
-    //    { return blade_area_model.get_blade_area(); }
 
 private:
     ecomeristem::ModelParameters _parameters;
@@ -428,6 +439,7 @@ private:
     double _blade_len;
     double _sheath_LLL_cst;
     bool _is_dead;
+    bool _firstl;
 
     // external variables
     double _MGR;

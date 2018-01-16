@@ -41,11 +41,7 @@ public:
 
     enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
                      DD, DELTA_T, PLASTO, LIGULO, NB_LIG, CULM_DEFICIT, CULM_STOCK,
-                     BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE, TEST_IC, FCSTR };
-
-    //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
-    //    enum externals { DD, DELTA_T, FTSW, P, PHASE, STATE, PREDIM_LEAF,
-    //                     LIG };
+                     BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE, LIGSTAGE, TEST_IC, FCSTR };
 
     InternodeModel(int index, bool is_on_mainstem):
         _index(index),
@@ -64,7 +60,6 @@ public:
         Internal(DEMAND, &InternodeModel::_demand);
         Internal(LAST_DEMAND, &InternodeModel::_last_demand);
         Internal(TIME_FROM_APP, &InternodeModel::_time_from_app);
-        Internal(CSTE_PLASTO, &InternodeModel::_cste_plasto);
         Internal(CSTE_LIGULO, &InternodeModel::_cste_ligulo);
         Internal(DENSITY_IN, &InternodeModel::_density);
 
@@ -86,6 +81,7 @@ public:
         External(LAST_LEAF_INDEX, &InternodeModel::_last_leaf_index);
         External(PREVIOUS_IN_PREDIM, &InternodeModel::_previous_inter_predim);
         External(PHENOSTAGE, &InternodeModel::_phenostage);
+        External(LIGSTAGE, &InternodeModel::_ligstage);
         External(TEST_IC, &InternodeModel::_test_ic);
         External(FCSTR, &InternodeModel::_fcstr);
     }
@@ -96,10 +92,8 @@ public:
     void compute(double t, bool /* update */){
         _p = _parameters.get(t).P;
 
-        //@TODO : récupérer is_lig de la feuille
-        if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _bool_crossed_plasto > 0 and (_index >= _last_leaf_index - 1) and _plant_phase != plant::FLO and _nb_lig > 0 and _inter_phase == VEGETATIVE) {
+        if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _cste_ligulo == 0) {
             _cste_ligulo = _ligulo;
-            _cste_plasto = _plasto;
         }
 
         //InternodePredim
@@ -122,11 +116,8 @@ public:
         }
 
         //INER
-        if (_inter_phase == REALIZATION) {
-            _iner = _inter_predim * _reduction_iner / (3*_cste_ligulo);
-        } else {
-            _iner = _inter_predim * _reduction_iner / (3*_ligulo);
-        }
+        _iner = _inter_predim * _reduction_iner / (3*_cste_ligulo);
+
         //InternodeManager
         step_state(t);
 
@@ -154,7 +145,7 @@ public:
         _inter_volume = _inter_len * 3.141592653589793238462643383280 * radius * radius;
 
         //Density
-        _density = _density_IN1 + std::min(_density_IN2, std::max(0., (_phenostage - _nb_leaf_stem_elong)) * ((_density_IN2 - _density_IN1)/((_maxleaves + 1 + _phenostage_pre_flo_to_flo) - _nb_leaf_stem_elong)));
+        _density = std::min(_density_IN2, _density_IN1 + std::max(0., (_ligstage - _nb_leaf_stem_elong)) * ((_density_IN2 - _density_IN1)/((_maxleaves + 4) - _nb_leaf_stem_elong)));
 
         //Biomass
         double biomass_1 = _biomass;
@@ -209,8 +200,7 @@ public:
             _inter_phase = VEGETATIVE;
             break;
         case VEGETATIVE:
-            //@TODO : récupérer is_lig de la feuille
-            if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _bool_crossed_plasto > 0 and (_index >= _last_leaf_index - 1) and _plant_phase != plant::FLO and _nb_lig > 0) {
+            if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and (_index >= _last_leaf_index) and _plant_phase != plant::FLO and _nb_lig > 0 and _is_lig) {
                 _inter_phase = REALIZATION;
             }
             break;
@@ -263,7 +253,6 @@ public:
         _inter_predim = 0;
         _is_mature = false;
         _cste_ligulo = 0;
-        _cste_plasto = 0;
         _density = 0;
     }
 
@@ -313,7 +302,6 @@ private:
     double _first_day;
     bool _is_mature;
     double _cste_ligulo;
-    double _cste_plasto;
 
     // externals
     plant::plant_state _plant_state;
@@ -335,6 +323,7 @@ private:
     double _last_leaf_index;
     double _previous_inter_predim;
     int _phenostage;
+    int _ligstage;
     double _test_ic;
     double _fcstr;
 

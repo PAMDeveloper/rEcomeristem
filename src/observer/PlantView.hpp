@@ -57,8 +57,6 @@ public:
                      PlantModel::HEIGHT });
         selector("PHT_P", artis::kernel::DOUBLE, {
                      PlantModel::HEIGHT_P });
-        selector("ALIG", artis::kernel::DOUBLE, {
-                     PlantModel::LIG });
         selector("TT_LIG", artis::kernel::DOUBLE, {
                      PlantModel::TT_LIG });
         selector("TT", artis::kernel::DOUBLE, {
@@ -71,7 +69,7 @@ public:
                      PlantModel::SLA});
         selector("TILLERNB_1", artis::kernel::DOUBLE, {
                      PlantModel::TILLERNB_1});
-       selector("NBLEAF", artis::kernel::DOUBLE, {
+        selector("NBLEAF", artis::kernel::DOUBLE, {
                      PlantModel::NBLEAF});
         selector("BIOMAERO2", artis::kernel::DOUBLE, {
                      PlantModel::BIOMAERO2});
@@ -104,7 +102,9 @@ public:
         selector("STOCKIN", artis::kernel::DOUBLE, {
                      PlantModel::INTERNODE_STOCK_SUM});
         selector("LIG", artis::kernel::DOUBLE, {
-                     PlantModel::LIG_INDEX});
+                     PlantModel::LIG});
+        selector("APP", artis::kernel::DOUBLE, {
+                     PlantModel::APP});
         selector("BOOL_CROSSED_PLASTO", artis::kernel::DOUBLE, {
                      PlantModel::BOOL_CROSSED_PLASTO});
         selector("BOOL_CROSSED_LIGULO", artis::kernel::DOUBLE, {
@@ -120,7 +120,7 @@ public:
                      PlantModel::ASSIMILATION,
                      AssimilationModel::LAI});
 
-//        //StockModel
+        //StockModel
         selector("DAYDEMAND", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::DAY_DEMAND});
@@ -156,13 +156,6 @@ public:
         selector("ROOTBIOMASS", artis::kernel::DOUBLE, {
                      PlantModel::ROOT,
                      RootModel::ROOT_BIOMASS});
-
-        //WaterBalanceModel
-        //CulmStockModel
-        //PhytomerModel
-        //LeafModel
-        //InternodeModel
-
     }
 
     virtual ~PlantView()
