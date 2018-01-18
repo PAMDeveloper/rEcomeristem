@@ -64,7 +64,7 @@ public:
                      CULM_PHENO_STAGE, CULM_APP_STAGE, CULM_LIG_STAGE,
                      LIG_INDEX, MS_INDEX_CST, CULM_NBLEAF_PARAM2, CULM_PHENO_STAGE_CSTE,
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, PLASTO, PHYLLO, LIGULO, TT_PLASTO,
-                     TT_PHYLLO, TT_LIGULO };
+                     TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2 };
 
     enum externals { PLANT_BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, PLANT_PHENOSTAGE,
                      PLANT_APPSTAGE, PLANT_LIGSTAGE, PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
@@ -136,6 +136,9 @@ public:
         Internal(TT_PLASTO, &CulmModel::_tt_plasto);
         Internal(TT_PHYLLO, &CulmModel::_tt_phyllo);
         Internal(TT_LIGULO, &CulmModel::_tt_ligulo);
+        Internal(DEL_LEAF_BIOM, &CulmModel::_deleted_leaf_biomass);
+        Internal(IS_COMPUTED, &CulmModel::_is_computed);
+        Internal(PLASTO_NBLEAF_PARAM2, &CulmModel::_plasto_nbleaf_param2);
 
         //    externals
         External(PLANT_BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -267,6 +270,28 @@ public:
 
     void compute(double t, bool /* update */) {
         std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
+
+        //kill culm if plant ic is < ict over phase 1 of first culm leaf
+        //TODO : realloc deleted leaf
+//        if(_is_first_culm) {
+//            _is_computed = true;
+//        } else if (t != _creation_date){
+//            _is_computed = _culm_ictmodel->get < bool >(t, IctModel::IS_COMPUTED);
+//        }
+//        if(t != _creation_date) {
+//            if(_culm_ictmodel->get < bool >(t, IctModel::IS_COMPUTED)) {
+//                if(!_culm_ictmodel->get < bool >(t, IctModel::SURVIVED)) {
+//                    if(!_kill_culm) {
+//                        auto phyto = _phytomer_models.begin();
+//                        _deleted_leaf_biomass = (*phyto)->leaf()->get< double >(t-1, LeafModel::BIOMASS);
+//                        _kill_culm = true;
+//                    } else {
+//                        _deleted_leaf_biomass = 0;
+//                    }
+//                }
+//            }
+//        }
+
         if(_kill_culm or _plant_phase == plant::DEAD) {
             _nb_lig = 0;
             _nb_lig_tot = 0;
@@ -300,15 +325,16 @@ public:
 
         //thermaltimevalues update
         if(_plant_phenostage >= _nb_leaf_param2 - 1 and _plant_stock >= 0) {
-            _plasto = _plasto_init * _coeff_Plasto_PI;
             _phyllo = _phyllo_init * _coeff_Phyllo_PI;
             _ligulo = _ligulo_init * _coeff_Ligulo_PI;
+        }
+        if(_plant_appstage >= _nb_leaf_param2 - 1 and _plant_stock >= 0 and _plasto_nbleaf_param2 == _maxleaves + 1) {
+            _plasto = _plasto_init * _coeff_Plasto_PI;
             _tt_plasto = _plasto;
-        }
-        if(_plant_appstage >= _nb_leaf_param2 - 1) {
             _tt_phyllo = _phyllo;
+            _plasto_nbleaf_param2 = _phytomer_models.size();
         }
-        if(_plant_ligstage >= _nb_leaf_param2 - 1) {
+        if(_plant_ligstage >= _nb_leaf_param2 - 1 and _plant_stock >= 0) {
             _tt_ligulo = _ligulo;
         }
 
@@ -374,7 +400,7 @@ public:
 
         step_state(t);
 
-        //nb leaf param2 for specific culm
+//        //nb leaf param2 for specific culm
         if(_plant_phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _plant_stock > 0) {
             _culm_nbleaf_param_2 = _phytomer_models.size();
         }
@@ -561,6 +587,7 @@ public:
         (*it)->leaf()->put(t, LeafModel::CULM_STOCK, _culm_stock);
         (*it)->leaf()->put(t, LeafModel::SHEATH_LLL, _sheath_LLL);
         (*it)->leaf()->put(t, LeafModel::CULM_NBLEAF_PARAM2, _culm_nbleaf_param_2);
+        (*it)->leaf()->put(t, LeafModel::PLASTO_NBLEAF_PARAM2, _plasto_nbleaf_param2);
         (*it)->internode()->put(t, InternodeModel::CULM_DEFICIT, _culm_deficit);
         (*it)->internode()->put(t, InternodeModel::CULM_STOCK, _culm_stock);
         (*it)->internode()->put(t, InternodeModel::CULM_PHASE, _culm_phase);
@@ -721,22 +748,6 @@ public:
         return i;
     }
 
-    CulmStockModelNG * stock_model() const {
-        return _culm_stock_model.get();
-    }
-
-    IctModel * ictmodel() const {
-            return _culm_ictmodel.get();
-    }
-
-    ThermalTimeModel * thermaltime_model() const {
-        return _culm_thermaltime_model.get();
-    }
-
-    ThermalTimeModelNG * thermaltime_modelNG() const {
-        return _culm_thermaltime_modelNG.get();
-    }
-
     void delete_leaf(double t, int index, double leaf_biomass, double internode_biomass)
     {
         _deleted_senesc_dw += (1 - _realocationCoeff) * leaf_biomass;
@@ -856,6 +867,23 @@ public:
         }
         return creation_date;
     }
+
+    CulmStockModelNG * stock_model() const {
+        return _culm_stock_model.get();
+    }
+
+    IctModel * ictmodel() const {
+        return _culm_ictmodel.get();
+    }
+
+    ThermalTimeModel * thermaltime_model() const {
+        return _culm_thermaltime_model.get();
+    }
+
+    ThermalTimeModelNG * thermaltime_modelNG() const {
+        return _culm_thermaltime_modelNG.get();
+    }
+
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
@@ -987,12 +1015,15 @@ public:
         _culm_bool_crossed_phyllo = -1;
         _culm_bool_crossed_ligulo = -1;
         _lig_index = 0;
-        _culm_nbleaf_param_2 = _nb_leaf_param2;
+        _culm_nbleaf_param_2 = _maxleaves + 1;
+        _plasto_nbleaf_param2 = _maxleaves + 1;
         _culm_plasto_visu = _plasto_init;
         _culm_ligulo_visu = _ligulo_init;
         _culm_phyllo_visu = _phyllo_init;
         _culm_DD_phyllo = 0;
         _culm_DD_ligulo = 0;
+        _deleted_leaf_biomass = 0;
+        _is_computed = false;
     }
 
 private:
@@ -1099,11 +1130,14 @@ private:
     double _culm_bool_crossed_ligulo;
     double _lig_index;
     double _culm_nbleaf_param_2;
+    double _plasto_nbleaf_param2;
     double _culm_plasto_visu;
     double _culm_ligulo_visu;
     double _culm_phyllo_visu;
     double _culm_DD_phyllo;
     double _culm_DD_ligulo;
+    double _deleted_leaf_biomass;
+    bool _is_computed;
 
     //    externals
     int _plant_phenostage;

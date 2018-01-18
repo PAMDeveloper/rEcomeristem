@@ -189,23 +189,9 @@ public:
         _seed_res_[2] = _seed_res_[1];
         _seed_res_[1] = _seed_res_[0];
         _seed_res_[0] = _seed_res;
-
-        //@TODO : exemple du nouveau calcul IC :
-        //if(_bool_crossed_plasto) {
-
-        // for(vector<double>::size_t i = 0; i < _seed_res_.size(); i++) {
-        //    _seed_res_.pop_back();
-        // }
-        // _seed_res_.push_back(_seed_res);
-
-        //} else {
-        //@TODO : exemple du nouveau calcul IC :
-        // _seed_res_.push_back(_seed_res);
-        //}
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
-        //permet le passage du get à t0 en mimant un isComputed au temps t
         last_time = t-1;
 
         // parameters
@@ -247,9 +233,6 @@ private:
     double _seed_res_[3];
     double _supply_[3];
     double _day_demand_[3];
-
-    //@TODO : exmple pour IC over plasto
-    // vector<double> _seed_res_;
 
     //    internals - computed
     double _day_demand;

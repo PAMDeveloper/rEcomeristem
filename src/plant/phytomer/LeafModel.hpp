@@ -42,7 +42,7 @@ public:
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
                      SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF, CULM_DEFICIT, CULM_STOCK, SHEATH_LLL,
-                     CULM_NBLEAF_PARAM2 };
+                     CULM_NBLEAF_PARAM2, PLASTO_NBLEAF_PARAM2 };
 
 
     virtual ~LeafModel()
@@ -109,6 +109,7 @@ public:
         External(CULM_STOCK, &LeafModel::_culm_stock);
         External(SHEATH_LLL, &LeafModel::_sheath_LLL);
         External(CULM_NBLEAF_PARAM2, &LeafModel::_culm_nbleaf_param2);
+        External(PLASTO_NBLEAF_PARAM2, &LeafModel::_plasto_nbleaf_param2);
     }
 
     void compute(double t, bool /* update */)
@@ -182,7 +183,8 @@ public:
 
         //LER & exp time
         //leaves already grown with a specific plasto/phyllo/ligulo or the initial plasto/phyllo/ligulo
-        double tmp = std::max(0., _index-(_culm_nbleaf_param2-1));
+        double tmp1 = std::max(0., _index-(_plasto_nbleaf_param2-1));
+        double tmp2 = std::max(0., _index-(_culm_nbleaf_param2-1));
         if (_leaf_phase == LeafModel::INITIAL) {
             if(_is_first_leaf) {
                 if(_index <= _culm_nbleaf_param2) {
@@ -192,12 +194,12 @@ public:
                 }
                 _exp_time = (_sheath_LLL_cst-_len)/_ler;
             } else {
-                double time = (((_index-tmp-1)*_phyllo_init)+(tmp*_phyllo))-(((std::max(0.,_index-tmp-_nbinitleaves))*_plasto_init)+(tmp*_plasto));
+                double time = (((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo))-(((std::max(0.,_index-tmp1-_nbinitleaves))*_plasto_init)+(tmp1*_plasto));
                 _ler = (_sheath_LLL_cst/time)*_reduction_ler;
                 _exp_time = (_sheath_LLL_cst-_len)/_ler;
             }
         } else {
-            double time = (((_index-tmp)*_ligulo_init)+(tmp*_ligulo))-(((_index-tmp-1)*_phyllo_init)+(tmp*_phyllo));
+            double time = (((_index-tmp2)*_ligulo_init)+(tmp2*_ligulo))-(((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo));
             _ler = ((_predim-_sheath_LLL_cst)/time)*_reduction_ler;
             _exp_time = (_predim-_len)/_ler;
         }
@@ -459,6 +461,7 @@ private:
     double _sheath_LLL;
     int _ms_index;
     double _culm_nbleaf_param2;
+    double _plasto_nbleaf_param2;
 };
 
 } // namespace model

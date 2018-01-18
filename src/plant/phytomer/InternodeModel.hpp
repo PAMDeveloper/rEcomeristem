@@ -92,7 +92,7 @@ public:
     void compute(double t, bool /* update */){
         _p = _parameters.get(t).P;
 
-        if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _cste_ligulo == 0) {
+        if(t == _first_day) {
             _cste_ligulo = _ligulo;
         }
 
@@ -144,8 +144,11 @@ public:
         double radius = _inter_diameter / 2;
         _inter_volume = _inter_len * 3.141592653589793238462643383280 * radius * radius;
 
-        //Density
-        _density = std::min(_density_IN2, _density_IN1 + std::max(0., (_ligstage - _nb_leaf_stem_elong)) * ((_density_IN2 - _density_IN1)/((_maxleaves + 4) - _nb_leaf_stem_elong)));
+        //Density per IN
+        _density = std::min(_density_IN2, _density + ((_density_IN2-_density_IN1)/(3*_cste_ligulo) * _delta_t));
+            //whole plant
+        //_density = std::min(_density_IN2, _density_IN1 + std::max(0., (_ligstage - _nb_leaf_stem_elong)) * ((_density_IN2 - _density_IN1)/((_maxleaves + 4) - _nb_leaf_stem_elong)));
+
 
         //Biomass
         double biomass_1 = _biomass;
@@ -166,7 +169,7 @@ public:
         }
 
         //InternodeTimeFromApp
-        if (_first_day == t) {
+        if(t == _first_day) {
             _time_from_app = _dd;
         } else {
             if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {

@@ -56,7 +56,7 @@ public:
                      TILLERNB_1, NBLEAF, BIOMAERO2, BIOMLEAFMAINSTEM, BIOMINMAINSTEM, AREALFEL,
                      MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK,
                      DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW,
-                     PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX, MS_INDEX };
+                     PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX, MS_INDEX, DELETED_LEAF_BIOMASS };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -135,6 +135,7 @@ public:
         Internal( PHENOSTAGE_AT_FLO, &PlantModel::_phenostage_at_flo);
         Internal( LIG_INDEX, &PlantModel::_lig_index);
         Internal( MS_INDEX, &PlantModel::_ms_index);
+        Internal( DELETED_LEAF_BIOMASS, &PlantModel::_deleted_leaf_biomass);
     }
 
     virtual ~PlantModel()
@@ -238,8 +239,18 @@ public:
 
     void compute(double t, bool /* update */) {
         std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
+
         //Delete leaf
+        std::deque < CulmModel* >::const_iterator nc = _culm_models.begin();
+//        while(nc != _culm_models.end()) {
+//            if((*nc)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM)) {
+//                _deleted_leaf_biomass += (*nc)->get < double, CulmModel >(t-1, CulmModel::DEL_LEAF_BIOM);
+//            }
+//            ++nc;
+//        }
+
         delete_leaf(t);
+
         if (_deleted_leaf_biomass > 0) {
             _qty = _deleted_leaf_biomass * _realocationCoeff;
             _stock = std::max(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
@@ -259,10 +270,10 @@ public:
         std::deque < CulmModel* >::const_iterator culms = _culm_models.begin();
         int i = 0;
         while(culms != _culm_models.end()) {
-            (*culms)->ictmodel()->put < double >(t, IctModel::SEEDRES, _stock_model->get <double> (t-1, PlantStockModel::SEED_RES));
-            (*culms)->ictmodel()->put < double >(t, IctModel::DAY_DEMAND, _stock_model->get <double> (t-1, PlantStockModel::DAY_DEMAND));
-            (*culms)->ictmodel()->put < double >(t, IctModel::SUPPLY, _stock_model->get <double> (t-1, PlantStockModel::SUPPLY));
-            (*culms)->compute_ictmodel(t);
+            //(*culms)->ictmodel()->put < double >(t, IctModel::SEEDRES, _stock_model->get <double> (t-1, PlantStockModel::SEED_RES));
+            //(*culms)->ictmodel()->put < double >(t, IctModel::DAY_DEMAND, _stock_model->get <double> (t-1, PlantStockModel::DAY_DEMAND));
+            //(*culms)->ictmodel()->put < double >(t, IctModel::SUPPLY, _stock_model->get <double> (t-1, PlantStockModel::SUPPLY));
+            //(*culms)->compute_ictmodel(t);
             if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
                 if(!(*culms)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM)) {
                     (*culms)->thermaltime_model()->put < double >(t, ThermalTimeModel::DELTA_T, _deltaT);
@@ -314,11 +325,11 @@ public:
         (*_water_balance_model)(t);
 
         // Manager
-        std::cout << "BEFORE " << date << " state: " << _plant_state << " - phase: " << _plant_phase << std::endl;
-        std::cout << "NB CREATED CULMS : " << _culm_models.size() << std::endl;
-        std::cout << "NB ALIVE CULMS : " <<_tillerNb_1 << std::endl;
+        //std::cout << "BEFORE " << date << " state: " << _plant_state << " - phase: " << _plant_phase << std::endl;
+        //std::cout << "NB CREATED CULMS : " << _culm_models.size() << std::endl;
+        //std::cout << "NB ALIVE CULMS : " <<_tillerNb_1 << std::endl;
         step_state(t);
-        std::cout << "AFTER " << date << " state: " << _plant_state << " - phase: " << _plant_phase << std::endl;
+        //std::cout << "AFTER " << date << " state: " << _plant_state << " - phase: " << _plant_phase << std::endl;
 
 
         //LLBL - Plasto
@@ -511,7 +522,7 @@ public:
         _panicleDW = 0;
         std::deque < CulmModel* >::const_iterator itnbc = _culm_models.begin();
         while(itnbc != _culm_models.end()) {
-            if(!((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM))) {
+            if(/*(*itnbc)->get < bool, CulmModel >(t, CulmModel::IS_COMPUTED) and*/ !((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM))) {
                 nbc++;
             }
             _biomAero2 += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) +
@@ -651,7 +662,6 @@ public:
         if (_culm_index != -1 and _leaf_index != -1) {
             _culm_models[_culm_index]->delete_leaf(t, _leaf_index, _deleted_leaf_biomass, _deleted_internode_biomass);
             _leaf_blade_area_sum -= _deleted_leaf_blade_area;
-            std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
         }
     }
 
