@@ -272,25 +272,29 @@ public:
         std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
 
         //kill culm if plant ic is < ict over phase 1 of first culm leaf
-        //TODO : realloc deleted leaf
-//        if(_is_first_culm) {
-//            _is_computed = true;
-//        } else if (t != _creation_date){
-//            _is_computed = _culm_ictmodel->get < bool >(t, IctModel::IS_COMPUTED);
-//        }
-//        if(t != _creation_date) {
-//            if(_culm_ictmodel->get < bool >(t, IctModel::IS_COMPUTED)) {
-//                if(!_culm_ictmodel->get < bool >(t, IctModel::SURVIVED)) {
-//                    if(!_kill_culm) {
-//                        auto phyto = _phytomer_models.begin();
-//                        _deleted_leaf_biomass = (*phyto)->leaf()->get< double >(t-1, LeafModel::BIOMASS);
-//                        _kill_culm = true;
-//                    } else {
-//                        _deleted_leaf_biomass = 0;
-//                    }
-//                }
-//            }
-//        }
+        if(_is_first_culm) {
+            _is_computed = true;
+        } else if (t != _creation_date){
+            _is_computed = _culm_ictmodel->get < bool >(t, IctModel::IS_COMPUTED);
+        }
+        if(t != _creation_date) {
+            if(_culm_ictmodel->get < bool >(t, IctModel::IS_COMPUTED)) {
+                if(!_culm_ictmodel->get < bool >(t, IctModel::SURVIVED)) {
+                    if(!_kill_culm) {
+                        _deleted_leaf_biomass = 0;
+                        auto phyto = _phytomer_models.begin();
+                        while (phyto != _phytomer_models.end()) {
+                            _deleted_leaf_biomass += (*phyto)->leaf()->get< double >(t-1, LeafModel::BIOMASS);
+                            (*phyto)->kill_leaf(t);
+                            ++phyto;
+                        }
+                        _kill_culm = true;
+                    } else {
+                        _deleted_leaf_biomass = 0;
+                    }
+                }
+            }
+        }
 
         if(_kill_culm or _plant_phase == plant::DEAD) {
             _nb_lig = 0;
@@ -315,9 +319,7 @@ public:
             _kill_culm = true;
             auto it = _phytomer_models.begin();
             while (it != _phytomer_models.end()) {
-                if(!(*it)->is_leaf_dead(t-1)) {
-                    (*it)->kill_leaf(t);
-                }
+                (*it)->kill_leaf(t);
                 ++it;
             }
             return;
@@ -400,7 +402,7 @@ public:
 
         step_state(t);
 
-//        //nb leaf param2 for specific culm
+        //        //nb leaf param2 for specific culm
         if(_plant_phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _plant_stock > 0) {
             _culm_nbleaf_param_2 = _phytomer_models.size();
         }
