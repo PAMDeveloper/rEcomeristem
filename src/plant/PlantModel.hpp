@@ -358,7 +358,7 @@ public:
         if (ic > _Ict) {
             _nb_tillers = _nb_tillers + _nbExistingTillers;
         }
-        if (_bool_crossed_plasto > 0 and _nb_tillers >= 1 and ic > _Ict * ((P * _resp_Ict) + 1)) {
+        if (_bool_crossed_plasto > 0 and _nb_tillers >= 1 /*and ic > _Ict * ((P * _resp_Ict) + 1)*/) {
             _nb_tillers = std::min(_nb_tillers, tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
             //TODO : virer condition max tillers

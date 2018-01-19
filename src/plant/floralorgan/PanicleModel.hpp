@@ -32,12 +32,13 @@ namespace model {
 class PanicleModel : public AtomicModel < PanicleModel >
 {
 public:
-    enum internals { GRAIN_NB, FERTILE_GRAIN_NB, RESERVOIR_DISPO,
+    enum internals { PREFLO_PASSED, GRAIN_NB, FERTILE_GRAIN_NB, RESERVOIR_DISPO,
                      DAY_DEMAND, WEIGHT, FILLED_GRAIN_NB };
     enum externals { DELTA_T, FCSTR, TEST_IC, PLANT_PHASE };
 
     PanicleModel()
     {
+        Internal(PREFLO_PASSED, &PanicleModel::_preflo_passed);
         Internal(GRAIN_NB, &PanicleModel::_grain_nb);
         Internal(FERTILE_GRAIN_NB, &PanicleModel::_fertile_grain_nb);
         Internal(RESERVOIR_DISPO, &PanicleModel::_reservoir_dispo);

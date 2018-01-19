@@ -401,6 +401,7 @@ private:
     double _phyllo_init;
     double _plasto_init;
     double _ligulo_init;
+    double _p;
 
     // attributes
     int _index;
@@ -446,7 +447,6 @@ private:
     // external variables
     double _MGR;
     double _ftsw;
-    double _p;
     plant::plant_state _plant_state;
     double _fcstr;
     double _predim_leaf_on_mainstem;
@@ -459,7 +459,6 @@ private:
     double _culm_deficit;
     double _culm_stock;
     double _sheath_LLL;
-    int _ms_index;
     double _culm_nbleaf_param2;
     double _plasto_nbleaf_param2;
 };

@@ -35,8 +35,8 @@ class PeduncleModel : public AtomicModel < PeduncleModel >
 {
 public:
 
-    enum internals { LENGTH_PREDIM, DIAMETER_PREDIM, REDUCTION_INER, INER,
-                     LENGTH, VOLUME, EXP_TIME, BIOMASS, DEMAND, LAST_DEMAND };
+    enum internals { IS_MATURE, LENGTH_PREDIM, DIAMETER_PREDIM, REDUCTION_INER, INER,
+                     LENGTH, VOLUME, EXP_TIME, BIOMASS, DEMAND, LAST_DEMAND, FIRST_DAY };
     enum externals { PLANT_PHASE, CULM_PHASE, INTER_PREDIM, INTER_DIAM, FTSW,
                      EDD, DELTA_T, PLASTO, LIGULO, FCSTR, TEST_IC };
 
@@ -45,6 +45,7 @@ public:
         _index(index),
         _is_on_mainstem(is_on_mainstem)
     {
+        Internal(IS_MATURE, &PeduncleModel::_is_mature);
         Internal(LENGTH_PREDIM, &PeduncleModel::_length_predim);
         Internal(DIAMETER_PREDIM, &PeduncleModel::_diameter_predim);
         Internal(REDUCTION_INER, &PeduncleModel::_reduction_iner);
@@ -55,6 +56,7 @@ public:
         Internal(BIOMASS, &PeduncleModel::_biomass);
         Internal(DEMAND, &PeduncleModel::_demand);
         Internal(LAST_DEMAND, &PeduncleModel::_last_demand);
+        Internal(FIRST_DAY, &PeduncleModel::_first_day);
 
         External(PLANT_PHASE, &PeduncleModel::_plant_phase);
         External(CULM_PHASE, &PeduncleModel::_culm_phase);

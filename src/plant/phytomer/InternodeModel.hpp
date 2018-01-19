@@ -41,7 +41,8 @@ public:
 
     enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
                      DD, DELTA_T, PLASTO, LIGULO, NB_LIG, CULM_DEFICIT, CULM_STOCK,
-                     BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE, LIGSTAGE, TEST_IC, FCSTR };
+                     BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE, LIGSTAGE,
+                     TEST_IC, FCSTR, CULM_NBLEAF_PARAM2 };
 
     InternodeModel(int index, bool is_on_mainstem):
         _index(index),
@@ -84,6 +85,7 @@ public:
         External(LIGSTAGE, &InternodeModel::_ligstage);
         External(TEST_IC, &InternodeModel::_test_ic);
         External(FCSTR, &InternodeModel::_fcstr);
+        External(CULM_NBLEAF_PARAM2, &InternodeModel::_culm_nb_leaf_param2);
     }
 
     virtual ~InternodeModel()
@@ -97,8 +99,7 @@ public:
         }
 
         //InternodePredim
-        if(_index < _nb_leaf_param2) {
-            _LL_BL = _LL_BL_init;
+        if(_index < _culm_nb_leaf_param2) {
             _inter_predim = std::max(1e-4, _leaf_length_to_IN_length * _leaf_predim );
         } else {
             _inter_predim = std::max(1e-4, _previous_inter_predim * _slope_length_IN);
@@ -221,9 +222,7 @@ public:
         //parameters
         _slope_length_IN = parameters.get("slope_length_IN");
         _leaf_length_to_IN_length = parameters.get("leaf_length_to_IN_length");
-        _LL_BL_init = parameters.get("LL_BL_init");
         _nb_leaf_param2 = parameters.get("nb_leaf_param2");
-        _slope_LL_BL_at_PI = parameters.get("slope_LL_BL_at_PI");
         _thresINER = parameters.get("thresINER");
         _respINER = parameters.get("resp_LER");
         _slopeINER = parameters.get("slopeINER");
@@ -269,9 +268,7 @@ private:
     // parameters
     double _nb_leaf_max_after_pi;
     double _phenostage_pre_flo_to_flo;
-    double _LL_BL_init;
     double _nb_leaf_param2;
-    double _slope_LL_BL_at_PI;
     double _slope_length_IN;
     double _leaf_length_to_IN_length;
     double _thresINER;
@@ -285,10 +282,10 @@ private:
     double _density_IN2;
     double _wbmodel;
     double _maxleaves;
+    double _p;
 
     // internals
     double _density;
-    double _LL_BL;
     internode_phase _inter_phase;
     internode_phase _inter_phase_1;
     double _inter_len;
@@ -314,7 +311,6 @@ private:
     double _lig;
     bool _is_lig;
     double _ftsw;
-    double _p;
     double _dd;
     double _delta_t;
     double _ligulo;
@@ -329,17 +325,7 @@ private:
     int _ligstage;
     double _test_ic;
     double _fcstr;
-
-    //// external variables
-    //    double _dd;
-    //    double _delta_t;
-    //    double _ftsw;
-    //    double _p;
-    //    double _phase;
-    //    double _state;
-    //    double _test_ic;
-    //    double _predim_leaf;
-    //    double _lig;
+    double _culm_nb_leaf_param2;
 };
 
 } // namespace model
