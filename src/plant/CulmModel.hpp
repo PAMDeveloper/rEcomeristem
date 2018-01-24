@@ -600,6 +600,7 @@ public:
         (*it)->internode()->put(t, InternodeModel::LAST_LEAF_INDEX, _last_leaf_index);
         (*it)->internode()->put(t, InternodeModel::PHENOSTAGE, _plant_phenostage);
         (*it)->internode()->put(t, InternodeModel::LIGSTAGE, _plant_ligstage);
+        (*it)->internode()->put(t, InternodeModel::CULM_NBLEAF_PARAM2, _culm_nbleaf_param_2);
         if(i == 0) {
             (*it)->internode()->put(t, InternodeModel::PREVIOUS_IN_PREDIM, 0.);
         } else {
