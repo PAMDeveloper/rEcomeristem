@@ -56,7 +56,7 @@ public:
                      TILLERNB_1, NBLEAF, BIOMAERO2, BIOMLEAFMAINSTEM, BIOMINMAINSTEM, AREALFEL,
                      MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK,
                      DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW,
-                     PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX, MS_INDEX, DELETED_LEAF_BIOMASS };
+                     PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX, MS_INDEX, DELETED_LEAF_BIOMASS, VISI };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -136,6 +136,7 @@ public:
         Internal( LIG_INDEX, &PlantModel::_lig_index);
         Internal( MS_INDEX, &PlantModel::_ms_index);
         Internal( DELETED_LEAF_BIOMASS, &PlantModel::_deleted_leaf_biomass);
+        Internal( VISI, &PlantModel::_visi);
     }
 
     virtual ~PlantModel()
@@ -358,7 +359,7 @@ public:
         if (ic > _Ict) {
             _nb_tillers = _nb_tillers + _nbExistingTillers;
         }
-        if (_bool_crossed_plasto > 0 and _nb_tillers >= 1 and ic > _Ict * ((P * _resp_Ict) + 1)) {
+        if (_bool_crossed_plasto > 0 and _nb_tillers >= 1 /*and ic > _Ict * ((P * _resp_Ict) + 1)*/) {
             _nb_tillers = std::min(_nb_tillers, tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
             //TODO : virer condition max tillers
@@ -375,6 +376,7 @@ public:
         mainstem = _culm_models.begin();
         _lig = (*mainstem)->get <double, CulmModel>(t, CulmModel::NB_LIG_TOT);
         _app = (*mainstem)->get < double, CulmModel >(t, CulmModel::NB_APP_LEAVES_TOT);
+        _visi = (*mainstem)->get < double, CulmModel >(t, CulmModel::NB_APP_LEAVES);
 
         //TT_Lig
         if (t != _parameters.beginDate) {
@@ -837,6 +839,7 @@ public:
         _realloc_biomass_sum = 0;
         _appstage = 1;
         _ligstage = 0;
+        _visi = 0;
         _ms_index = 1;
     }
 
@@ -966,6 +969,7 @@ private:
     double _phenostage_at_flo;
     double _lig_index;
     int _ms_index;
+    double _visi;
 
     //internal states
     plant::plant_state _plant_state;

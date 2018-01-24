@@ -105,6 +105,8 @@ public:
                      PlantModel::LIG});
         selector("APP", artis::kernel::DOUBLE, {
                      PlantModel::APP});
+        selector("NBLEAFMAINSTEM", artis::kernel::DOUBLE, {
+                     PlantModel::VISI});
         selector("BOOL_CROSSED_PLASTO", artis::kernel::DOUBLE, {
                      PlantModel::BOOL_CROSSED_PLASTO});
         selector("BOOL_CROSSED_LIGULO", artis::kernel::DOUBLE, {

@@ -635,17 +635,18 @@ public:
                 ++ _nb_lig_tot;
                 double ratio = (*it)->leaf()->get < double >(t, LeafModel::BLADE_AREA) / (*it)->leaf()->get < double >(t, LeafModel::LAST_BLADE_AREA);
                 if(ratio >= 0.5) {
-                    _nb_leaf = _nb_leaf + 1;
+                    ++_nb_leaf;
+                    ++ _nb_app_leaves;
                 }
                 ++ _nb_app_leaves_tot;
             } else {
                 _nb_leaf = _nb_leaf + 1;
                 _reductionLER = (*it)->leaf()->get < double >(t, LeafModel::REDUCTION_LER);
                 if((*it)->is_leaf_app(t)) {
-                    _nb_app_leaves = _nb_app_leaves + 1;
+                    ++ _nb_app_leaves;
                     ++ _nb_app_leaves_tot;
                 } else {
-                    _nb_init_leaves = _nb_init_leaves + 1;
+                    ++ _nb_init_leaves;
                 }
             }
 
