@@ -206,7 +206,7 @@ public:
         _day_demand = 0;
         _ic = 0;
         _ic_1 = 0;
-        _test_ic = 0;
+        _test_ic = 1;
         _reservoir_dispo = 0;
         _seed_res = _gdw;
         _stock = 1e-10;

@@ -34,7 +34,7 @@ public:
     enum submodels { LEAF, INTERNODE };
 
     enum internals { LEAF_PREDIM,
-                     LEAF_BIOMASS, LEAF_BLADE_AREA, LEAF_DEMAND,
+                     LEAF_BIOMASS, LEAF_BLADE_AREA, LEAF_VISIBLE_BLADE_AREA, LEAF_DEMAND,
                      INTERNODE_DEMAND, INTERNODE_LAST_DEMAND, INTERNODE_BIOMASS,
                      INTERNODE_LEN, LEAF_LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
@@ -64,6 +64,7 @@ public:
         InternalS(LEAF_PREDIM,  _leaf_model.get(), LeafModel::LEAF_PREDIM);
         InternalS(LEAF_BIOMASS, _leaf_model.get(), LeafModel::BIOMASS);
         InternalS(LEAF_BLADE_AREA, _leaf_model.get(), LeafModel::BLADE_AREA);
+        InternalS(LEAF_VISIBLE_BLADE_AREA, _leaf_model.get(), LeafModel::VISIBLE_BLADE_AREA);
         InternalS(LEAF_DEMAND, _leaf_model.get(), LeafModel::DEMAND);
         InternalS(LEAF_LAST_DEMAND, _leaf_model.get(), LeafModel::LAST_DEMAND);
         InternalS(REALLOC_BIOMASS, _leaf_model.get(), LeafModel::REALLOC_BIOMASS);

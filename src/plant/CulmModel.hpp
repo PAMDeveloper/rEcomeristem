@@ -56,7 +56,7 @@ public:
                      LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND, PEDUNCLE_BIOMASS,
                      PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND,
                      FIRST_LEAF_LEN, DELETED_SENESC_DW, PEDUNCLE_LEN, KILL_CULM,
-                     LAST_LIGULATED_LEAF_BLADE_LEN, DELETED_REALLOC_BIOMASS, CULM_TEST_IC,
+                     LAST_LIGULATED_LEAF_SHEATH_LEN, DELETED_REALLOC_BIOMASS, CULM_TEST_IC,
                      CULM_DEFICIT, CULM_STOCK, LAST_LEAF_INDEX, REALLOC_SUPPLY, PANICLE_WEIGHT,
                      LAST_LEAF_BLADE_AREA, NBLEAF,
                      DELETED_LEAF_NUMBER, LEAF_DELAY, SHEATH_LLL, REDUCTION_LER,
@@ -66,14 +66,15 @@ public:
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, PLASTO, PHYLLO, LIGULO, TT_PLASTO,
                      TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2 };
 
-    enum externals { PLANT_BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, PLANT_PHENOSTAGE,
-                     PLANT_APPSTAGE, PLANT_LIGSTAGE, PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
-                     PLANT_STATE, TEST_IC, PLANT_STOCK, PLANT_DEFICIT, ASSIM, MGR,
+    enum externals { PLANT_BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, FCSTRI, FCSTRL, FCSTRLLEN,
+                     PLANT_PHENOSTAGE, PLANT_APPSTAGE, PLANT_LIGSTAGE, PREDIM_LEAF_ON_MAINSTEM, SLA,
+                     PLANT_PHASE, PLANT_STATE, TEST_IC, PLANT_STOCK, PLANT_DEFICIT, ASSIM, MGR,
                      LL_BL,IS_FIRST_DAY_PI, MS_PHYT_INDEX, MS_SHEATH_LLL };
 
 
     CulmModel(int index):
-        _index(index), _is_first_culm(index == 1),
+        _index(index),
+        _is_first_culm(index == 1),
         _culm_stock_model(new CulmStockModelNG),
         _culm_thermaltime_model(new ThermalTimeModel),
         _culm_ictmodel(new IctModel),
@@ -104,7 +105,7 @@ public:
         Internal(NB_LIG_TOT, &CulmModel::_nb_lig_tot);
         Internal(PEDUNCLE_LEN, &CulmModel::_peduncle_len);
         Internal(KILL_CULM, &CulmModel::_kill_culm);
-        Internal(LAST_LIGULATED_LEAF_BLADE_LEN, &CulmModel::_last_ligulated_leaf_blade_len);
+        Internal(LAST_LIGULATED_LEAF_SHEATH_LEN, &CulmModel::_last_ligulated_leaf_sheath_len);
         Internal(DELETED_REALLOC_BIOMASS, &CulmModel::_deleted_realloc_biomass);
         Internal(CULM_TEST_IC, &CulmModel::_culm_test_ic);
         Internal(CULM_DEFICIT, &CulmModel::_culm_deficit);
@@ -147,6 +148,9 @@ public:
         External(DELTA_T, &CulmModel::_delta_t);
         External(FTSW, &CulmModel::_ftsw);
         External(FCSTR, &CulmModel::_fcstr);
+        External(FCSTRI, &CulmModel::_fcstrI);
+        External(FCSTRL, &CulmModel::_fcstrL);
+        External(FCSTRLLEN, &CulmModel::_fcstrLlen);
         External(PLANT_PHENOSTAGE, &CulmModel::_plant_phenostage);
         External(PLANT_APPSTAGE, &CulmModel::_plant_appstage);
         External(PLANT_LIGSTAGE, &CulmModel::_plant_ligstage);
@@ -402,7 +406,7 @@ public:
 
         step_state(t);
 
-        //        //nb leaf param2 for specific culm
+        //nb leaf param2 for specific culm
         if(_plant_phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _plant_stock > 0) {
             _culm_nbleaf_param_2 = _phytomer_models.size();
         }
@@ -458,11 +462,11 @@ public:
             get_nonvegetative_in(it, t);
 
             if(i == 0 and not (*it)->is_leaf_dead(t)) {
-                _first_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
+                _first_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::SHEATH_LEN);
                 if ((*it)->is_leaf_lig(t) and t == (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
                     _last_ligulated_leaf = i;
                     _last_ligulated_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::LEAF_LEN);
-                    _last_ligulated_leaf_blade_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
+                    _last_ligulated_leaf_sheath_len = (*it)->leaf()->get < double >(t, LeafModel::SHEATH_LEN);
                 }
             }
 
@@ -493,6 +497,7 @@ public:
             _peduncle_model->put (t, PeduncleModel::PLASTO, _plasto);
             _peduncle_model->put (t, PeduncleModel::LIGULO, _ligulo);
             _peduncle_model->put (t, PeduncleModel::FCSTR, _fcstr);
+            _peduncle_model->put (t, PeduncleModel::FCSTRI, _fcstrI);
             _peduncle_model->put (t, PeduncleModel::TEST_IC, _test_ic);
             (*_peduncle_model)(t);
         }
@@ -585,12 +590,16 @@ public:
             (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
         }
         (*it)->leaf()->put(t, LeafModel::MGR, _MGR);
+        (*it)->leaf()->put(t, LeafModel::FCSTRL, _fcstrL);
+        (*it)->leaf()->put(t, LeafModel::FCSTRLLEN, _fcstrLlen);
         (*it)->leaf()->put(t, LeafModel::CULM_DEFICIT, _culm_deficit);
         (*it)->leaf()->put(t, LeafModel::CULM_STOCK, _culm_stock);
         (*it)->leaf()->put(t, LeafModel::SHEATH_LLL, _sheath_LLL);
         (*it)->leaf()->put(t, LeafModel::CULM_NBLEAF_PARAM2, _culm_nbleaf_param_2);
         (*it)->leaf()->put(t, LeafModel::PLASTO_NBLEAF_PARAM2, _plasto_nbleaf_param2);
         (*it)->internode()->put(t, InternodeModel::CULM_DEFICIT, _culm_deficit);
+        (*it)->internode()->put(t, InternodeModel::FCSTRI, _fcstrI);
+        (*it)->internode()->put(t, InternodeModel::FCSTRL, _fcstrL);
         (*it)->internode()->put(t, InternodeModel::CULM_STOCK, _culm_stock);
         (*it)->internode()->put(t, InternodeModel::CULM_PHASE, _culm_phase);
         (*it)->internode()->put(t, InternodeModel::PLASTO, _plasto);
@@ -604,7 +613,7 @@ public:
         if(i == 0) {
             (*it)->internode()->put(t, InternodeModel::PREVIOUS_IN_PREDIM, 0.);
         } else {
-            (*it)->internode()->put(t, InternodeModel::PREVIOUS_IN_PREDIM, (*previous_it)->internode()->get < double >(t, InternodeModel::INTERNODE_PREDIM));
+            (*it)->internode()->put(t, InternodeModel::PREVIOUS_IN_PREDIM, (*previous_it)->internode()->get < double >(t, InternodeModel::POT_PREDIM));
         }
         if (_is_first_culm) {
             if (i == 0) {
@@ -660,7 +669,7 @@ public:
             if (_index == 1 and (*it)->is_leaf_lig(t) and t != (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
                 _last_ligulated_leaf = i;
                 _last_ligulated_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
-                _last_ligulated_leaf_blade_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
+                _last_ligulated_leaf_sheath_len = (*it)->leaf()->get < double >(t, LeafModel::SHEATH_LEN);
             }
         } else {
             ++_nb_lig_tot;
@@ -669,10 +678,10 @@ public:
             }
         }
         if(i == 0) {
-            _sheath_LLL = ((*it)->leaf()->get < double >(t, LeafModel::LEAF_PREDIM)) - ((1 - (1 / _LL_BL))*(*it)->leaf()->get < double >(t, LeafModel::LEAF_PREDIM));
+            _sheath_LLL = ((1 - (1 / _LL_BL))*(*it)->leaf()->get < double >(t, LeafModel::LEAF_PREDIM));
         }
         if((*it)->is_leaf_lig(t)) {
-            _sheath_LLL = (*it)->leaf()->get < double >(t, LeafModel::LEAF_LEN) - (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
+            _sheath_LLL = (*it)->leaf()->get < double >(t, LeafModel::SHEATH_LEN);
         }
         _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
 
@@ -693,9 +702,8 @@ public:
                     t, PhytomerModel::INTERNODE_BIOMASS);
         _internode_len_sum += (*it)->get < double, InternodeModel >(
                     t, PhytomerModel::INTERNODE_LEN);
-        _leaf_blade_area_sum +=
-                (*it)->get < double, LeafModel >(
-                    t, PhytomerModel::LEAF_BLADE_AREA);
+
+        _leaf_blade_area_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_VISIBLE_BLADE_AREA);
 
         _realloc_biomass_sum +=
                 (*it)->get < double, LeafModel >(
@@ -802,7 +810,7 @@ public:
 
     double get_leaf_blade_area(double t, int index) const
     {
-        double blade_area = _phytomer_models[index]->leaf()->get < double >(t, LeafModel::BLADE_AREA);
+        double blade_area = _phytomer_models[index]->leaf()->get < double >(t, LeafModel::VISIBLE_BLADE_AREA);
         return blade_area;
     }
 
@@ -977,10 +985,10 @@ public:
         _deleted_senesc_dw = 0;
         _nb_lig_tot = 0;
         _kill_culm = false;
-        _last_ligulated_leaf_blade_len = 0;
+        _last_ligulated_leaf_sheath_len = 0;
         _deleted_realloc_biomass = 0;
         _culm_test_ic = 0;
-        _culm_stock = 0;
+        _culm_stock = 1;
         _culm_deficit = 0;
         _last_leaf_index = -1;
         _realloc_supply = 0;
@@ -1110,7 +1118,7 @@ private:
     double _deleted_senesc_dw;
     double _nb_lig_tot;
     bool _kill_culm;
-    double _last_ligulated_leaf_blade_len;
+    double _last_ligulated_leaf_sheath_len;
     double _deleted_realloc_biomass;
     double _culm_test_ic;
     double _culm_stock;
@@ -1160,6 +1168,9 @@ private:
     double _delta_t;
     double _ftsw;
     double _fcstr;
+    double _fcstrL;
+    double _fcstrI;
+    double _fcstrLlen;
     double _predim_leaf_on_mainstem;
     double _sla;
     double _test_ic;

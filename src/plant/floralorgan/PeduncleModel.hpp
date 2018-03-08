@@ -38,7 +38,7 @@ public:
     enum internals { IS_MATURE, LENGTH_PREDIM, DIAMETER_PREDIM, REDUCTION_INER, INER,
                      LENGTH, VOLUME, EXP_TIME, BIOMASS, DEMAND, LAST_DEMAND, FIRST_DAY };
     enum externals { PLANT_PHASE, CULM_PHASE, INTER_PREDIM, INTER_DIAM, FTSW,
-                     EDD, DELTA_T, PLASTO, LIGULO, FCSTR, TEST_IC };
+                     EDD, DELTA_T, PLASTO, LIGULO, FCSTR, FCSTRI, TEST_IC };
 
 
     PeduncleModel(int index, bool is_on_mainstem):
@@ -68,6 +68,7 @@ public:
         External(PLASTO, &PeduncleModel::_plasto);
         External(LIGULO, &PeduncleModel::_ligulo);
         External(FCSTR, &PeduncleModel::_fcstr);
+        External(FCSTRI, &PeduncleModel::_fcstrI);
         External(TEST_IC, &PeduncleModel::_test_ic);
     }
 
@@ -89,7 +90,7 @@ public:
 
             //ReductionINER
             if(_wbmodel == 2) {
-                _reduction_iner = std::max(1e-4, (std::min(1.,(((1. / _thresINER) * _fcstr) * (1. + (_p * _respINER)))))) * _test_ic;
+                _reduction_iner = std::max(1e-4, (std::min(1.,_fcstrI * (1. + (_p * _respINER)))) * _test_ic);
             } else {
                 if (_ftsw < _thresINER) {
                     _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw) * (1. + (_p * _respINER))) * _test_ic;
@@ -198,6 +199,7 @@ private:
     double _plasto;
     double _ligulo;
     double _fcstr;
+    double _fcstrI;
     double _test_ic;
 
 };

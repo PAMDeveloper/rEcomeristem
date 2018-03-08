@@ -400,6 +400,8 @@ public:
                                             _water_balance_model->get < double >(t, WaterBalanceModel::CSTR));
         _assimilation_model->put < double >(t, AssimilationModel::FCSTR,
                                             _water_balance_model->get < double >(t, WaterBalanceModel::FCSTR));
+        _assimilation_model->put < double >(t, AssimilationModel::FCSTRA,
+                                            _water_balance_model->get < double >(t, WaterBalanceModel::FCSTRA));
         _assimilation_model->put < double >(t, AssimilationModel::PAI, _leaf_blade_area_sum);
         _assimilation_model->put < double >(t, AssimilationModel::LEAFBIOMASS, _leaf_biomass_sum);
         _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, _internode_biomass_sum);
@@ -573,6 +575,9 @@ public:
             (*it)->put(t, CulmModel::DELTA_T, _deltaT);
             (*it)->put(t, CulmModel::FTSW, _water_balance_model->get < double >(t, WaterBalanceModel::FTSW));
             (*it)->put(t, CulmModel::FCSTR, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTR));
+            (*it)->put(t, CulmModel::FCSTRI, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTRI));
+            (*it)->put(t, CulmModel::FCSTRL, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTRL));
+            (*it)->put(t, CulmModel::FCSTRLLEN, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTRLLEN));
             (*it)->put < int > (t, CulmModel::PLANT_PHENOSTAGE, _phenostage);
             (*it)->put < int > (t, CulmModel::PLANT_APPSTAGE, _appstage);
             (*it)->put < int > (t, CulmModel::PLANT_LIGSTAGE, _ligstage);
@@ -648,8 +653,8 @@ public:
             _height += (*it)->get < double, CulmModel >(t, CulmModel::FIRST_LEAF_LEN);
             _height_ped = _height;
         } else {
-            double tmp = (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_BLADE_LEN);
-            _height += (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_BLADE_LEN);
+            double tmp = (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_SHEATH_LEN);
+            _height += (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_SHEATH_LEN);
             if (tmp > (*it)->get< double, CulmModel >(t, CulmModel::PEDUNCLE_LEN)) {
                 _height_ped += tmp;
             } else {
@@ -734,6 +739,7 @@ public:
 
         //Attributes for culmmodel
         _LL_BL = _LL_BL_init;
+        _phenostage = 4;
 
         //local init
         CulmModel* meristem = new CulmModel(1);

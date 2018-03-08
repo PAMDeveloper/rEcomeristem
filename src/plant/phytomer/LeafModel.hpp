@@ -33,13 +33,15 @@ public:
 
     enum internals { LEAF_PHASE, LIFE_SPAN, REDUCTION_LER, LEAF_LEN, LER,
                      EXP_TIME, LEAF_PREDIM, WIDTH,
-                     TT_LIG, BLADE_AREA, BIOMASS, DEMAND, LAST_DEMAND,
+                     TT_LIG, BLADE_AREA, VISIBLE_BLADE_AREA, BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      TIME_FROM_APP, LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS,
                      LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL_, PLASTO, PHYLLO, LIGULO, FIRST_DAY,
-                     BLADE_LEN, LAST_BLADE_AREA, SHEATH_LLL_CST, IS_APP, IS_DEAD, IS_FIRST };
+                     SHEATH_LEN, LAST_BLADE_AREA, LAST_VISIBLE_BLADE_AREA, SHEATH_LLL_CST,
+                     IS_APP, IS_DEAD, IS_FIRST, GROWTH_DELAY, POT_LER, RED_LENGTH, POT_PREDIM,
+                     WIDTH_LER, POT_LEN };
 
-    enum externals { DD, DELTA_T, FTSW, FCSTR,
+    enum externals { DD, DELTA_T, FTSW, FCSTR, FCSTRL, FCSTRLLEN,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
                      SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF, CULM_DEFICIT, CULM_STOCK, SHEATH_LLL,
                      CULM_NBLEAF_PARAM2, PLASTO_NBLEAF_PARAM2 };
@@ -68,6 +70,7 @@ public:
         Internal(WIDTH, &LeafModel::_width);
         Internal(TT_LIG, &LeafModel::_TT_Lig);
         Internal(BLADE_AREA, &LeafModel::_blade_area);
+        Internal(VISIBLE_BLADE_AREA, &LeafModel::_visible_blade_area);
         Internal(BIOMASS, &LeafModel::_biomass);
         Internal(REALLOC_BIOMASS, &LeafModel::_realloc_biomass);
         Internal(SENESC_DW, &LeafModel::_senesc_dw);
@@ -86,17 +89,26 @@ public:
         Internal(PHYLLO, &LeafModel::_phyllo);
         Internal(LIGULO, &LeafModel::_ligulo);
         Internal(FIRST_DAY, &LeafModel::_first_day);
-        Internal(BLADE_LEN, &LeafModel::_blade_len);
+        Internal(SHEATH_LEN, &LeafModel::_sheath_len);
         Internal(LAST_BLADE_AREA, &LeafModel::_last_blade_area);
+        Internal(LAST_VISIBLE_BLADE_AREA, &LeafModel::_last_visible_blade_area);
         Internal(SHEATH_LLL_CST, &LeafModel::_sheath_LLL_cst);
         Internal(IS_APP, &LeafModel::_is_app);
         Internal(IS_DEAD, &LeafModel::_is_dead);
         Internal(IS_FIRST, &LeafModel::_firstl);
+        Internal(GROWTH_DELAY, &LeafModel::_growth_delay);
+        Internal(POT_LER, &LeafModel::_pot_ler);
+        Internal(RED_LENGTH, &LeafModel::_red_length);
+        Internal(POT_PREDIM, &LeafModel::_pot_predim);
+        Internal(WIDTH_LER, &LeafModel::_width_ler);
+        Internal(POT_LEN, &LeafModel::_pot_len);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);
         External(TEST_IC, &LeafModel::_test_ic);
         External(FCSTR, &LeafModel::_fcstr);
+        External(FCSTRL, &LeafModel::_fcstrL);
+        External(FCSTRLLEN, &LeafModel::_fcstrLlen);
         External(LEAF_PREDIM_ON_MAINSTEM, &LeafModel::_predim_leaf_on_mainstem);
         External(PREVIOUS_LEAF_PREDIM, &LeafModel::_predim_previous_leaf);
         External(FTSW, &LeafModel::_ftsw);
@@ -155,23 +167,27 @@ public:
             if (_is_first_leaf and _is_on_mainstem) {
                 _predim = _Lef1;
             } else if (not _is_first_leaf and _is_on_mainstem) {
-                _predim =  _predim_leaf_on_mainstem + _MGR * _test_ic * _fcstr;
+                _predim =  _predim_leaf_on_mainstem + _MGR * _test_ic * _fcstr * _fcstrL;
             } else if (_is_first_leaf and not _is_on_mainstem) {
                 _predim = 0.5 * (_predim_leaf_on_mainstem + _Lef1) *
-                        _test_ic * _fcstr;
+                        _test_ic * _fcstr * _fcstrL;
             } else {
                 _predim = 0.5 * (_predim_leaf_on_mainstem +
                                  _predim_previous_leaf) +
-                        _MGR * _test_ic * _fcstr;
+                        _MGR * _test_ic * _fcstr * _fcstrL;
             }
+            _pot_predim = _predim;
         }
+
+        //growth deficit
+        _predim = std::max(0.,std::max(_len,_predim + _red_length));
 
         //ReductionLER
         if(t == _first_day && _is_first_leaf && _is_on_mainstem) {
             _reduction_ler = 1.;
         } else {
             if(_wbmodel == 2) {
-                _reduction_ler = std::max(1e-4, (std::min(1.,((1-((1-_fcstr) * _thresLER)) * (1. + (_p * _respLER)))))* _test_ic);
+                _reduction_ler = std::max(1e-4, (std::min(1.,_fcstrL * (1. + (_p * _respLER))))* _test_ic);
             } else {
                 if (_ftsw < _thresLER) {
                     _reduction_ler = std::max(1e-4, ((1. / _thresLER) * _ftsw) * (1. + (_p * _respLER))* _test_ic);
@@ -198,18 +214,31 @@ public:
                 _ler = (_sheath_LLL_cst/time)*_reduction_ler;
                 _exp_time = (_sheath_LLL_cst-_len)/_ler;
             }
+            _width_ler = _ler;
         } else {
             double time = (((_index-tmp2)*_ligulo_init)+(tmp2*_ligulo))-(((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo));
             _ler = ((_predim-_sheath_LLL_cst)/time)*_reduction_ler;
+            _width_ler = ((_pot_predim-_sheath_LLL_cst)/time)*_reduction_ler;
             _exp_time = (_predim-_len)/_ler;
+        }
+
+        //growth deficit
+        _pot_ler = _ler / _reduction_ler;
+        _growth_delay = std::min(_delta_t, _exp_time * _reduction_ler) * (-1. + _reduction_ler);
+        if((_fcstrL < 1 or _fcstr < 1)) {
+            _red_length = (_growth_delay * _pot_ler) * (1-_fcstrLlen);
+        } else {
+            _red_length = 0;
         }
 
         //LeafLen
         if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
             if(_leaf_phase == LeafModel::INITIAL) {
                 _len = std::min(_sheath_LLL_cst, _len+_ler*std::min(_delta_t, _exp_time));
+                _pot_len = _len;
             } else {
                 _len = std::min(_predim, _len+_ler*std::min(_delta_t, _exp_time));
+                _pot_len = std::min(_pot_predim, _pot_len+_width_ler*std::min(_delta_t, _exp_time));
             }
         }
 
@@ -217,7 +246,7 @@ public:
         step_state();
 
         //Width
-        _width = _len * _WLR / _LL_BL;
+        _width = _pot_len * _WLR / _LL_BL;
 
         //ThermalTimeSinceLigulation
         _is_lig_t = false;
@@ -233,15 +262,30 @@ public:
             _TT_Lig += _delta_t;
         }
 
-        //BladeArea
+        //Sheath length
+        _sheath_len = (1 - (1 / _LL_BL)) * _len;
+
+        //BladeArea and VisibleBladeArea : consider only leaves already appeared for PAI
+        _blade_area = _len * _width * _allo_area / _LL_BL;
         if (not _is_lig || _is_lig_t) {
-            _blade_area = _len * _width * _allo_area / _LL_BL;
-            if (_is_lig_t) {
+            if(_leaf_phase == LeafModel::INITIAL) {
+                _visible_blade_area = 0;
+            } else {
+                if(_sheath_len < _sheath_LLL_cst) {
+                    _visible_blade_area = std::max(0.,_len - _sheath_LLL_cst) * _width * _allo_area;
+                } else {
+                    _visible_blade_area = _blade_area;
+                }
+            }
+            if(_is_lig_t) {
                 _last_blade_area = _blade_area;
+                _last_visible_blade_area = _visible_blade_area;
             }
         } else {
             _blade_area = std::max(0.,_last_blade_area * (1 - _TT_Lig / _life_span));
+            _visible_blade_area = _blade_area;
         }
+
 
         //Biomass
         _old_biomass = _biomass;
@@ -294,8 +338,6 @@ public:
             }
         }
 
-        _blade_len = (1 - (1 / _LL_BL)) * _len;
-
         if(_biomass == 0) {
             _is_dead = true;
             _leaf_phase = LeafModel::DEAD;
@@ -304,7 +346,6 @@ public:
         if(_demand < 0) {
             _demand = _demand;
         }
-
     }
 
     void step_state() {
@@ -367,6 +408,7 @@ public:
         _is_lig = false;
         _is_lig_t = false;
         _blade_area = 0;
+        _visible_blade_area = 0;
         _biomass = 0;
         _old_biomass = 0;
         _senesc_dw = 0;
@@ -376,12 +418,19 @@ public:
         _time_from_app = 0;
         _lig_t = 0;
         _last_blade_area = 0;
+        _last_visible_blade_area = 0;
         _last_leaf_biomass = 0;
         _sla_cste = 0;
-        _blade_len = 0;
+        _sheath_len = 0;
         _sheath_LLL_cst = 0;
         _is_dead = false;
         _firstl = (_index == 1);
+        _pot_ler = 0;
+        _growth_delay = 0;
+        _red_length = 0;
+        _pot_predim = 0;
+        _width_ler = 0;
+        _pot_len = 0;
     }
 
 private:
@@ -427,6 +476,7 @@ private:
     bool _is_lig_t;
     bool _is_app;
     double _blade_area;
+    double _visible_blade_area;
     double _biomass;
     double _realloc_biomass;
     double _old_biomass;
@@ -438,17 +488,25 @@ private:
     double _sla_cste;
     double _lig_t;
     double _last_blade_area;
+    double _last_visible_blade_area;
     double _last_leaf_biomass;
-    double _blade_len;
+    double _sheath_len;
     double _sheath_LLL_cst;
     bool _is_dead;
     bool _firstl;
+    double _pot_ler;
+    double _growth_delay;
+    double _red_length;
+    double _pot_predim;
+    double _width_ler;
+    double _pot_len;
 
     // external variables
     double _MGR;
     double _ftsw;
     plant::plant_state _plant_state;
     double _fcstr;
+    double _fcstrL;
     double _predim_leaf_on_mainstem;
     double _predim_previous_leaf;
     double _test_ic;
@@ -461,6 +519,7 @@ private:
     double _sheath_LLL;
     double _culm_nbleaf_param2;
     double _plasto_nbleaf_param2;
+    double _fcstrLlen;
 };
 
 } // namespace model
