@@ -256,7 +256,6 @@ public:
         _density_IN2 = parameters.get("density_IN2");
         _coeff_species = parameters.get("coeff_species");
         _nb_leaf_stem_elong = parameters.get("nb_leaf_stem_elong");
-        _nb_leaf_max_after_pi = parameters.get("nb_leaf_max_after_PI");
         _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
         _wbmodel = parameters.get("wbmodel");
         _maxleaves = parameters.get("maxleaves");
@@ -293,7 +292,6 @@ private:
     bool _is_on_mainstem;
 
     // parameters
-    double _nb_leaf_max_after_pi;
     double _phenostage_pre_flo_to_flo;
     double _nb_leaf_param2;
     double _slope_length_IN;

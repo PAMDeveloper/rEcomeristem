@@ -39,12 +39,12 @@ public:
                      LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL_, PLASTO, PHYLLO, LIGULO, FIRST_DAY,
                      SHEATH_LEN, LAST_BLADE_AREA, LAST_VISIBLE_BLADE_AREA, SHEATH_LLL_CST,
                      IS_APP, IS_DEAD, IS_FIRST, GROWTH_DELAY, POT_LER, RED_LENGTH, POT_PREDIM,
-                     WIDTH_LER, POT_LEN };
+                     WIDTH_LER, POT_LEN, BLADE_LEN };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR, FCSTRL, FCSTRLLEN,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
                      SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF, CULM_DEFICIT, CULM_STOCK, SHEATH_LLL,
-                     CULM_NBLEAF_PARAM2, PLASTO_NBLEAF_PARAM2 };
+                     CULM_NBLEAF_PARAM2, PLASTO_NBLEAF_PARAM2, PREDIM_APP_LEAF_MS };
 
 
     virtual ~LeafModel()
@@ -102,6 +102,7 @@ public:
         Internal(POT_PREDIM, &LeafModel::_pot_predim);
         Internal(WIDTH_LER, &LeafModel::_width_ler);
         Internal(POT_LEN, &LeafModel::_pot_len);
+        Internal(BLADE_LEN, &LeafModel::_blade_len);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);
@@ -111,6 +112,7 @@ public:
         External(FCSTRLLEN, &LeafModel::_fcstrLlen);
         External(LEAF_PREDIM_ON_MAINSTEM, &LeafModel::_predim_leaf_on_mainstem);
         External(PREVIOUS_LEAF_PREDIM, &LeafModel::_predim_previous_leaf);
+        External(PREDIM_APP_LEAF_MS, &LeafModel::_predim_app_leaf_on_mainstem);
         External(FTSW, &LeafModel::_ftsw);
         External(DD, &LeafModel::_dd);
         External(DELTA_T, &LeafModel::_delta_t);
@@ -169,7 +171,7 @@ public:
             } else if (not _is_first_leaf and _is_on_mainstem) {
                 _predim =  _predim_leaf_on_mainstem + _MGR * _test_ic * _fcstr * _fcstrL;
             } else if (_is_first_leaf and not _is_on_mainstem) {
-                _predim = 0.5 * (_predim_leaf_on_mainstem + _Lef1) *
+                _predim = 0.5 * (_predim_app_leaf_on_mainstem + _Lef1) *
                         _test_ic * _fcstr * _fcstrL;
             } else {
                 _predim = 0.5 * (_predim_leaf_on_mainstem +
@@ -262,8 +264,9 @@ public:
             _TT_Lig += _delta_t;
         }
 
-        //Sheath length
+        //Sheath and blade length
         _sheath_len = (1 - (1 / _LL_BL)) * _len;
+        _blade_len = _len - _sheath_len;
 
         //BladeArea and VisibleBladeArea : consider only leaves already appeared for PAI
         _blade_area = _len * _width * _allo_area / _LL_BL;
@@ -500,6 +503,8 @@ private:
     double _pot_predim;
     double _width_ler;
     double _pot_len;
+    double _blade_len;
+
 
     // external variables
     double _MGR;
@@ -509,6 +514,7 @@ private:
     double _fcstrL;
     double _predim_leaf_on_mainstem;
     double _predim_previous_leaf;
+    double _predim_app_leaf_on_mainstem;
     double _test_ic;
     double _dd;
     double _delta_t;

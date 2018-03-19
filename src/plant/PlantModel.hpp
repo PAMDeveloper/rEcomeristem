@@ -56,7 +56,8 @@ public:
                      TILLERNB_1, NBLEAF, BIOMAERO2, BIOMLEAFMAINSTEM, BIOMINMAINSTEM, AREALFEL,
                      MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK,
                      DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW,
-                     PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX, MS_INDEX, DELETED_LEAF_BIOMASS, VISI };
+                     PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
+                     MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -137,6 +138,7 @@ public:
         Internal( MS_INDEX, &PlantModel::_ms_index);
         Internal( DELETED_LEAF_BIOMASS, &PlantModel::_deleted_leaf_biomass);
         Internal( VISI, &PlantModel::_visi);
+        Internal( PREDIM_APP_LEAF_MS, &PlantModel::_predim_app_leaf_on_mainstem);
     }
 
     virtual ~PlantModel()
@@ -336,10 +338,10 @@ public:
         std::deque < CulmModel* >::const_iterator mainstem = _culm_models.begin();
         int nb_leaves = (*mainstem)->get_phytomer_number();
         if ( _phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _stock > 0) {
-            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves + 2 - _nb_leaf_param2);
+            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves + 1 - _nb_leaf_param2);
             _MGR = _MGR * _coeff_MGR_PI;
         } else if ( _phenostage > _nb_leaf_param2 and _bool_crossed_plasto > 0 and nb_leaves < _maxleaves + 1) {
-            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (std::min(nb_leaves, (int)(_maxleaves - 1)) + 2 - _nb_leaf_param2);
+            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (std::min(nb_leaves, (int)_maxleaves) - _nb_leaf_param2);
         }
 
         //Tillering
@@ -582,6 +584,7 @@ public:
             (*it)->put < int > (t, CulmModel::PLANT_APPSTAGE, _appstage);
             (*it)->put < int > (t, CulmModel::PLANT_LIGSTAGE, _ligstage);
             (*it)->put(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM, _predim_leaf_on_mainstem);
+            (*it)->put(t, CulmModel::PREDIM_APP_LEAF_MS, _predim_app_leaf_on_mainstem);
             (*it)->put(t, CulmModel::SLA, _sla);
             (*it)->put < plant::plant_state >(t, CulmModel::PLANT_STATE, _plant_state);
             (*it)->put < plant::plant_phase >(t, CulmModel::PLANT_PHASE, _plant_phase);
@@ -614,6 +617,7 @@ public:
 
         it = _culm_models.begin();
         _predim_leaf_on_mainstem = (*it)->get < double, CulmModel > (t, CulmModel::STEM_LEAF_PREDIM);
+        _predim_app_leaf_on_mainstem = (*it)->get < double, CulmModel > (t, CulmModel::STEM_APP_LEAF_PREDIM);
         _sheath_LLL = (*it)->get < double, CulmModel >(t, CulmModel::SHEATH_LLL);
         _lig_index = (*it)->get < double, CulmModel >(t, CulmModel::LIG_INDEX);
 
@@ -718,7 +722,6 @@ public:
         _LL_BL_init = _parameters.get("LL_BL_init");
         _nb_leaf_param2 = _parameters.get("nb_leaf_param2");
         _slope_LL_BL_at_PI = _parameters.get("slope_LL_BL_at_PI");
-        _nb_leaf_max_after_pi = _parameters.get("nb_leaf_max_after_PI");
         _nb_leaf_enabling_tillering = _parameters.get("nb_leaf_enabling_tillering");
         _coeff_MGR_PI = _parameters.get("coef_MGR_PI");
         _nb_leaf_stem_elong = _parameters.get("nb_leaf_stem_elong");
@@ -847,6 +850,7 @@ public:
         _ligstage = 0;
         _visi = 0;
         _ms_index = 1;
+        _predim_app_leaf_on_mainstem = 0;
     }
 
 private:
@@ -865,7 +869,6 @@ private:
     double _nbleaf_enabling_tillering;
     double _nb_leaf_param2;
     double _slope_LL_BL_at_PI;
-    double _nb_leaf_max_after_pi;
     double _LL_BL_init;
     double _nb_leaf_stem_elong;
     double _phenostage_pre_flo_to_flo;
@@ -976,6 +979,7 @@ private:
     double _lig_index;
     int _ms_index;
     double _visi;
+    double _predim_app_leaf_on_mainstem;
 
     //internal states
     plant::plant_state _plant_state;

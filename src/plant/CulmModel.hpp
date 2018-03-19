@@ -64,12 +64,12 @@ public:
                      CULM_PHENO_STAGE, CULM_APP_STAGE, CULM_LIG_STAGE,
                      LIG_INDEX, MS_INDEX_CST, CULM_NBLEAF_PARAM2, CULM_PHENO_STAGE_CSTE,
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, PLASTO, PHYLLO, LIGULO, TT_PLASTO,
-                     TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2 };
+                     TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2, STEM_APP_LEAF_PREDIM };
 
     enum externals { PLANT_BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, FCSTRI, FCSTRL, FCSTRLLEN,
                      PLANT_PHENOSTAGE, PLANT_APPSTAGE, PLANT_LIGSTAGE, PREDIM_LEAF_ON_MAINSTEM, SLA,
                      PLANT_PHASE, PLANT_STATE, TEST_IC, PLANT_STOCK, PLANT_DEFICIT, ASSIM, MGR,
-                     LL_BL,IS_FIRST_DAY_PI, MS_PHYT_INDEX, MS_SHEATH_LLL };
+                     LL_BL,IS_FIRST_DAY_PI, MS_PHYT_INDEX, MS_SHEATH_LLL, PREDIM_APP_LEAF_MS };
 
 
     CulmModel(int index):
@@ -140,6 +140,7 @@ public:
         Internal(DEL_LEAF_BIOM, &CulmModel::_deleted_leaf_biomass);
         Internal(IS_COMPUTED, &CulmModel::_is_computed);
         Internal(PLASTO_NBLEAF_PARAM2, &CulmModel::_plasto_nbleaf_param2);
+        Internal(STEM_APP_LEAF_PREDIM, &CulmModel::_stem_app_leaf_predim);
 
         //    externals
         External(PLANT_BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -167,6 +168,7 @@ public:
         External(IS_FIRST_DAY_PI, &CulmModel::_is_first_day_pi);
         External(MS_SHEATH_LLL, &CulmModel::_ms_sheath_LLL);
         External(MS_PHYT_INDEX, &CulmModel::_ms_phyt_index);
+        External(PREDIM_APP_LEAF_MS, &CulmModel::_predim_app_leaf_on_mainstem);
     }
 
     virtual ~CulmModel()
@@ -597,6 +599,7 @@ public:
         (*it)->leaf()->put(t, LeafModel::SHEATH_LLL, _sheath_LLL);
         (*it)->leaf()->put(t, LeafModel::CULM_NBLEAF_PARAM2, _culm_nbleaf_param_2);
         (*it)->leaf()->put(t, LeafModel::PLASTO_NBLEAF_PARAM2, _plasto_nbleaf_param2);
+        (*it)->leaf()->put(t, LeafModel::PREDIM_APP_LEAF_MS, _predim_app_leaf_on_mainstem);
         (*it)->internode()->put(t, InternodeModel::CULM_DEFICIT, _culm_deficit);
         (*it)->internode()->put(t, InternodeModel::FCSTRI, _fcstrI);
         (*it)->internode()->put(t, InternodeModel::FCSTRL, _fcstrL);
@@ -662,6 +665,9 @@ public:
 
             if (_index == 1) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
+                if((*it)->leaf()->get < bool >(t, LeafModel::IS_APP)) {
+                    _stem_app_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
+                }
                 if(!((*it)->is_leaf_dead(t)) and (*it)->is_leaf_lig(t)) {
                     _last_leaf_blade_area = (*it)->leaf()->get < double >(t, LeafModel::LAST_BLADE_AREA);
                 }
@@ -947,7 +953,6 @@ public:
         first_day = t;
 
         //parameters
-        _nb_leaf_max_after_pi = _parameters.get("nb_leaf_max_after_PI");
         _phenostage_pre_flo_to_flo  = _parameters.get("phenostage_PRE_FLO_to_FLO");
         _coeff_pi_lag = _parameters.get("coeff_PI_lag");
         _realocationCoeff = _parameters.get("realocationCoeff");
@@ -1036,6 +1041,7 @@ public:
         _culm_DD_ligulo = 0;
         _deleted_leaf_biomass = 0;
         _is_computed = false;
+        _stem_app_leaf_predim = 0;
     }
 
 private:
@@ -1056,7 +1062,6 @@ private:
 
 
     //parameters
-    double _nb_leaf_max_after_pi;
     double _phenostage_pre_flo_to_flo;
     double _coeff_pi_lag;
     double _nb_leaf_param2;
@@ -1150,6 +1155,7 @@ private:
     double _culm_DD_ligulo;
     double _deleted_leaf_biomass;
     bool _is_computed;
+    double _stem_app_leaf_predim;
 
     //    externals
     int _plant_phenostage;
@@ -1172,6 +1178,7 @@ private:
     double _fcstrI;
     double _fcstrLlen;
     double _predim_leaf_on_mainstem;
+    double _predim_app_leaf_on_mainstem;
     double _sla;
     double _test_ic;
     double _plant_stock;
