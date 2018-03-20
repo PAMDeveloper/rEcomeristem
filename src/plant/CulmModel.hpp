@@ -199,8 +199,6 @@ public:
     }
 
     void step_state(double t) {
-        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
-
         if(_plant_phase == plant::PI && _lag == false && _is_lagged == false) {
             _lag = true;
             _is_lagged = true;
@@ -264,7 +262,6 @@ public:
                 _peduncle_model->init(t, _parameters);
                 _culm_phase = culm::PRE_FLO;
                 _culm_phenostage_at_pre_flo = _culm_phenostage;
-                std::cout << date << " : preflo : " << _index << std::endl;
             }
             break;
         }
@@ -272,7 +269,6 @@ public:
             _last_phase = _culm_phase ;
             if(_culm_ligstage == _culm_maxleaves + 2) { //+1 to pre_flo; +1 to end peduncle growth)
                 _culm_phase = culm::FLO;
-                std::cout << date << " : flo : " << _index << std::endl;
             }
             break;
         }
