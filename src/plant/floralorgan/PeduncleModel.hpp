@@ -99,7 +99,7 @@ public:
                 }
             }
 
-            _iner = _length_predim * _reduction_iner / (3 * _ligulo);
+            _iner = _length_predim * _reduction_iner / (_ligulo);
 
             //Length and Exp time
             if (t == _first_day) {

@@ -64,7 +64,8 @@ public:
                      CULM_PHENO_STAGE, CULM_APP_STAGE, CULM_LIG_STAGE,
                      LIG_INDEX, MS_INDEX_CST, CULM_NBLEAF_PARAM2, CULM_PHENO_STAGE_CSTE,
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, PLASTO, PHYLLO, LIGULO, TT_PLASTO,
-                     TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2, STEM_APP_LEAF_PREDIM };
+                     TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2,
+                     STEM_APP_LEAF_PREDIM, CULM_MAXLEAVES };
 
     enum externals { PLANT_BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, FCSTRI, FCSTRL, FCSTRLLEN,
                      PLANT_PHENOSTAGE, PLANT_APPSTAGE, PLANT_LIGSTAGE, PREDIM_LEAF_ON_MAINSTEM, SLA,
@@ -141,6 +142,7 @@ public:
         Internal(IS_COMPUTED, &CulmModel::_is_computed);
         Internal(PLASTO_NBLEAF_PARAM2, &CulmModel::_plasto_nbleaf_param2);
         Internal(STEM_APP_LEAF_PREDIM, &CulmModel::_stem_app_leaf_predim);
+        Internal(CULM_MAXLEAVES, &CulmModel::_culm_maxleaves);
 
         //    externals
         External(PLANT_BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -191,13 +193,13 @@ public:
     bool is_phytomer_creatable() {
         return (_culm_phase == culm::VEGETATIVE
                 || _culm_phase == culm::ELONG
-                || _culm_phase == culm::PI
                 )
                 && (get_phytomer_number() < _maxleaves)
                 && (_culm_deficit + _culm_stock >= 0);
     }
 
     void step_state(double t) {
+        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
 
         if(_plant_phase == plant::PI && _lag == false && _is_lagged == false) {
             _lag = true;
@@ -241,6 +243,7 @@ public:
             break;
         }
         case culm::PI: {
+            _culm_maxleaves = _phytomer_models.size();
             _last_phase = _culm_phase ;
             if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE) {
                 if( _plant_phase == plant::PI) {
@@ -252,7 +255,7 @@ public:
                     }
                 }
             }
-            if (_culm_ligstage == _maxleaves + 1) {
+            if (_culm_ligstage == _culm_maxleaves + 1) {
                 if(_is_first_culm and _plant_phase == plant::PI) {
                     return;
                 }
@@ -261,13 +264,15 @@ public:
                 _peduncle_model->init(t, _parameters);
                 _culm_phase = culm::PRE_FLO;
                 _culm_phenostage_at_pre_flo = _culm_phenostage;
+                std::cout << date << " : preflo : " << _index << std::endl;
             }
             break;
         }
         case culm::PRE_FLO: {
             _last_phase = _culm_phase ;
-            if(_culm_ligstage == _maxleaves + 4) { //+1 to pre_flo; +3 to end peduncle growth)
+            if(_culm_ligstage == _culm_maxleaves + 2) { //+1 to pre_flo; +1 to end peduncle growth)
                 _culm_phase = culm::FLO;
+                std::cout << date << " : flo : " << _index << std::endl;
             }
             break;
         }
@@ -723,13 +728,21 @@ public:
     {
         if (t != _parameters.beginDate) {
             int index;
+            bool last_phytomer = true;
             if (_phytomer_models.empty()) {
                 index = 1;
             } else {
+                if(_is_first_culm && _plant_phenostage == _maxleaves) {
+                    last_phytomer = true;
+                } else if(!_is_first_culm && _plant_phenostage == _maxleaves + 1) {
+                    last_phytomer = true;
+                } else {
+                    last_phytomer = false;
+                }
                 index = _phytomer_models.back()->get_index() + 1;
             }
 
-            PhytomerModel* phytomer = new PhytomerModel(index, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL);
+            PhytomerModel* phytomer = new PhytomerModel(index, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL, last_phytomer);
             setsubmodel(PHYTOMERS, phytomer);
             phytomer->init(t, _parameters);
             _phytomer_models.push_back(phytomer);
@@ -922,14 +935,14 @@ public:
             _phyllo = _phyllo_init;
             _ligulo = _ligulo_init;
         }
-        PhytomerModel* first_phytomer = new PhytomerModel(1, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL);
+        PhytomerModel* first_phytomer = new PhytomerModel(1, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL, false);
         setsubmodel(PHYTOMERS, first_phytomer);
         first_phytomer->init(t, parameters);
         _phytomer_models.push_back(first_phytomer);
         if(_is_first_culm) {
-            PhytomerModel* second_phytomer = new PhytomerModel(2, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL);
-            PhytomerModel* third_phytomer = new PhytomerModel(3, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL);
-            PhytomerModel* fourth_phytomer = new PhytomerModel(4, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL);
+            PhytomerModel* second_phytomer = new PhytomerModel(2, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL, false);
+            PhytomerModel* third_phytomer = new PhytomerModel(3, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL, false);
+            PhytomerModel* fourth_phytomer = new PhytomerModel(4, _is_first_culm, _plasto, _phyllo, _ligulo, _LL_BL, false);
 
             setsubmodel(PHYTOMERS, second_phytomer);
             second_phytomer->init(t, parameters);
@@ -1042,6 +1055,7 @@ public:
         _deleted_leaf_biomass = 0;
         _is_computed = false;
         _stem_app_leaf_predim = 0;
+        _culm_maxleaves = 0;
     }
 
 private:
@@ -1156,6 +1170,7 @@ private:
     double _deleted_leaf_biomass;
     bool _is_computed;
     double _stem_app_leaf_predim;
+    int _culm_maxleaves;
 
     //    externals
     int _plant_phenostage;

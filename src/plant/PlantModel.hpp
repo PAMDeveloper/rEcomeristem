@@ -215,7 +215,7 @@ public:
             break;
         }
         case plant::PRE_FLO: {
-            if (_ligstage == _maxleaves + 4) { //+1 to pre_flo; +3 to end peduncle growth
+            if (_ligstage == _maxleaves + 2) { //+1 to pre_flo; +1 to end peduncle growth
                 _plant_phase = plant::FLO;
                 _phenostage_at_flo = _phenostage;
             }
@@ -345,7 +345,6 @@ public:
         }
 
         //Tillering
-        double P = _parameters.get(t).P;
         double ic = _stock_model->get < double >(t-1, PlantStockModel::IC);
 
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();

@@ -45,9 +45,10 @@ public:
                      BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE, LIGSTAGE,
                      TEST_IC, FCSTR, FCSTRI, FCSTRL, CULM_NBLEAF_PARAM2 };
 
-    InternodeModel(int index, bool is_on_mainstem):
+    InternodeModel(int index, bool is_on_mainstem, bool is_last_internode):
         _index(index),
-        _is_on_mainstem(is_on_mainstem)
+        _is_on_mainstem(is_on_mainstem),
+        _is_last_internode(is_last_internode)
     {
         Internal(INTERNODE_PHASE, &InternodeModel::_inter_phase);
         Internal(INTERNODE_PHASE_1, &InternodeModel::_inter_phase_1);
@@ -130,7 +131,12 @@ public:
         }
 
         //INER
-        _iner = _inter_predim * _reduction_iner / (3*_cste_ligulo);
+        if(_is_last_internode) {
+            _iner = _inter_predim * _reduction_iner / (_cste_ligulo);
+
+        } else {
+            _iner = _inter_predim * _reduction_iner / (3*_cste_ligulo);
+        }
 
         //growth deficit
         _pot_iner = _iner / _reduction_iner;
@@ -288,8 +294,8 @@ private:
     ecomeristem::ModelParameters _parameters;
     // attributes
     int _index;
-    bool _is_first_internode;
     bool _is_on_mainstem;
+    bool _is_last_internode;
 
     // parameters
     double _phenostage_pre_flo_to_flo;
