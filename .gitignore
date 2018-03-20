@@ -10,3 +10,5 @@ src-i386/
 .Rproj.user
 src/recomeristem.dll
 clusterlog.txt
+src/RcppExports.cpp
+R/RcppExports.R
