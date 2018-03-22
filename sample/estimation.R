@@ -2,15 +2,10 @@
 #Authors : Florian Larue, Gregory Beurier, Lauriane Rouan, Delphine Luquet
 #-- (PAM, AGAP, BIOS, CIRAD)
 ###Set informations for parameter estimation###
-<<<<<<< HEAD
 PPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G13"
 VPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G13"
 MPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G13"
-=======
-PPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G15"
-VPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G15"
-MPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G15"
->>>>>>> c7106e9815edbf8fdd63a9d9affb0d5307143c1e
+
 VName <- "vobs_moy.txt"
 VECName <- "vobs_et.txt"
 #Temoin
