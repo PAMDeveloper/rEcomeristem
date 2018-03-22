@@ -87,10 +87,10 @@ public:
             if(_water_supply == 1) {
                 _stressdays = std::min(10.,_stressdays + 1);
                 _psib = (pot/10)*_stressdays;
-                _fcstrA = std::min(1.,(stressBP-_psib)/(stressBP-thresAssim));
-                _fcstrL = std::min(1.,(stressBP-_psib)/(stressBP-thresLER));
-                _fcstrI = std::min(1.,(stressBP-_psib)/(stressBP-thresINER));
-                _fcstrLlen = std::min(1.,(stressBP-_psib)/(stressBP-thresLEN));
+                _fcstrA = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresAssim)));
+                _fcstrL = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresLER)));
+                _fcstrI = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresINER)));
+                _fcstrLlen = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresLEN)));
             } else {
                 _fcstr = 1;
                 _fcstrA = 1;
