@@ -129,6 +129,7 @@ public:
                 _demand = 0;
             }
         }
+        _demand = 0;
     }
 
     void init(double t, const ecomeristem::ModelParameters&  parameters )

@@ -147,6 +147,9 @@ public:
             _time_from_app = 0;
             _last_blade_area = 0;
             _last_leaf_biomass = 0;
+            _visible_blade_area = 0;
+            _senesc_dw = 0;
+            _blade_len = 0;
             _is_lig = _is_lig;
             _is_app = _is_app;
             return;

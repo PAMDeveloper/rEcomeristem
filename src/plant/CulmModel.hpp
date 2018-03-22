@@ -324,6 +324,10 @@ public:
             _culm_phase = culm::DEAD;
             _leaf_delay = 0;
             _kill_culm = true;
+            _panicle_day_demand = 0;
+            _peduncle_day_demand = 0;
+            _deleted_senesc_dw = 0;
+
             auto it = _phytomer_models.begin();
             while (it != _phytomer_models.end()) {
                 (*it)->kill_leaf(t);

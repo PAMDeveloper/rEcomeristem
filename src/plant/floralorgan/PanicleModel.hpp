@@ -76,6 +76,8 @@ public:
 
             // Panicle Filled Grain Nb
             _filled_grain_nb = (_fertile_grain_nb * _weight) / (_fertile_grain_nb * _gdw);
+        } else {
+            _day_demand = 0;
         }
 
         if(!_preflo_passed) {

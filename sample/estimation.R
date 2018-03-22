@@ -2,23 +2,23 @@
 #Authors : Florian Larue, Gregory Beurier, Lauriane Rouan, Delphine Luquet
 #-- (PAM, AGAP, BIOS, CIRAD)
 ###Set informations for parameter estimation###
-PPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G7"
-VPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G7"
-MPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G7"
+PPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G13"
+VPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G13"
+MPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G13"
 VName <- "vobs_moy.txt"
 VECName <- "vobs_et.txt"
 #Temoin
 ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init", "ligulo_init", "coef_MGR_PI", "slope_length_IN", "density_IN2", "coef_plasto_PI", "coef_phyllo_PI", "coef_ligulo_PI", "slope_LL_BL_at_PI")
-MinValue <- c(3, 0.5, 8, 20, 20, 20, -0.5, 0.5, 0.1, 1, 1, 1, 0.0)
-MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 2.5, 2.5, 2.5, 0.4)
+MinValue <- c(3, 0.5, 6, 15, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
+MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
 ##Stress
 #ParamOfInterest <- c("thresAssim","thresINER","thresLER","thresLEN","stressBP")
 #MinValue <- c(0,0,0,0,5)
 #MaxValue <- c(5,5,5,5,20)
-coefIncrease <- 10
+coefIncrease <- 20
 Optimizer <- "D" #(D = DE, G = RGenoud)
 RmseM <- "RECC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef)
-MaxIter <- 3000
+MaxIter <- 5000
 Penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
 SolTol <- 0.01 #will be multiplied by the number of observed variables
 ACluster <- TRUE  #parallel for machines with at least 4 cores
@@ -395,7 +395,7 @@ fnList <- function() {
 }
 
 #Optimisation run
-set.seed(224)
+#set.seed(224)
 if(ACluster && detectCores() >= 4) {
   nbCores <- detectCores() - 2
   cl <- makeCluster(nbCores, outfile="clusterlog.txt")
