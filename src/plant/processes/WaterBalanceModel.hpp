@@ -33,7 +33,7 @@ namespace model {
 class WaterBalanceModel : public AtomicModel < WaterBalanceModel >
 {
 public:
-    enum internals { CSTR, FCSTR, FTSW, TRANSPIRATION, SWC, PSIB };
+    enum internals { CSTR, FCSTR, FCSTRA, FCSTRI, FCSTRL, FCSTRLLEN, FTSW, TRANSPIRATION, SWC, PSIB };
     enum externals { INTERC };
 
 
@@ -41,6 +41,10 @@ public:
         //    computed variables
         Internal(CSTR, &WaterBalanceModel::_cstr);
         Internal(FCSTR, &WaterBalanceModel::_fcstr);
+        Internal(FCSTRA, &WaterBalanceModel::_fcstrA);
+        Internal(FCSTRI, &WaterBalanceModel::_fcstrI);
+        Internal(FCSTRL, &WaterBalanceModel::_fcstrL);
+        Internal(FCSTRLLEN, &WaterBalanceModel::_fcstrLlen);
         Internal(FTSW, &WaterBalanceModel::_ftsw);
         Internal(TRANSPIRATION, &WaterBalanceModel::_transpiration);
         Internal(SWC, &WaterBalanceModel::_swc);
@@ -83,9 +87,15 @@ public:
             if(_water_supply == 1) {
                 _stressdays = std::min(10.,_stressdays + 1);
                 _psib = (pot/10)*_stressdays;
-                _fcstr = std::min(1.,(18-_psib)/(18-stressBP));
+                _fcstrA = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresAssim)));
+                _fcstrL = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresLER)));
+                _fcstrI = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresINER)));
+                _fcstrLlen = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresLEN)));
             } else {
                 _fcstr = 1;
+                _fcstrA = 1;
+                _fcstrI = 1;
+                _fcstrL = 1;
                 _stressdays = 0;
             }
         }
@@ -102,6 +112,9 @@ public:
         Kcpot = parameters.get("Kcpot");
         Density = parameters.get("density");
         thresLER = parameters.get("thresLER");
+        thresINER = parameters.get("thresINER");
+        thresAssim = parameters.get("thresAssim");
+        thresLEN = parameters.get("thresLEN");
         stressBP = parameters.get("stressBP");
         pot = parameters.get("psib");
 
@@ -114,6 +127,10 @@ public:
         _transpiration = 0;
         _psib = 0;
         _stressdays = 0;
+        _fcstrA = 1;
+        _fcstrL = 1;
+        _fcstrI = 1;
+        _fcstrLlen = 1;
     }
 
 private:
@@ -126,6 +143,9 @@ private:
     double ThresTransp;
     //Field WB
     double thresLER;
+    double thresAssim;
+    double thresINER;
+    double thresLEN;
     double pot;
     double _wbmodel;
     double stressBP;
@@ -139,6 +159,10 @@ private:
     double _swc;
     double _cstr;
     double _fcstr;
+    double _fcstrA;
+    double _fcstrL;
+    double _fcstrI;
+    double _fcstrLlen;
     //Field WB
     double _psib;
     double _stressdays;

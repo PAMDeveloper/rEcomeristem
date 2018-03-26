@@ -158,6 +158,17 @@ public:
         selector("ROOTBIOMASS", artis::kernel::DOUBLE, {
                      PlantModel::ROOT,
                      RootModel::ROOT_BIOMASS});
+
+        //Waterbalance
+        selector("FCSTRI", artis::kernel::DOUBLE, {
+                     PlantModel::WATER_BALANCE,
+                     WaterBalanceModel::FCSTRI});
+        selector("FCSTRL", artis::kernel::DOUBLE, {
+                     PlantModel::WATER_BALANCE,
+                     WaterBalanceModel::FCSTRL});
+        selector("FCSTRA", artis::kernel::DOUBLE, {
+                     PlantModel::WATER_BALANCE,
+                     WaterBalanceModel::FCSTRA});
     }
 
     virtual ~PlantView()

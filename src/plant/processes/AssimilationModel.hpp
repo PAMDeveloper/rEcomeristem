@@ -35,7 +35,7 @@ class AssimilationModel : public AtomicModel < AssimilationModel >
 public:
     enum internals { ASSIM, ASSIM_POT, INTERC, LAI, RESP_MAINT };
 
-    enum externals { CSTR, FCSTR, PAI, LEAFBIOMASS, INTERNODEBIOMASS };
+    enum externals { CSTR, FCSTR, FCSTRA, PAI, LEAFBIOMASS, INTERNODEBIOMASS };
 
 
     AssimilationModel() {
@@ -49,6 +49,7 @@ public:
         //  external variables
         External(CSTR, &AssimilationModel::_cstr);
         External(FCSTR, &AssimilationModel::_fcstr);
+        External(FCSTRA, &AssimilationModel::_fcstrA);
         External(PAI, &AssimilationModel::_PAI);
         External(LEAFBIOMASS, &AssimilationModel::_LeafBiomass);
         External(INTERNODEBIOMASS, &AssimilationModel::_InternodeBiomass);
@@ -72,7 +73,7 @@ public:
         if(_wbmodel == 1) {
             _assim_pot = std::pow(_cstr, _power_for_cstr) * _interc * _epsib * _radiation * _kpar;
         } else {
-            _assim_pot = (1-((1-_fcstr) * _thresAssim)) * _interc * _epsib * _radiation * _kpar;
+            _assim_pot = _fcstrA * _interc * _epsib * _radiation * _kpar;
         }
 
         //  respMaint
@@ -141,6 +142,7 @@ private:
 
     //  externals
     double _cstr;
+    double _fcstrA;
     double _fcstr;
     double _PAI;
     double _LeafBiomass;

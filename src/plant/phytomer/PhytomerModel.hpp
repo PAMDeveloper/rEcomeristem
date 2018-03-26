@@ -34,7 +34,7 @@ public:
     enum submodels { LEAF, INTERNODE };
 
     enum internals { LEAF_PREDIM,
-                     LEAF_BIOMASS, LEAF_BLADE_AREA, LEAF_DEMAND,
+                     LEAF_BIOMASS, LEAF_BLADE_AREA, LEAF_VISIBLE_BLADE_AREA, LEAF_DEMAND,
                      INTERNODE_DEMAND, INTERNODE_LAST_DEMAND, INTERNODE_BIOMASS,
                      INTERNODE_LEN, LEAF_LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
@@ -45,15 +45,16 @@ public:
                      PREDIM_PREVIOUS_LEAF, SLA, PLANT_PHASE, TEST_IC,
                      PLANT_STATE};
 
-    PhytomerModel(int index, bool is_on_mainstem, double plasto, double phyllo, double ligulo, double LL_BL) :
+    PhytomerModel(int index, bool is_on_mainstem, double plasto, double phyllo, double ligulo, double LL_BL, bool is_last_phytomer) :
         _index(index),
         _is_first_phytomer(index == 1),
         _plasto(plasto),
         _phyllo(phyllo),
         _ligulo(ligulo),
         _LL_BL(LL_BL),
+        _is_last_phytomer(is_last_phytomer),
         _is_on_mainstem(is_on_mainstem),
-        _internode_model(new InternodeModel(_index, _is_on_mainstem)),
+        _internode_model(new InternodeModel(_index, _is_on_mainstem, _is_last_phytomer)),
         _leaf_model(new LeafModel(_index, _is_on_mainstem, _plasto, _phyllo, _ligulo, _LL_BL))
     {
         // submodels
@@ -64,6 +65,7 @@ public:
         InternalS(LEAF_PREDIM,  _leaf_model.get(), LeafModel::LEAF_PREDIM);
         InternalS(LEAF_BIOMASS, _leaf_model.get(), LeafModel::BIOMASS);
         InternalS(LEAF_BLADE_AREA, _leaf_model.get(), LeafModel::BLADE_AREA);
+        InternalS(LEAF_VISIBLE_BLADE_AREA, _leaf_model.get(), LeafModel::VISIBLE_BLADE_AREA);
         InternalS(LEAF_DEMAND, _leaf_model.get(), LeafModel::DEMAND);
         InternalS(LEAF_LAST_DEMAND, _leaf_model.get(), LeafModel::LAST_DEMAND);
         InternalS(REALLOC_BIOMASS, _leaf_model.get(), LeafModel::REALLOC_BIOMASS);
@@ -177,6 +179,7 @@ private:
     double _phyllo;
     double _ligulo;
     double _LL_BL;
+    bool _is_last_phytomer;
 
     // submodels
     std::unique_ptr < InternodeModel > _internode_model;

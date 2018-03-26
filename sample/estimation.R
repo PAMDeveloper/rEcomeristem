@@ -2,19 +2,24 @@
 #Authors : Florian Larue, Gregory Beurier, Lauriane Rouan, Delphine Luquet
 #-- (PAM, AGAP, BIOS, CIRAD)
 ###Set informations for parameter estimation###
-PPath <- "D:/Workspace/estimlisa_fvobs/2015"
-MPath <- "D:/Workspace/estimlisa_fvobs/2015"
-VPath <- "D:/Workspace/estimlisa_fvobs/2015"
-VName <- "vobs_G1moyINT_C_BFF2015woleaf.txt"
-VECName <- "vobs_G1_C_BFF2015_ET_INTwoleaf.txt"
-ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init", "ligulo_init", "leaf_length_to_IN_length", "coef_MGR_PI", "slope_length_IN", "slope_LL_BL_at_PI", "density_IN1", "density_IN2", "coef_plasto_PI", "coef_phyllo_PI", "coef_ligulo_PI", "SLAp", "coeff_lifespan")
-MinValue <- c(3, 0.5, 5, 20, 20, 20,  0.01, -0.5, 0.0, 0.0, 0.001, 0.1, 1, 1, 1, 20, 1000)
-MaxValue <- c(8, 2.5, 15, 50, 50, 50 , 0.5, 0.5, 1, 0.75, 0.1, 0.3, 4, 4, 4, 60, 2500)
-obsCoef <- c(1,1,1,1,1,1,1,1,1)
-coefIncrease <- 10
+PPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G13"
+VPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G13"
+MPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/temoin/G13"
+
+VName <- "vobs_moy.txt"
+VECName <- "vobs_et.txt"
+#Temoin
+ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init", "ligulo_init", "coef_MGR_PI", "slope_length_IN", "density_IN2", "coef_plasto_PI", "coef_phyllo_PI", "coef_ligulo_PI", "slope_LL_BL_at_PI")
+MinValue <- c(3, 0.5, 6, 15, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
+MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
+##Stress
+#ParamOfInterest <- c("thresAssim","thresINER","thresLER","thresLEN","stressBP")
+#MinValue <- c(0,0,0,0,5)
+#MaxValue <- c(5,5,5,5,20)
+coefIncrease <- 20
 Optimizer <- "D" #(D = DE, G = RGenoud)
 RmseM <- "RECC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef)
-MaxIter <- 2000
+MaxIter <- 5000
 Penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
 SolTol <- 0.01 #will be multiplied by the number of observed variables
 ACluster <- TRUE  #parallel for machines with at least 4 cores
@@ -50,6 +55,7 @@ resRed <- recomeristem::rcpp_reduceResults(resulttmp, vObs)
 VarList <- names(obsRed)
 obsLength <- nrow(obsRed)
 coeff <- c()
+obsCoef <- rep(1,ncol(obsRed))
 SolTol <- SolTol * length(VarList)
 res <- list()
 
@@ -295,7 +301,7 @@ resEPlot <- function(par = res$par) {
   sapply(VarList, plotF)
 }
 savePar <- function(name = Sys.time()) {
-  resPar <- matrix(as.vector(res$par), ncol=11)
+  resPar <- matrix(as.vector(res$par), ncol=length(ParamOfInterest))
   write.table(resPar, file="par.csv", sep=",", append=T, dec=".",col.names = F,row.names = name)
 }
 savePlots <- function(name = Sys.Date()) {
@@ -350,13 +356,11 @@ saveParF <- function() {
 saveErrParF <- function(parameters) {
   write.table(parameters, "ECOMERISTEM_parameters_err.txt", sep="=", dec=".", quote=F, row.names=F, col.names=F)
 }
-
 resPlot <- function() {
   bestp <- as.vector(res$par)
   paramInitTrans[ParamOfInterest] <- bestp
   parameters <- data.frame(Name=ParamList, Values=unlist(paramInitTrans[1,]), row.names=NULL)
   Res_ecomeristem <- recomeristem::rcpp_run_from_dataframe(parameters,meteo)
-  print(Res_ecomeristem$tillernb_1)
   resRed <- recomeristem::rcpp_reduceResults(Res_ecomeristem,vObs)
   obsRed$day <- vObs$day
   plotF <- function(x) {
@@ -376,7 +380,6 @@ resPlot <- function() {
   }
   sapply(VarList, plotF)
 }
-
 fnList <- function() {
   flist <- c("resPlot() : Plot estimated simulation restults and observations",
              "resEPlot(''vector of parameters'') : Plot simulation results and observations with redefined estimated parameter values",
@@ -393,6 +396,7 @@ fnList <- function() {
 }
 
 #Optimisation run
+#set.seed(224)
 if(ACluster && detectCores() >= 4) {
   nbCores <- detectCores() - 2
   cl <- makeCluster(nbCores, outfile="clusterlog.txt")

@@ -37,16 +37,18 @@ public:
 
     enum internals { INTERNODE_PHASE, INTERNODE_PHASE_1, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
-                     VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP, CSTE_PLASTO, CSTE_LIGULO, DENSITY_IN};
+                     VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP, CSTE_PLASTO,
+                     CSTE_LIGULO, DENSITY_IN, POT_INER, GROWTH_DELAY, RED_LENGTH, POT_PREDIM};
 
     enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
                      DD, DELTA_T, PLASTO, LIGULO, NB_LIG, CULM_DEFICIT, CULM_STOCK,
                      BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE, LIGSTAGE,
-                     TEST_IC, FCSTR, CULM_NBLEAF_PARAM2 };
+                     TEST_IC, FCSTR, FCSTRI, FCSTRL, CULM_NBLEAF_PARAM2 };
 
-    InternodeModel(int index, bool is_on_mainstem):
+    InternodeModel(int index, bool is_on_mainstem, bool is_last_internode):
         _index(index),
-        _is_on_mainstem(is_on_mainstem)
+        _is_on_mainstem(is_on_mainstem),
+        _is_last_internode(is_last_internode)
     {
         Internal(INTERNODE_PHASE, &InternodeModel::_inter_phase);
         Internal(INTERNODE_PHASE_1, &InternodeModel::_inter_phase_1);
@@ -63,6 +65,10 @@ public:
         Internal(TIME_FROM_APP, &InternodeModel::_time_from_app);
         Internal(CSTE_LIGULO, &InternodeModel::_cste_ligulo);
         Internal(DENSITY_IN, &InternodeModel::_density);
+        Internal(POT_INER, &InternodeModel::_pot_iner);
+        Internal(GROWTH_DELAY, &InternodeModel::_growth_delay);
+        Internal(RED_LENGTH, &InternodeModel::_red_length);
+        Internal(POT_PREDIM, &InternodeModel::_pot_predim);
 
         External(PLANT_STATE, &InternodeModel::_plant_state);
         External(PLANT_PHASE, &InternodeModel::_plant_phase);
@@ -85,6 +91,8 @@ public:
         External(LIGSTAGE, &InternodeModel::_ligstage);
         External(TEST_IC, &InternodeModel::_test_ic);
         External(FCSTR, &InternodeModel::_fcstr);
+        External(FCSTRI, &InternodeModel::_fcstrI);
+        External(FCSTRL, &InternodeModel::_fcstrL);
         External(CULM_NBLEAF_PARAM2, &InternodeModel::_culm_nb_leaf_param2);
     }
 
@@ -99,15 +107,21 @@ public:
         }
 
         //InternodePredim
-        if(_index < _culm_nb_leaf_param2) {
-            _inter_predim = std::max(1e-4, _leaf_length_to_IN_length * _leaf_predim );
-        } else {
-            _inter_predim = std::max(1e-4, _previous_inter_predim * _slope_length_IN);
+        if (_inter_phase_1 == VEGETATIVE and _inter_phase == REALIZATION) {
+            if(_index < _culm_nb_leaf_param2) {
+                _inter_predim = std::max(1e-4, _leaf_length_to_IN_length * _leaf_predim );
+            } else {
+                _inter_predim = std::max(1e-4, _previous_inter_predim * _slope_length_IN);
+            }
+            _pot_predim = _inter_predim;
         }
+
+        //growth deficit
+        _inter_predim = std::max(0.,std::max(_inter_len,_inter_predim + _red_length));
 
         //ReductionINER
         if(_wbmodel == 2) {
-            _reduction_iner = std::max(1e-4, (std::min(1.,((1-((1-_fcstr) * _thresINER)) * (1. + (_p * _respINER))))) * _test_ic);
+            _reduction_iner = std::max(1e-4, (std::min(1.,_fcstrL * (1. + (_p * _respINER)))) * _test_ic);
         } else {
             if (_ftsw < _thresINER) {
                 _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw) * (1. + (_p * _respINER)) * _test_ic);
@@ -117,7 +131,22 @@ public:
         }
 
         //INER
-        _iner = _inter_predim * _reduction_iner / (3*_cste_ligulo);
+        if(_is_last_internode) {
+            _iner = _inter_predim * _reduction_iner / (_cste_ligulo);
+
+        } else {
+            _iner = _inter_predim * _reduction_iner / (3*_cste_ligulo);
+        }
+
+        //growth deficit
+        _pot_iner = _iner / _reduction_iner;
+        _growth_delay = std::min(_delta_t, _exp_time * _reduction_iner) * (-1. + _reduction_iner);
+        if((_fcstrL < 1 or _fcstr < 1)) {
+            _red_length = (_growth_delay * _pot_iner) * (1-_fcstrI);
+        } else {
+            _red_length = 0;
+        }
+
 
         //InternodeManager
         step_state(t);
@@ -147,7 +176,7 @@ public:
 
         //Density per IN
         _density = std::min(_density_IN2, _density + ((_density_IN2-_density_IN1)/(3*_cste_ligulo) * _delta_t));
-            //whole plant
+        //whole plant
         //_density = std::min(_density_IN2, _density_IN1 + std::max(0., (_ligstage - _nb_leaf_stem_elong)) * ((_density_IN2 - _density_IN1)/((_maxleaves + 4) - _nb_leaf_stem_elong)));
 
 
@@ -233,7 +262,6 @@ public:
         _density_IN2 = parameters.get("density_IN2");
         _coeff_species = parameters.get("coeff_species");
         _nb_leaf_stem_elong = parameters.get("nb_leaf_stem_elong");
-        _nb_leaf_max_after_pi = parameters.get("nb_leaf_max_after_PI");
         _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
         _wbmodel = parameters.get("wbmodel");
         _maxleaves = parameters.get("maxleaves");
@@ -256,17 +284,20 @@ public:
         _is_mature = false;
         _cste_ligulo = 0;
         _density = 0;
+        _pot_iner = 0;
+        _growth_delay = 0;
+        _red_length = 0;
+        _pot_predim = 0;
     }
 
 private:
     ecomeristem::ModelParameters _parameters;
     // attributes
     int _index;
-    bool _is_first_internode;
     bool _is_on_mainstem;
+    bool _is_last_internode;
 
     // parameters
-    double _nb_leaf_max_after_pi;
     double _phenostage_pre_flo_to_flo;
     double _nb_leaf_param2;
     double _slope_length_IN;
@@ -302,6 +333,10 @@ private:
     double _first_day;
     bool _is_mature;
     double _cste_ligulo;
+    double _pot_iner;
+    double _growth_delay;
+    double _red_length;
+    double _pot_predim;
 
     // externals
     plant::plant_state _plant_state;
@@ -325,6 +360,8 @@ private:
     int _ligstage;
     double _test_ic;
     double _fcstr;
+    double _fcstrI;
+    double _fcstrL;
     double _culm_nb_leaf_param2;
 };
 
