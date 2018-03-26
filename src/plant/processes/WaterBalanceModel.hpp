@@ -87,10 +87,10 @@ public:
             if(_water_supply == 1) {
                 _stressdays = std::min(10.,_stressdays + 1);
                 _psib = (pot/10)*_stressdays;
-                _fcstrA = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresAssim)));
-                _fcstrL = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresLER)));
-                _fcstrI = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresINER)));
-                _fcstrLlen = std::min(1.,std::max(0.,(stressBP-_psib)/(stressBP-thresLEN)));
+                _fcstrA = std::min(1.,std::max(0.,((thresAssim+stressBP2)-_psib)/((thresAssim+stressBP2)-stressBP2)));
+                _fcstrL = std::min(1.,std::max(0.,((thresLER+stressBP)-_psib)/((thresLER+stressBP)-stressBP)));
+                _fcstrI = std::min(1.,std::max(0.,((thresINER+stressBP)-_psib)/((thresINER+stressBP)-stressBP)));
+                _fcstrLlen = std::min(1.,std::max(0.,((thresLEN+stressBP)-_psib)/((thresLEN+stressBP)-stressBP)));
             } else {
                 _fcstr = 1;
                 _fcstrA = 1;
@@ -116,6 +116,7 @@ public:
         thresAssim = parameters.get("thresAssim");
         thresLEN = parameters.get("thresLEN");
         stressBP = parameters.get("stressBP");
+        stressBP2 = parameters.get("stressBP2");
         pot = parameters.get("psib");
 
         _wbmodel = parameters.get("wbmodel");
@@ -149,6 +150,7 @@ private:
     double pot;
     double _wbmodel;
     double stressBP;
+    double stressBP2;
     //meteo
     double _etp;
     double _water_supply;

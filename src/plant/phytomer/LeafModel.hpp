@@ -172,14 +172,14 @@ public:
             if (_is_first_leaf and _is_on_mainstem) {
                 _predim = _Lef1;
             } else if (not _is_first_leaf and _is_on_mainstem) {
-                _predim =  _predim_leaf_on_mainstem + _MGR * _test_ic * _fcstr * _fcstrL;
+                _predim =  _predim_leaf_on_mainstem + _MGR * _test_ic * _fcstr;
             } else if (_is_first_leaf and not _is_on_mainstem) {
                 _predim = 0.5 * (_predim_app_leaf_on_mainstem + _Lef1) *
-                        _test_ic * _fcstr * _fcstrL;
+                        _test_ic * _fcstr;
             } else {
                 _predim = 0.5 * (_predim_leaf_on_mainstem +
                                  _predim_previous_leaf) +
-                        _MGR * _test_ic * _fcstr * _fcstrL;
+                        _MGR * _test_ic * _fcstr;
             }
             _pot_predim = _predim;
         }
