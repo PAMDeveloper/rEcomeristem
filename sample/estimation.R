@@ -14,13 +14,13 @@ VECName <- "vobs_et.txt"
 # MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
 ##Stress
 ParamOfInterest <- c("thresAssim","thresINER","thresLER","thresLEN","stressBP","stressBP2")
-MinValue <- c(0.1,0.1,0.1,0.1,0,0)
+MinValue <- c(1,1,1,1,0,1)
 MaxValue <- c(20,20,20,20,10,10)
 
 coefIncrease <- 10
 Optimizer <- "D" #(D = DE, G = RGenoud)
 RmseM <- "RECC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef)
-MaxIter <- 3000
+MaxIter <- 5000
 Penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
 SolTol <- 0.01 #will be multiplied by the number of observed variables
 ACluster <- TRUE  #parallel for machines with at least 4 cores
