@@ -164,6 +164,7 @@ public:
         _remain_to_store = 0;
         _remain_to_store_1 = 0;
         _culm_demand_sum = 0;
+        _culm_demand = 0;
         _culm_supply = 0;
         _culm_ic = 0;
         _culm_deficit = 0;

@@ -38,7 +38,7 @@ public:
     enum internals { INTERNODE_PHASE, INTERNODE_PHASE_1, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
                      VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP, CSTE_PLASTO,
-                     CSTE_LIGULO, DENSITY_IN, POT_INER, GROWTH_DELAY, RED_LENGTH, POT_PREDIM};
+                     CSTE_LIGULO, DENSITY_IN, POT_INER, GROWTH_DELAY, RED_LENGTH, POT_PREDIM, INDEX_};
 
     enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
                      DD, DELTA_T, PLASTO, LIGULO, NB_LIG, CULM_DEFICIT, CULM_STOCK,
@@ -69,6 +69,7 @@ public:
         Internal(GROWTH_DELAY, &InternodeModel::_growth_delay);
         Internal(RED_LENGTH, &InternodeModel::_red_length);
         Internal(POT_PREDIM, &InternodeModel::_pot_predim);
+        Internal(INDEX_, &InternodeModel::_index);
 
         External(PLANT_STATE, &InternodeModel::_plant_state);
         External(PLANT_PHASE, &InternodeModel::_plant_phase);
@@ -107,7 +108,7 @@ public:
         }
 
         //InternodePredim
-        if (_inter_phase_1 == VEGETATIVE and _inter_phase == REALIZATION) {
+        if (_inter_phase == VEGETATIVE and (_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and (_index >= _last_leaf_index) and _plant_phase != plant::FLO and _nb_lig > 0 and _is_lig) {
             if(_index < _culm_nb_leaf_param2) {
                 _inter_predim = std::max(1e-4, _leaf_length_to_IN_length * _leaf_predim );
             } else {

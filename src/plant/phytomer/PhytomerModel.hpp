@@ -104,6 +104,7 @@ public:
         _leaf_model->init(t, parameters);
 
         _kill_leaf = false;
+
     }
 
     void compute(double t, bool /* update */)

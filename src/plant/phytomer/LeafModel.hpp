@@ -437,6 +437,7 @@ public:
         _pot_predim = 0;
         _width_ler = 0;
         _pot_len = 0;
+        _blade_len = 0;
     }
 
 private:
