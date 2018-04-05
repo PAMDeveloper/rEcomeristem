@@ -365,8 +365,7 @@ public:
         if (_bool_crossed_plasto > 0 and _nb_tillers >= 1) {
             _nb_tillers = std::min(_nb_tillers, _tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
-            //TODO : virer condition max tillers
-            if(_plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::DEAD and _plant_phase != plant::MATURITY) {
+            if(_plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::DEAD and _plant_phase != plant::MATURITY) {
                 create_culm(t, _nb_tillers);
             }
         }
