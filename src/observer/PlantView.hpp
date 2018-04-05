@@ -113,6 +113,8 @@ public:
                      PlantModel::BOOL_CROSSED_LIGULO});
         selector("BOOL_CROSSED_PHYLOO", artis::kernel::DOUBLE, {
                      PlantModel::BOOL_CROSSED_PHYLLO});
+        selector("PANICLENB", artis::kernel::DOUBLE, {
+                     PlantModel::PANICLENB});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {
