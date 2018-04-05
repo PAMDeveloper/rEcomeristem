@@ -353,7 +353,8 @@ public:
         _tae = 0;
         while(it != _culm_models.end()) {
             if(!(*it)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM) and (*it)->get < bool, CulmModel >(t-1, CulmModel::IS_COMPUTED)) {
-                if ((*it)->get_app_phytomer_number(t) >= _nbleaf_enabling_tillering) {
+                int potential_leaf = (_bool_crossed_phyllo >= 0) ? 1 : 0;
+                if ((*it)->get_app_phytomer_number(t) + potential_leaf >= _nbleaf_enabling_tillering) {
                     ++_tae;
                 }
             }
@@ -365,7 +366,6 @@ public:
         if (_bool_crossed_plasto > 0 and _nb_tillers >= 1) {
             _nb_tillers = std::min(_nb_tillers, _tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
-            //TODO : virer condition max tillers
             if(_plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::DEAD and _plant_phase != plant::MATURITY) {
                 create_culm(t, _nb_tillers);
             }
