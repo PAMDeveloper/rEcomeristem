@@ -380,6 +380,10 @@ public:
                 _culm_ligstage_cste = _culm_ligstage;
             }
         } else {
+            if(_creation_date == t) {
+                _culm_thermaltime_modelNG->put(t, ThermalTimeModelNG::DELTA_T, _delta_t);
+                compute_thermaltimeNG(t);
+            }
             _culm_DD = _culm_thermaltime_modelNG->get < double >(t, ThermalTimeModelNG::CULM_DD);
             _culm_EDD = _culm_thermaltime_modelNG->get < double >(t, ThermalTimeModelNG::EDD);
             _culm_bool_crossed_plasto = _culm_thermaltime_modelNG->get < double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_PLASTO);
