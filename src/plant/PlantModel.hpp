@@ -330,12 +330,7 @@ public:
         (*_water_balance_model)(t);
 
         // Manager
-        //std::cout << "BEFORE " << date << " state: " << _plant_state << " - phase: " << _plant_phase << std::endl;
-        //std::cout << "NB CREATED CULMS : " << _culm_models.size() << std::endl;
-        //std::cout << "NB ALIVE CULMS : " <<_tillerNb_1 << std::endl;
         step_state(t);
-        //std::cout << "AFTER " << date << " state: " << _plant_state << " - phase: " << _plant_phase << std::endl;
-
 
         //LLBL - Plasto
         std::deque < CulmModel* >::const_iterator mainstem = _culm_models.begin();
@@ -354,7 +349,13 @@ public:
         _tae = 0;
         while(it != _culm_models.end()) {
             if(!(*it)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM) and (*it)->get < bool, CulmModel >(t-1, CulmModel::IS_COMPUTED)) {
-                int potential_leaf = (_bool_crossed_phyllo >= 0) ? 1 : 0;
+                double bcphyllo = -1;
+                if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE or _is_first_day_pi) {
+                    bcphyllo = (*it)->thermaltime_model()->get< double >(t, ThermalTimeModel::BOOL_CROSSED_PHYLLO);
+                } else {
+                    bcphyllo = (*it)->thermaltime_modelNG()->get< double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_PHYLLO);
+                }
+                int potential_leaf = bcphyllo >= 0 ? 1 : 0;
                 if ((*it)->get_app_phytomer_number(t) + potential_leaf >= _nbleaf_enabling_tillering) {
                     ++_tae;
                 }
@@ -367,7 +368,7 @@ public:
         if (_bool_crossed_plasto > 0 and _nb_tillers >= 1) {
             _nb_tillers = std::min(_nb_tillers, _tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
-            if(_plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::DEAD and _plant_phase != plant::MATURITY) {
+            if(_plant_phase != plant::ELONG and _plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::DEAD and _plant_phase != plant::MATURITY) {
                 create_culm(t, _nb_tillers);
             }
         }
@@ -543,6 +544,7 @@ public:
             itnbc++;
         }
         _biomAero2 = _biomAero2 +  _stock_model->get< double > (t, PlantStockModel::STOCK);
+
         // VISU
         _tillerNb_1 = nbc;
         std::deque < CulmModel* >::const_iterator visumainstem = _culm_models.begin();
@@ -710,7 +712,6 @@ public:
                 _deleted_leaf_blade_area =
                         _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
                 if (_culm_models[_culm_index]->get_alive_phytomer_number() < 2 and _culm_index == 0) {
-                    //_plant_phase = plant::DEAD;
                     _plant_state << plant::NOGROWTH;
                     _stock = 0;
                 }
@@ -991,12 +992,6 @@ private:
     //internal states
     plant::plant_state _plant_state;
     plant::plant_phase _plant_phase;
-
-    //    double _demand_sum;
-    //    bool _culm_is_computed;
-    //    double _lig;
-    //    double _deleted_leaf_biomass;
-    //    double _deleted_leaf_blade_area;
 };
 
 #endif //PLANT_MODEL_HPP
