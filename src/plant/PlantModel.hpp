@@ -57,7 +57,7 @@ public:
                      MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK,
                      DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW,
                      PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
-                     MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS };
+                     MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -139,6 +139,9 @@ public:
         Internal( DELETED_LEAF_BIOMASS, &PlantModel::_deleted_leaf_biomass);
         Internal( VISI, &PlantModel::_visi);
         Internal( PREDIM_APP_LEAF_MS, &PlantModel::_predim_app_leaf_on_mainstem);
+        Internal( NB_CR_TILLERS, &PlantModel:: _nb_tillers);
+        Internal( TAE, &PlantModel:: _tae);
+        Internal( PANICLENB, &PlantModel:: _paniclenb);
     }
 
     virtual ~PlantModel()
@@ -348,11 +351,12 @@ public:
         double ic = _stock_model->get < double >(t-1, PlantStockModel::IC);
 
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
-        double tae = 0;
+        _tae = 0;
         while(it != _culm_models.end()) {
             if(!(*it)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM) and (*it)->get < bool, CulmModel >(t-1, CulmModel::IS_COMPUTED)) {
-                if ((*it)->get_app_phytomer_number(t) >= _nbleaf_enabling_tillering) {
-                    ++tae;
+                int potential_leaf = (_bool_crossed_phyllo >= 0) ? 1 : 0;
+                if ((*it)->get_app_phytomer_number(t) + potential_leaf >= _nbleaf_enabling_tillering) {
+                    ++_tae;
                 }
             }
             it++;
@@ -360,11 +364,10 @@ public:
         if (ic > _Ict) {
             _nb_tillers = _nb_tillers + _nbExistingTillers;
         }
-        if (_bool_crossed_plasto > 0 and _nb_tillers >= 1 /*and ic > _Ict * ((P * _resp_Ict) + 1)*/) {
-            _nb_tillers = std::min(_nb_tillers, tae);
+        if (_bool_crossed_plasto > 0 and _nb_tillers >= 1) {
+            _nb_tillers = std::min(_nb_tillers, _tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
-            //TODO : virer condition max tillers
-            if(_tillerNb_1 + _nb_tillers < 30 and _plant_phase != plant::ELONG and _plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::MATURITY) {
+            if(_plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::DEAD and _plant_phase != plant::MATURITY) {
                 create_culm(t, _nb_tillers);
             }
         }
@@ -524,6 +527,7 @@ public:
         _biomAero2 = 0;
         _deadleafNb = 0;
         _panicleDW = 0;
+        _paniclenb = 0;
         std::deque < CulmModel* >::const_iterator itnbc = _culm_models.begin();
         while(itnbc != _culm_models.end()) {
             if(!((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM)) and (*itnbc)->get < bool, CulmModel >(t, CulmModel::IS_COMPUTED)) {
@@ -535,6 +539,7 @@ public:
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
             _deadleafNb += (*itnbc)->get_dead_phytomer_number(t);
             _panicleDW += (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
+            _paniclenb += (*itnbc)->get < double, CulmModel >(t, CulmModel::GRAIN_NB) > 0 ? 1 : 0;
             itnbc++;
         }
         _biomAero2 = _biomAero2 +  _stock_model->get< double > (t, PlantStockModel::STOCK);
@@ -762,6 +767,7 @@ public:
 
         //internal variables (local)
         _nb_tillers = 0;
+        _paniclenb = 0;
         _nbExistingTillers = 1;
         _lig = 0;
         _app = 1;
@@ -885,6 +891,7 @@ private:
     double _SLAp;
     double _Tb;
     double _maxleaves;
+    double _tae;
 
 
     // vars
@@ -979,6 +986,7 @@ private:
     int _ms_index;
     double _visi;
     double _predim_app_leaf_on_mainstem;
+    double _paniclenb;
 
     //internal states
     plant::plant_state _plant_state;

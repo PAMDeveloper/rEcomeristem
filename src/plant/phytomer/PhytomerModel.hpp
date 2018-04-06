@@ -33,13 +33,11 @@ class PhytomerModel : public CoupledModel < PhytomerModel >
 public:
     enum submodels { LEAF, INTERNODE };
 
-    enum internals { LEAF_PREDIM,
+    enum internals { KILL_LEAF, LEAF_PREDIM,
                      LEAF_BIOMASS, LEAF_BLADE_AREA, LEAF_VISIBLE_BLADE_AREA, LEAF_DEMAND,
-                     INTERNODE_DEMAND, INTERNODE_LAST_DEMAND, INTERNODE_BIOMASS,
-                     INTERNODE_LEN, LEAF_LAST_DEMAND,
-                     REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
-                     LEAF_CORRECTED_BIOMASS, LEAF_CORRECTED_BLADE_AREA,
-                     LEAF_LEN, KILL_LEAF };
+                     LEAF_LAST_DEMAND, REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM, LEAF_LEN,
+                     INTERNODE_LAST_DEMAND, INTERNODE_DEMAND, INTERNODE_BIOMASS,
+                     INTERNODE_LEN};
 
     enum externals { DD, DELTA_T, FTSW, FCSTR, PREDIM_LEAF_ON_MAINSTEM,
                      PREDIM_PREVIOUS_LEAF, SLA, PLANT_PHASE, TEST_IC,
@@ -62,22 +60,22 @@ public:
         setsubmodel(INTERNODE, _internode_model.get());
 
         // internals
-        InternalS(LEAF_PREDIM,  _leaf_model.get(), LeafModel::LEAF_PREDIM);
-        InternalS(LEAF_BIOMASS, _leaf_model.get(), LeafModel::BIOMASS);
-        InternalS(LEAF_BLADE_AREA, _leaf_model.get(), LeafModel::BLADE_AREA);
-        InternalS(LEAF_VISIBLE_BLADE_AREA, _leaf_model.get(), LeafModel::VISIBLE_BLADE_AREA);
-        InternalS(LEAF_DEMAND, _leaf_model.get(), LeafModel::DEMAND);
-        InternalS(LEAF_LAST_DEMAND, _leaf_model.get(), LeafModel::LAST_DEMAND);
-        InternalS(REALLOC_BIOMASS, _leaf_model.get(), LeafModel::REALLOC_BIOMASS);
-        InternalS(SENESC_DW, _leaf_model.get(), LeafModel::SENESC_DW);
-        InternalS(SENESC_DW_SUM, _leaf_model.get(), LeafModel::SENESC_DW_SUM);
-        InternalS(LEAF_LEN, _leaf_model.get(), LeafModel::LEAF_LEN);
-        InternalS(INTERNODE_LAST_DEMAND, _internode_model.get(), InternodeModel::LAST_DEMAND);
-        InternalS(INTERNODE_DEMAND, _internode_model.get(), InternodeModel::DEMAND);
-        InternalS(INTERNODE_BIOMASS, _internode_model.get(), InternodeModel::BIOMASS);
-        InternalS(INTERNODE_LEN, _internode_model.get(), InternodeModel::INTERNODE_LEN);
-
         Internal(KILL_LEAF, &PhytomerModel::_kill_leaf);
+        Internal(LEAF_PREDIM, &PhytomerModel::_leaf_predim);
+        Internal(LEAF_BIOMASS, &PhytomerModel::_leaf_biomass);
+        Internal(LEAF_BLADE_AREA, &PhytomerModel::_leaf_blade_area);
+        Internal(LEAF_VISIBLE_BLADE_AREA, &PhytomerModel::_leaf_visible_blade_area);
+        Internal(LEAF_DEMAND, &PhytomerModel::_leaf_demand);
+        Internal(LEAF_LAST_DEMAND, &PhytomerModel::_leaf_last_demand);
+        Internal(REALLOC_BIOMASS, &PhytomerModel::_realloc_biomass);
+        Internal(SENESC_DW, &PhytomerModel::_senesc_dw);
+        Internal(SENESC_DW_SUM, &PhytomerModel::_senesc_dw_sum);
+        Internal(LEAF_LEN, &PhytomerModel::_leaf_len);
+        Internal(INTERNODE_LAST_DEMAND, &PhytomerModel::_internode_last_demand);
+        Internal(INTERNODE_DEMAND, &PhytomerModel::_internode_demand);
+        Internal(INTERNODE_BIOMASS, &PhytomerModel::_internode_biomass);
+        Internal(INTERNODE_LEN, &PhytomerModel::_internode_len);
+
         // externals
         External(PLANT_STATE, &PhytomerModel::_plant_state);
         External(PLANT_PHASE, &PhytomerModel::_plant_phase);
@@ -104,6 +102,20 @@ public:
         _leaf_model->init(t, parameters);
 
         _kill_leaf = false;
+        _leaf_predim = 0;
+        _leaf_biomass = 0;
+        _leaf_blade_area = 0;
+        _leaf_visible_blade_area = 0;
+        _leaf_demand = 0;
+        _leaf_last_demand = 0;
+        _realloc_biomass = 0;
+        _senesc_dw = 0;
+        _senesc_dw_sum = 0;
+        _leaf_len = 0;
+        _internode_last_demand = 0;
+        _internode_demand = 0;
+        _internode_biomass = 0;
+        _internode_len = 0;
 
     }
 
@@ -121,6 +133,16 @@ public:
             _leaf_model->put < plant::plant_state >(t, LeafModel::PLANT_STATE, _plant_state);
             _leaf_model->put(t, LeafModel::TEST_IC, _test_ic);
             (*_leaf_model)(t);
+            _leaf_predim = _leaf_model->get< double >(t, LeafModel::LEAF_PREDIM);
+            _leaf_biomass = _leaf_model->get< double >(t, LeafModel::BIOMASS);
+            _leaf_blade_area = _leaf_model->get< double >(t, LeafModel::BLADE_AREA);
+            _leaf_visible_blade_area = _leaf_model->get< double >(t, LeafModel::VISIBLE_BLADE_AREA);
+            _leaf_demand = _leaf_model->get< double >(t, LeafModel::DEMAND);
+            _leaf_last_demand = _leaf_model->get< double >(t, LeafModel::LAST_DEMAND);
+            _realloc_biomass = _leaf_model->get< double >(t, LeafModel::REALLOC_BIOMASS);
+            _senesc_dw = _leaf_model->get< double >(t, LeafModel::SENESC_DW);
+            _senesc_dw_sum = _leaf_model->get< double >(t, LeafModel::SENESC_DW_SUM);
+            _leaf_len = _leaf_model->get< double >(t, LeafModel::LEAF_LEN);
         }
 
         _internode_model->put(t, InternodeModel::DD, _dd);
@@ -134,6 +156,10 @@ public:
         _internode_model->put(t, InternodeModel::IS_LIG, _leaf_model->get < bool > (t, LeafModel::IS_LIG));
         _internode_model->put(t, InternodeModel::TEST_IC, _test_ic);
         (*_internode_model)(t);
+        _internode_last_demand = _internode_model->get< double >(t, InternodeModel::LAST_DEMAND);
+        _internode_demand = _internode_model->get< double >(t, InternodeModel::DEMAND);
+        _internode_biomass = _internode_model->get< double >(t, InternodeModel::BIOMASS);
+        _internode_len = _internode_model->get< double >(t, InternodeModel::INTERNODE_LEN);
     }
 
     void kill_leaf(double t)
@@ -188,6 +214,20 @@ private:
 
     // internal
     bool _kill_leaf;
+    double _leaf_predim;
+    double _leaf_biomass;
+    double _leaf_blade_area;
+    double _leaf_visible_blade_area;
+    double _leaf_demand;
+    double _leaf_last_demand;
+    double _realloc_biomass;
+    double _senesc_dw;
+    double _senesc_dw_sum;
+    double _leaf_len;
+    double _internode_last_demand;
+    double _internode_demand;
+    double _internode_biomass;
+    double _internode_len;
 
     // external variables
     double _ftsw;

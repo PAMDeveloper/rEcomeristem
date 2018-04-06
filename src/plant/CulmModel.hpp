@@ -65,7 +65,7 @@ public:
                      LIG_INDEX, MS_INDEX_CST, CULM_NBLEAF_PARAM2, CULM_PHENO_STAGE_CSTE,
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, PLASTO, PHYLLO, LIGULO, TT_PLASTO,
                      TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2,
-                     STEM_APP_LEAF_PREDIM, CULM_MAXLEAVES };
+                     STEM_APP_LEAF_PREDIM, CULM_MAXLEAVES, GRAIN_NB };
 
     enum externals { PLANT_BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, FCSTRI, FCSTRL, FCSTRLLEN,
                      PLANT_PHENOSTAGE, PLANT_APPSTAGE, PLANT_LIGSTAGE, PREDIM_LEAF_ON_MAINSTEM, SLA,
@@ -143,6 +143,7 @@ public:
         Internal(PLASTO_NBLEAF_PARAM2, &CulmModel::_plasto_nbleaf_param2);
         Internal(STEM_APP_LEAF_PREDIM, &CulmModel::_stem_app_leaf_predim);
         Internal(CULM_MAXLEAVES, &CulmModel::_culm_maxleaves);
+        Internal(GRAIN_NB, &CulmModel::_grain_nb);
 
         //    externals
         External(PLANT_BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -380,6 +381,10 @@ public:
                 _culm_ligstage_cste = _culm_ligstage;
             }
         } else {
+            if(_creation_date == t) {
+                _culm_thermaltime_modelNG->put(t, ThermalTimeModelNG::DELTA_T, _delta_t);
+                compute_thermaltimeNG(t);
+            }
             _culm_DD = _culm_thermaltime_modelNG->get < double >(t, ThermalTimeModelNG::CULM_DD);
             _culm_EDD = _culm_thermaltime_modelNG->get < double >(t, ThermalTimeModelNG::EDD);
             _culm_bool_crossed_plasto = _culm_thermaltime_modelNG->get < double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_PLASTO);
@@ -491,6 +496,7 @@ public:
             (*_panicle_model)(t);
             _panicle_day_demand = _panicle_model->get < double >(t, PanicleModel::DAY_DEMAND);
             _panicle_weight = _panicle_model->get < double >(t, PanicleModel::WEIGHT);
+            _grain_nb = _panicle_model->get < double >(t, PanicleModel::GRAIN_NB);
         }
 
         if(_peduncle_model.get()) {
@@ -1056,6 +1062,7 @@ public:
         _is_computed = false;
         _stem_app_leaf_predim = 0;
         _culm_maxleaves = 0;
+        _grain_nb = 0;
     }
 
 private:
@@ -1171,6 +1178,7 @@ private:
     bool _is_computed;
     double _stem_app_leaf_predim;
     int _culm_maxleaves;
+    double _grain_nb;
 
     //    externals
     int _plant_phenostage;

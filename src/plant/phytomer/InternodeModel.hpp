@@ -106,10 +106,14 @@ public:
 
         //InternodePredim
         if (_inter_phase == internode::VEGETATIVE and (_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and (_index >= _last_leaf_index) and _plant_phase != plant::FLO and _nb_lig > 0 and _is_lig) {
-            if(_index < _culm_nb_leaf_param2) {
+            if(_index <= _culm_nb_leaf_param2) {
                 _inter_predim = std::max(1e-4, _leaf_length_to_IN_length * _leaf_predim );
             } else {
-                _inter_predim = std::max(1e-4, _previous_inter_predim * _slope_length_IN);
+                if(_previous_inter_predim == 0) {
+                    _inter_predim = std::max(1e-4, _leaf_length_to_IN_length * _leaf_predim );
+                } else {
+                    _inter_predim = std::max(1e-4, _previous_inter_predim * _slope_length_IN);
+                }
             }
             _pot_predim = _inter_predim;
         }

@@ -2,20 +2,20 @@
 #Authors : Florian Larue, Gregory Beurier, Lauriane Rouan, Delphine Luquet
 #-- (PAM, AGAP, BIOS, CIRAD)
 ###Set informations for parameter estimation###
-PPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/stress/G15"
-VPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/stress/G15"
-MPath <- "D:/Workspace/estimlisa_fvobs/2015/8geno/stress/G15"
-VName <- "vobs_moy.txt"
-VECName <- "vobs_et.txt"
+PPath <- "D:/Workspace/estimworkspace/riz/estim_1"
+VPath <- "D:/Workspace/estimworkspace/riz/estim_1"
+MPath <- "D:/Workspace/estimworkspace/riz/estim_1"
+VName <- "vobs_moy_T1.txt"
+VECName <- "vobs_et_T1.txt"
 
 #Temoin
-# ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init", "ligulo_init", "coef_MGR_PI", "slope_length_IN", "density_IN2", "coef_plasto_PI", "coef_phyllo_PI", "coef_ligulo_PI", "slope_LL_BL_at_PI")
-# MinValue <- c(3, 0.5, 6, 15, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
-# MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
+ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init", "ligulo_init", "coef_MGR_PI", "slope_length_IN", "density_IN2", "coef_plasto_PI", "coef_phyllo_PI", "coef_ligulo_PI", "slope_LL_BL_at_PI")
+MinValue <- c(3, 0.5, 6, 15, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
+MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
 ##Stress
-ParamOfInterest <- c("thresAssim","thresINER","thresLER","thresLEN","stressBP","stressBP2")
-MinValue <- c(1,1,1,1,0,1)
-MaxValue <- c(20,20,20,20,10,10)
+#ParamOfInterest <- c("thresAssim","thresINER","thresLER","thresLEN","stressBP","stressBP2")
+#MinValue <- c(1,1,1,1,0,1)
+#MaxValue <- c(20,20,20,20,10,10)
 
 coefIncrease <- 10
 Optimizer <- "D" #(D = DE, G = RGenoud)
