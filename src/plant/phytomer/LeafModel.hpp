@@ -29,8 +29,6 @@ namespace model {
 class LeafModel : public AtomicModel < LeafModel >
 {
 public:
-    enum leaf_phase   { INITIAL, VEGETATIVE, LIG, DEAD };
-
     enum internals { LEAF_PHASE, LIFE_SPAN, REDUCTION_LER, LEAF_LEN, LER,
                      EXP_TIME, LEAF_PREDIM, WIDTH,
                      TT_LIG, BLADE_AREA, VISIBLE_BLADE_AREA, BIOMASS, DEMAND, LAST_DEMAND,
@@ -128,8 +126,8 @@ public:
 
     void compute(double t, bool /* update */)
     {
-        if(_kill_leaf or _leaf_phase == LeafModel::DEAD) {
-            _leaf_phase = LeafModel::DEAD;
+        if(_kill_leaf or _leaf_phase == leaf::DEAD) {
+            _leaf_phase = leaf::DEAD;
             _is_dead = true;
             _realloc_biomass = 0;
             _life_span = 0;
@@ -206,7 +204,7 @@ public:
         //leaves already grown with a specific plasto/phyllo/ligulo or the initial plasto/phyllo/ligulo
         double tmp1 = std::max(0., _index-(_plasto_nbleaf_param2-1));
         double tmp2 = std::max(0., _index-(_culm_nbleaf_param2-1));
-        if (_leaf_phase == LeafModel::INITIAL) {
+        if (_leaf_phase == leaf::INITIAL) {
             if(_is_first_leaf) {
                 if(_index <= _culm_nbleaf_param2) {
                     _ler = (_sheath_LLL_cst/_phyllo_init)*_reduction_ler;
@@ -238,7 +236,7 @@ public:
 
         //LeafLen
         if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
-            if(_leaf_phase == LeafModel::INITIAL) {
+            if(_leaf_phase == leaf::INITIAL) {
                 _len = std::min(_sheath_LLL_cst, _len+_ler*std::min(_delta_t, _exp_time));
                 _pot_len = _len;
             } else {
@@ -256,7 +254,7 @@ public:
         //ThermalTimeSinceLigulation
         _is_lig_t = false;
         if (not _is_lig) {
-            if(_leaf_phase == LeafModel::LIG) {
+            if(_leaf_phase == leaf::LIG) {
                 _is_lig = true;
                 _is_lig_t = true;
                 if(_lig_t == 0) {
@@ -274,7 +272,7 @@ public:
         //BladeArea and VisibleBladeArea : consider only leaves already appeared for PAI
         _blade_area = _len * _width * _allo_area / _LL_BL;
         if (not _is_lig || _is_lig_t) {
-            if(_leaf_phase == LeafModel::INITIAL) {
+            if(_leaf_phase == leaf::INITIAL) {
                 _visible_blade_area = 0;
             } else {
                 if(_sheath_len < _sheath_LLL_cst) {
@@ -346,7 +344,7 @@ public:
 
         if(_biomass == 0) {
             _is_dead = true;
-            _leaf_phase = LeafModel::DEAD;
+            _leaf_phase = leaf::DEAD;
         }
 
         if(_demand < 0) {
@@ -356,15 +354,15 @@ public:
 
     void step_state() {
         switch (_leaf_phase) {
-        case LeafModel::INITIAL:
+        case leaf::INITIAL:
             if(_len >= _sheath_LLL_cst) {
-                _leaf_phase = LeafModel::VEGETATIVE;
+                _leaf_phase = leaf::VEGETATIVE;
                 _is_app = true;
             }
             break;
-        case LeafModel::VEGETATIVE:
+        case leaf::VEGETATIVE:
             if(_len >= _predim && !(_plant_state & plant::NOGROWTH)) {
-                _leaf_phase = LeafModel::LIG;
+                _leaf_phase = leaf::LIG;
                 _is_app = false;
             }
             break;
@@ -398,10 +396,10 @@ public:
         _first_day = t;
         _life_span = 0;
         if(_is_first_leaf && _is_on_mainstem) {
-            _leaf_phase = LeafModel::VEGETATIVE;
+            _leaf_phase = leaf::VEGETATIVE;
             _is_app = true;
         } else {
-            _leaf_phase = LeafModel::INITIAL;
+            _leaf_phase = leaf::INITIAL;
             _is_app = false;
         }
         _predim = 0;
@@ -470,7 +468,7 @@ private:
 
     // internal variable
     double _width;
-    leaf_phase _leaf_phase;
+    leaf::leaf_phase _leaf_phase;
     double _predim;
     double _first_day;
     double _life_span;

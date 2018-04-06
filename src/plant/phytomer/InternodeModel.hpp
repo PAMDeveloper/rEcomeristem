@@ -32,9 +32,6 @@ namespace model {
 class InternodeModel : public AtomicModel < InternodeModel >
 {
 public:
-    enum internode_phase {  INITIAL, VEGETATIVE, REALIZATION,
-                            MATURITY, DEAD };
-
     enum internals { INTERNODE_PHASE, INTERNODE_PHASE_1, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
                      VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP, CSTE_PLASTO,
@@ -108,7 +105,7 @@ public:
         }
 
         //InternodePredim
-        if (_inter_phase == VEGETATIVE and (_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and (_index >= _last_leaf_index) and _plant_phase != plant::FLO and _nb_lig > 0 and _is_lig) {
+        if (_inter_phase == internode::VEGETATIVE and (_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and (_index >= _last_leaf_index) and _plant_phase != plant::FLO and _nb_lig > 0 and _is_lig) {
             if(_index < _culm_nb_leaf_param2) {
                 _inter_predim = std::max(1e-4, _leaf_length_to_IN_length * _leaf_predim );
             } else {
@@ -153,11 +150,11 @@ public:
         step_state(t);
 
         //InternodeLen & InternodeExpTime
-        if (_inter_phase == VEGETATIVE) {
+        if (_inter_phase == internode::VEGETATIVE) {
             _inter_len = 0;
             _exp_time = 0;
         } else {
-            if (_inter_phase_1 == VEGETATIVE and _inter_phase == REALIZATION) {
+            if (_inter_phase_1 == internode::VEGETATIVE and _inter_phase == internode::REALIZATION) {
                 _inter_len = _iner * _dd;
                 _exp_time = (_inter_predim - _inter_len) / _iner;
             } else {
@@ -211,7 +208,7 @@ public:
 
     void culm_dead(double t) {
         _inter_phase_1 = _inter_phase;
-        _inter_phase = DEAD;
+        _inter_phase = internode::DEAD;
         _inter_len = 0;
         _reduction_iner = 0;
         _iner = 0;
@@ -230,17 +227,17 @@ public:
         _inter_phase_1 = _inter_phase;
 
         switch (_inter_phase) {
-        case INITIAL:
-            _inter_phase = VEGETATIVE;
+        case internode::INITIAL:
+            _inter_phase = internode::VEGETATIVE;
             break;
-        case VEGETATIVE:
+        case internode::VEGETATIVE:
             if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and (_index >= _last_leaf_index) and _plant_phase != plant::FLO and _nb_lig > 0 and _is_lig) {
-                _inter_phase = REALIZATION;
+                _inter_phase = internode::REALIZATION;
             }
             break;
-        case REALIZATION:
+        case internode::REALIZATION:
             if(_inter_len >= _inter_predim) {
-                _inter_phase = MATURITY;
+                _inter_phase = internode::MATURITY;
             }
             break;
         }
@@ -268,8 +265,8 @@ public:
         _maxleaves = parameters.get("maxleaves");
 
         //internals
-        _inter_phase = INITIAL;
-        _inter_phase_1 = INITIAL;
+        _inter_phase = internode::INITIAL;
+        _inter_phase_1 = internode::INITIAL;
         _inter_len = 0;
         _reduction_iner = 0;
         _iner = 0;
@@ -318,8 +315,8 @@ private:
 
     // internals
     double _density;
-    internode_phase _inter_phase;
-    internode_phase _inter_phase_1;
+    internode::internode_phase _inter_phase;
+    internode::internode_phase _inter_phase_1;
     double _inter_len;
     double _inter_predim;
     double _reduction_iner;

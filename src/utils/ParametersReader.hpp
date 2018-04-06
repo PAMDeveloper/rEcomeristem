@@ -3,7 +3,6 @@
 
 #include <ModelParameters.hpp>
 
-
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {
     std::stringstream ss;
@@ -31,6 +30,8 @@ inline double round( double val, int decimal )
 
 using namespace ecomeristem;
 using namespace std;
+#include <iostream>
+#include <fstream>
 namespace utils {
 
 class ParametersReader {

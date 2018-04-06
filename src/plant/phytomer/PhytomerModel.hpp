@@ -58,8 +58,8 @@ public:
         _leaf_model(new LeafModel(_index, _is_on_mainstem, _plasto, _phyllo, _ligulo, _LL_BL))
     {
         // submodels
-        Submodels( ((LEAF, _leaf_model.get())) );
-        Submodels( ((INTERNODE, _internode_model.get())) );
+        setsubmodel(LEAF, _leaf_model.get());
+        setsubmodel(INTERNODE, _internode_model.get());
 
         // internals
         InternalS(LEAF_PREDIM,  _leaf_model.get(), LeafModel::LEAF_PREDIM);

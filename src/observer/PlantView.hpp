@@ -25,9 +25,7 @@
 #ifndef MODEL_OBSERVER_PLANT_VIEW_HPP
 #define MODEL_OBSERVER_PLANT_VIEW_HPP
 
-#include <artis/observer/View.hpp>
-#include <artis/utils/DateTime.hpp>
-
+#include <defines.hpp>
 #include <ModelParameters.hpp>
 
 #include <plant/PlantModel.hpp>
@@ -40,8 +38,7 @@
 using namespace model;
 namespace observer {
 
-class PlantView : public artis::observer::View <
-        artis::utils::DoubleTime, ecomeristem::ModelParameters >
+class PlantView : public View
 {
 public:
     PlantView()

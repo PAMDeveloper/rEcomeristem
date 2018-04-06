@@ -66,10 +66,10 @@ public:
         _root_model(new RootModel)
     {
         // submodels
-        Submodels( ((WATER_BALANCE, _water_balance_model.get())) );
-        Submodels( ((STOCK, _stock_model.get())) );
-        Submodels( ((ASSIMILATION, _assimilation_model.get())) );
-        Submodels( ((ROOT, _root_model.get())) );
+        setsubmodel(WATER_BALANCE, _water_balance_model.get());
+        setsubmodel(STOCK, _stock_model.get());
+        setsubmodel(ASSIMILATION, _assimilation_model.get());
+        setsubmodel(ROOT, _root_model.get());
 
         // local internals
         Internal( LIG, &PlantModel::_lig );
@@ -241,7 +241,7 @@ public:
 
 
     void compute(double t, bool /* update */) {
-        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
+//        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
 
         //Delete culm and leaf
         std::deque < CulmModel* >::const_iterator nc = _culm_models.begin();

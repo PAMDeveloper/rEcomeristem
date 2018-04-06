@@ -276,7 +276,7 @@ public:
     }
 
     void compute(double t, bool /* update */) {
-        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
+//        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
 
         //kill culm if plant ic is < ict over phase 1 of first culm leaf
         if(_is_first_culm) {
