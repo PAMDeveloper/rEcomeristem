@@ -25,14 +25,12 @@
 #ifndef PLANT_MODEL_HPP
 #define PLANT_MODEL_HPP
 
-//#include <QDebug>
 #include <defines.hpp>
-#include <plant/processes/ThermalTimeModel.hpp>
+#include <plant/CulmModel.hpp>
+#include <plant/RootModel.hpp>
 #include <plant/processes/WaterBalanceModel.hpp>
 #include <plant/processes/PlantStockModel.hpp>
 #include <plant/processes/AssimilationModel.hpp>
-#include <plant/RootModel.hpp>
-#include <plant/CulmModel.hpp>
 
 using namespace model;
 
@@ -244,8 +242,6 @@ public:
 
 
     void compute(double t, bool /* update */) {
-//        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
-
         //Delete culm and leaf
         std::deque < CulmModel* >::const_iterator nc = _culm_models.begin();
         while(nc != _culm_models.end()) {

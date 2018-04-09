@@ -25,9 +25,6 @@
 #ifndef MODEL_OBSERVER_PLANT_VIEW_HPP
 #define MODEL_OBSERVER_PLANT_VIEW_HPP
 
-#include <defines.hpp>
-#include <ModelParameters.hpp>
-
 #include <plant/PlantModel.hpp>
 #include <plant/processes/ThermalTimeModel.hpp>
 #include <plant/processes/WaterBalanceModel.hpp>

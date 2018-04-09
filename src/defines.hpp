@@ -1,8 +1,7 @@
 #ifndef DEFINES_HPP
 #define DEFINES_HPP
 
-#include <ModelParameters.hpp>
-#include <utils/julianconverter.h>
+#include "iso646.h"
 #include <type_traits> //necessary for enum type checking on states
 
 class PlantModel;
@@ -100,42 +99,49 @@ struct GlobalParameters
 { };
 
 
-#if 1
+#ifdef UNSAFE_RUN
+#include <utils/juliancalculator.h>
 #include <artis_lite/simplemodel.h>
+//#include <artis_lite/simpletrace.h>
 #include <memory>
 #include <deque>
+#include <limits>
+
+namespace artis { namespace utils { namespace DateTime {
+static string toJulianDayFmt(double, int) {
+    return "";
+}
+}}}
+
+struct DoubleTime {
+    static constexpr double negative_infinity = -numeric_limits < double >::infinity();
+    static constexpr double positive_infinity = numeric_limits < double >::infinity();
+    static constexpr double null = 0;
+};
 
 
 using Model = SimpleModel < ecomeristem::ModelParameters >;
-
-template < typename T >
-using AtomicModel = SimpleModel < T >;
-
-template < typename T >
-using CoupledModel = SimpleModel < T >;
+template < typename T > using AtomicModel = SimpleModel < T >;
+template < typename T > using CoupledModel = SimpleModel < T >;
 
 typedef SimpleSimulator < PlantModel, GlobalParameters, ecomeristem::ModelParameters > EcomeristemSimulator;
-
 typedef SimpleContext EcomeristemContext;
+typedef SimpleView View;
+typedef SimpleObserver Observer;
 
-typedef SimpleView < ecomeristem::ModelParameters > View;
-
-//typedef artis::observer::Observer < artis::utils::DoubleTime,
-//                                    ecomeristem::ModelParameters > Observer;
-
-//using Trace = artis::utils::Trace < artis::utils::DoubleTime >;
-
-//using TraceElement = artis::utils::TraceElement < artis::utils::DoubleTime >;
-
+#ifdef WITH_TRACE
+using Trace = SimpleTrace;
+//using KernelInfo = SimpleKernelInfo;
+template < class T > using TraceElement = SimpleTraceElement;
+template < class T > using TraceElements = std::vector < TraceElement <T> >;
+#endif
 
 #else
-
-#include <artis/kernel/AbstractAtomicModel.hpp>
-#include <artis/kernel/AbstractCoupledModel.hpp>
+#include <utils/juliancalculator.h>
+#include <ModelParameters.hpp>
 #include <artis/kernel/Simulator.hpp>
-#include <artis/observer/Observer.hpp>
-#include <artis/observer/View.hpp>
-#include <artis/utils/DoubleTime.hpp>
+#include <artis/kernel/AbstractAtomicModel.hpp>
+#include <artis/utils/Trace.hpp>
 
 using Model = artis::kernel::AbstractModel < artis::utils::DoubleTime,
                                              ecomeristem::ModelParameters >;

@@ -26,8 +26,8 @@
 #ifndef SAMPLE_ATOMIC_MODEL_HPP
 #define SAMPLE_ATOMIC_MODEL_HPP
 
-//#include <QDebug>
 #include <defines.hpp>
+
 #include <plant/processes/CulmStockModel.hpp>
 #include <plant/processes/IctModel.hpp>
 #include <plant/processes/ThermalTimeModelNG.hpp>
@@ -277,8 +277,6 @@ public:
     }
 
     void compute(double t, bool /* update */) {
-//        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
-
         //kill culm if plant ic is < ict over phase 1 of first culm leaf
         if(_is_first_culm) {
             _is_computed = true;

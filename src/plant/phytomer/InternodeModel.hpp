@@ -24,9 +24,6 @@
 
 #include <defines.hpp>
 
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 namespace model {
 
 class InternodeModel : public AtomicModel < InternodeModel >

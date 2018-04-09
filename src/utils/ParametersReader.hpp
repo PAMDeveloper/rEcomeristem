@@ -2,6 +2,13 @@
 #define UTILS_PARAMETERS_READER_HPP
 
 #include <ModelParameters.hpp>
+#include <utils/juliancalculator.h>
+
+using namespace ecomeristem;
+using namespace std;
+
+#include <iostream>
+#include <fstream>
 
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {
@@ -28,10 +35,6 @@ inline double round( double val, int decimal )
     return val/factor;
 }
 
-using namespace ecomeristem;
-using namespace std;
-#include <iostream>
-#include <fstream>
 namespace utils {
 
 class ParametersReader {
@@ -51,7 +54,7 @@ public:
             char* p;
             double converted = strtod(s.c_str(), &p);
             if (*p) {
-                converted = JulianDayConverter::toJulianDayNumber(s, DATE_FORMAT_DMY);
+                converted = JulianCalculator::toJulianDay(s, JulianCalculator::DMY, '/');
             }
             parameters.set(line.substr(0, line.find("=")), converted);
         }
@@ -71,7 +74,7 @@ public:
 
         while (*meteoFiles[0] >> date) {
             if (first) {
-                double julianBegin = JulianDayConverter::toJulianDayNumber(date, DATE_FORMAT_DMY);
+                double julianBegin = JulianCalculator::toJulianDay(date, JulianCalculator::DMY, '/');
                 parameters.set("BeginDate", julianBegin);
                 parameters.beginDate = julianBegin;
                 first = false;
@@ -111,7 +114,7 @@ public:
         for (int i = 0; i < 5; ++i) {
             delete meteoFiles[i];
         }
-        parameters.set("EndDate", JulianDayConverter::toJulianDayNumber(date, DATE_FORMAT_DMY));
+        parameters.set("EndDate", JulianCalculator::toJulianDay(date, JulianCalculator::DMY, '/'));
         varietyParams.close();
 
 

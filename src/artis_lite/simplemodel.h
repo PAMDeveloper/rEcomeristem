@@ -4,64 +4,101 @@
 #include <vector>
 #include <iterator>
 #include <list>
+#include <memory>
+#include <mutex>
 #include <ModelParameters.hpp>
+
+#include <artis_lite/simpletrace.h>
+
 using namespace std;
 
 //useless - for signature compatibility
 namespace artis { namespace kernel {
-    enum ValueTypeID { DOUBLE, INT, BOOL, DOUBLE_VECTOR, INT_VECTOR, BOOL_VECTOR, STRING, USER };
+enum ValueTypeID { DOUBLE, INT, BOOL, DOUBLE_VECTOR, INT_VECTOR, BOOL_VECTOR, STRING, USER };
 }}
 
-
-template < typename T >
 class SimpleView {
     typedef vector < unsigned int > Selector;
-
 public:
-    void selector(const string& name,
-                  artis::kernel::ValueTypeID value_type,
-                  const Selector& chain)
-    {}
+    typedef vector < pair < double, string > > Value;
+    typedef map < string, Value > Values;
+    Values _values;
+    void selector(const string& name, artis::kernel::ValueTypeID value_type, const Selector& chain)  {}
+    Values values() {return _values;}
+    double begin() {return 0;}
+    double end() {return 0;}
+    double get(double day, string name) {return 0;}
 };
+
+class SimpleObserver {
+public:
+    typedef std::map < std::string, SimpleView * > Views;
+    Views _views;
+    Views views() const {return _views;}
+};
+
 
 class SimpleContext {
+    double _start, _end;
 public:
-    double start, end;
     SimpleContext(double start, double end):
-        start(start), end(end) {}
-};
-
-class AbstractSimpleModel {
-public:
-    virtual void compute(double t, bool update = false) = 0;
-    virtual void init(double t, const ecomeristem::ModelParameters& parameters) = 0;
-    virtual void operator()(double t) { this->compute(t); }
+        _start(start), _end(end) {}
+    double begin() {return _start;}
+    double end() {return _end;}
 };
 
 template < typename T, typename U, typename V >
 class SimpleSimulator {
 public:
     T * _model;
+    SimpleObserver _observer;
+
     SimpleSimulator(T * model, U parameters) : _model(model) {}
 
     void init(double time, const V& parameters)
     { _model->init(time, parameters); }
 
-    void run(const SimpleContext & context)
-    {}
-
-    void attachView(const string& name, SimpleView < V > * view)
-    { }
+    void run(SimpleContext & context) {
+        for (double t = context.begin(); t <= context.end(); t++) {
+            (*_model)(t);
+            //            _observer.observe(t);
+        }
+    }
+    void attachView(const string& name, SimpleView * view){ }
+    const SimpleObserver& observer() const { return _observer; }
 
 };
 
+class AbstractSimpleModel {
+
+public:
+#ifdef WITH_TRACE
+        map<string,vector<double>> before_compute_trace;
+        map<string,vector<double>> after_compute_trace;
+#endif
+
+    vector<string> i_names;
+    vector<string> e_names;
+    map<string, vector< AbstractSimpleModel * >> subModels;
+    AbstractSimpleModel * parent;
+    int childIndex;
+
+
+    double getIVal(double i, double j, bool before) {
+        return before ? before_compute_trace[i_names[i]][j] : after_compute_trace[i_names[i]][j];
+    }
+
+    virtual string name() = 0;
+    virtual string path() = 0;
+    virtual void compute(double t, bool update = false) = 0;
+    virtual void init(double t, const ecomeristem::ModelParameters& parameters) = 0;
+};
 
 template < typename T >
 class SimpleModel : public AbstractSimpleModel {
 
 protected:
     double last_time;
-public:
     vector<double T::*> i_double;
     vector<int T::*> i_int;
     vector<bool T::*> i_bool;
@@ -82,92 +119,160 @@ public:
     vector<leaf::leaf_phase T::*> e_leaf_phase;
     vector<peduncle::peduncle_phase T::*> e_peduncle_phase;
 
-    vector< AbstractSimpleModel * > subModels;
-//    ecomeristem::ModelParameters * parameters;
+public:
+    SimpleModel() {childIndex = -1; parent = nullptr;}
 
-    template <typename W>
-    void add_vec(unsigned int index, W T::* var, vector<W T::*> & vec) {
-        if(vec.size() <= index)
-            while(vec.size() <= index)
-                vec.push_back(var);
-        else vec[index] = var;
+    string path() {
+        return (parent == nullptr ? "" : parent->path() + "/") +
+                (childIndex == -1 ? "" : "[" + to_string(childIndex) + "]") +
+                typeid(T).name();
     }
 
-    void internal_(unsigned int index, const string& /*n*/, double T::* var) {add_vec<double>(index,var,i_double);}
-    void internal_(unsigned int index, const string& /*n*/, int T::* var) {add_vec<int>(index,var,i_int);}
-    void internal_(unsigned int index, const string& /*n*/, bool T::* var) {add_vec<bool>(index,var,i_bool);}
-    void internal_(unsigned int index, const string& /*n*/, plant::plant_state T::* var) {add_vec<plant::plant_state>(index,var,i_plant_state);}
-    void internal_(unsigned int index, const string& /*n*/, plant::plant_phase T::* var) {add_vec<plant::plant_phase>(index,var,i_plant_phase);}
-    void internal_(unsigned int index, const string& /*n*/, culm::culm_phase T::* var) {add_vec<culm::culm_phase>(index,var,i_culm_phase);}
-    void internal_(unsigned int index, const string& /*n*/, internode::internode_phase T::* var) {add_vec<internode::internode_phase>(index,var,i_internode_phase);}
-    void internal_(unsigned int index, const string& /*n*/, leaf::leaf_phase T::* var) {add_vec<leaf::leaf_phase>(index,var,i_leaf_phase);}
-    void internal_(unsigned int index, const string& /*n*/, peduncle::peduncle_phase T::* var) {add_vec<peduncle::peduncle_phase>(index,var,i_peduncle_phase);}
+    string name() {
+        return typeid(T).name();
+    }
 
-    void external_(unsigned int index, const string& /*n*/, double T::* var) {add_vec<double>(index,var,e_double);}
-    void external_(unsigned int index, const string& /*n*/, int T::* var) {add_vec<int>(index,var,e_int);}
-    void external_(unsigned int index, const string& /*n*/, bool T::* var) {add_vec<bool>(index,var,e_bool);}
-    void external_(unsigned int index, const string& /*n*/, plant::plant_state T::* var) {add_vec<plant::plant_state>(index,var,e_plant_state);}
-    void external_(unsigned int index, const string& /*n*/, plant::plant_phase T::* var) {add_vec<plant::plant_phase>(index,var,e_plant_phase);}
-    void external_(unsigned int index, const string& /*n*/, culm::culm_phase T::* var) {add_vec<culm::culm_phase>(index,var,e_culm_phase);}
-    void external_(unsigned int index, const string& /*n*/, internode::internode_phase T::* var) {add_vec<internode::internode_phase>(index,var,e_internode_phase);}
-    void external_(unsigned int index, const string& /*n*/, leaf::leaf_phase T::* var) {add_vec<leaf::leaf_phase>(index,var,e_leaf_phase);}
-    void external_(unsigned int index, const string& /*n*/, peduncle::peduncle_phase T::* var) {add_vec<peduncle::peduncle_phase>(index,var,e_peduncle_phase);}
+    double getIValue(unsigned int i) {
+        if(i_double.size() > i && i_double[i] != nullptr) return get<double>(0,i);
+        else if(i_int.size() > i && i_int[i] != nullptr) return static_cast<double>(get<int>(0,i));
+        else if(i_bool.size() > i && i_bool[i] != nullptr) return static_cast<double>(get<bool>(0,i));
+        else if(i_plant_state.size() > i && i_plant_state[i] != nullptr) return static_cast<double>(get<plant::plant_state>(0,i));
+        else if(i_plant_phase.size() > i && i_plant_phase[i] != nullptr) return static_cast<double>(get<plant::plant_phase>(0,i));
+        else if(i_culm_phase.size() > i && i_culm_phase[i] != nullptr) return static_cast<double>(get<culm::culm_phase>(0,i));
+        else if(i_internode_phase.size() > i && i_internode_phase[i] != nullptr) return static_cast<double>(get<internode::internode_phase>(0,i));
+        else if(i_leaf_phase.size() > i && i_leaf_phase[i] != nullptr) return static_cast<double>(get<leaf::leaf_phase>(0,i));
+        else if(i_peduncle_phase.size() > i && i_peduncle_phase[i] != nullptr) return static_cast<double>(get<peduncle::peduncle_phase>(0,i));
+    }
 
-    template < typename W > W get(double /*t*/, unsigned int index) { return W(); }
+    virtual void operator()(double t) {
+#ifdef WITH_TRACE
+        for (int i = 0; i < i_names.size(); ++i) {
+            KernelInfo k(i_names[i], true, to_string(getIValue(i)));
+            SimpleTraceElement t(path(), t, artis::utils::BEFORE_COMPUTE, k);
+            ::SimpleTrace::trace().addElement(t);
+            //                if(before_compute_trace.find( i_names[i] ) == before_compute_trace.end())
+            //                    before_compute_trace[i_names[i]] = vector<double>();
+
+            //                before_compute_trace[i_names[i]].push_back(getIValue(i));
+        }
+#endif
+        this->compute(t);
+#ifdef WITH_TRACE
+        for (int i = 0; i < i_names.size(); ++i) {
+            KernelInfo k(i_names[i], true, to_string(getIValue(i)));
+            SimpleTraceElement t(path(), t, artis::utils::AFTER_COMPUTE, k);
+            ::SimpleTrace::trace().addElement(t);
+            //                if(after_compute_trace.find( i_names[i] ) == after_compute_trace.end())
+            //                    after_compute_trace[i_names[i]] = vector<double>();
+
+            //                after_compute_trace[i_names[i]].push_back(getIValue(i));
+        }
+#endif
+    }
+
+    template <typename W>
+    void add_vec(unsigned int index, W T::* var, vector<W T::*> & vec, string name = "") {
+        if(vec.size() <= index)
+            while(vec.size() <= index)
+                vec.push_back(nullptr);
+        vec[index] = var;
+        if(name != "") {
+            if(i_names.size() <= index)
+                while(i_names.size() <= index)
+                    i_names.push_back("");
+            i_names[index] = name;
+        }
+    }
+
+    template <typename W>
+    void add_vec2(unsigned int index, W T::* var, vector<W T::*> & vec, string name = "") {
+        if(vec.size() <= index)
+            while(vec.size() <= index)
+                vec.push_back(nullptr);
+        vec[index] = var;
+
+        if(name != "") {
+            if(e_names.size() <= index)
+                while(e_names.size() <= index)
+                    e_names.push_back("");
+            e_names[index] = name;
+        }
+    }
+
+    void internal_(unsigned int index, const string& n, double T::* var) {add_vec<double>(index,var,i_double,n);}
+    void internal_(unsigned int index, const string& n, int T::* var) {add_vec<int>(index,var,i_int,n);}
+    void internal_(unsigned int index, const string& n, bool T::* var) {add_vec<bool>(index,var,i_bool,n);}
+    void internal_(unsigned int index, const string& n, plant::plant_state T::* var) {add_vec<plant::plant_state>(index,var,i_plant_state,n);}
+    void internal_(unsigned int index, const string& n, plant::plant_phase T::* var) {add_vec<plant::plant_phase>(index,var,i_plant_phase,n);}
+    void internal_(unsigned int index, const string& n, culm::culm_phase T::* var) {add_vec<culm::culm_phase>(index,var,i_culm_phase,n);}
+    void internal_(unsigned int index, const string& n, internode::internode_phase T::* var) {add_vec<internode::internode_phase>(index,var,i_internode_phase,n);}
+    void internal_(unsigned int index, const string& n, leaf::leaf_phase T::* var) {add_vec<leaf::leaf_phase>(index,var,i_leaf_phase,n);}
+    void internal_(unsigned int index, const string& n, peduncle::peduncle_phase T::* var) {add_vec<peduncle::peduncle_phase>(index,var,i_peduncle_phase,n);}
+
+    void external_(unsigned int index, const string& n, double T::* var) {add_vec2<double>(index,var,e_double,n);}
+    void external_(unsigned int index, const string& n, int T::* var) {add_vec2<int>(index,var,e_int,n);}
+    void external_(unsigned int index, const string& n, bool T::* var) {add_vec2<bool>(index,var,e_bool,n);}
+    void external_(unsigned int index, const string& n, plant::plant_state T::* var) {add_vec2<plant::plant_state>(index,var,e_plant_state,n);}
+    void external_(unsigned int index, const string& n, plant::plant_phase T::* var) {add_vec2<plant::plant_phase>(index,var,e_plant_phase,n);}
+    void external_(unsigned int index, const string& n, culm::culm_phase T::* var) {add_vec2<culm::culm_phase>(index,var,e_culm_phase,n);}
+    void external_(unsigned int index, const string& n, internode::internode_phase T::* var) {add_vec2<internode::internode_phase>(index,var,e_internode_phase,n);}
+    void external_(unsigned int index, const string& n, leaf::leaf_phase T::* var) {add_vec2<leaf::leaf_phase>(index,var,e_leaf_phase,n);}
+    void external_(unsigned int index, const string& n, peduncle::peduncle_phase T::* var) {add_vec2<peduncle::peduncle_phase>(index,var,e_peduncle_phase,n);}
+
+    template < typename W > W get(double /*t*/, unsigned int index) { cout<<"nospecialization"<<"\n";return nullptr; }
     template < typename W, typename U > W get(double t, unsigned int index) { return get<W>(t,index);}
-    template <> double get<double>(double /*t*/, unsigned int index)
-    {return static_cast<SimpleModel<T>*>(this)->*static_cast<double SimpleModel<T>::*>(i_double[index]);}
-    template <> int get<int>(double /*t*/, unsigned int index)
-    {return static_cast<SimpleModel<T>*>(this)->*static_cast<int SimpleModel<T>::*>(i_int[index]);}
-    template <> bool get<bool>(double /*t*/, unsigned int index)
-    {return static_cast<SimpleModel<T>*>(this)->*static_cast<bool SimpleModel<T>::*>(i_bool[index]);}
-    template <> plant::plant_state get<plant::plant_state>(double /*t*/, unsigned int index)
-    {return static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_state SimpleModel<T>::*>(i_plant_state[index]);}
-    template <> plant::plant_phase get<plant::plant_phase>(double /*t*/, unsigned int index)
-    {return static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_phase SimpleModel<T>::*>(i_plant_phase[index]);}
-    template <> culm::culm_phase get<culm::culm_phase>(double /*t*/, unsigned int index)
-    {return static_cast<SimpleModel<T>*>(this)->*static_cast<culm::culm_phase SimpleModel<T>::*>(i_culm_phase[index]);}
-    template <> internode::internode_phase get<internode::internode_phase>(double /*t*/, unsigned int index)
-    {return static_cast<SimpleModel<T>*>(this)->*static_cast<internode::internode_phase SimpleModel<T>::*>(i_internode_phase[index]);}
-    template <> leaf::leaf_phase get<leaf::leaf_phase>(double /*t*/, unsigned int index)
-    {return static_cast<SimpleModel<T>*>(this)->*static_cast<leaf::leaf_phase SimpleModel<T>::*>(i_leaf_phase[index]);}
-    template <> peduncle::peduncle_phase get<peduncle::peduncle_phase>(double /*t*/, unsigned int index)
-    {return static_cast<SimpleModel<T>*>(this)->*static_cast<peduncle::peduncle_phase SimpleModel<T>::*>(i_peduncle_phase[index]);}
+    template <> double get<double>(double t, unsigned int index)
+    {if(i_double[index]==nullptr) cout<<"ERROR" << t << "double[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<double SimpleModel<T>::*>(i_double[index]);}
+    template <> int get<int>(double t, unsigned int index)
+    {if(i_int[index]==nullptr) cout<<"ERROR" << t << "int[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<int SimpleModel<T>::*>(i_int[index]);}
+    template <> bool get<bool>(double t, unsigned int index)
+    {if(i_bool[index]==nullptr) cout<<"ERROR" << t << "bool[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<bool SimpleModel<T>::*>(i_bool[index]);}
+    template <> plant::plant_state get<plant::plant_state>(double t, unsigned int index)
+    {if(i_plant_state[index]==nullptr) cout<<"ERROR" << t << "plant_state[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_state SimpleModel<T>::*>(i_plant_state[index]);}
+    template <> plant::plant_phase get<plant::plant_phase>(double t, unsigned int index)
+    {if(i_plant_phase[index]==nullptr) cout<<"ERROR" << t << "plant_phase[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_phase SimpleModel<T>::*>(i_plant_phase[index]);}
+    template <> culm::culm_phase get<culm::culm_phase>(double t, unsigned int index)
+    {if(i_culm_phase[index]==nullptr) cout<<"ERROR" << t << "culm_phase[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<culm::culm_phase SimpleModel<T>::*>(i_culm_phase[index]);}
+    template <> internode::internode_phase get<internode::internode_phase>(double t, unsigned int index)
+    {if(i_internode_phase[index]==nullptr) cout<<"ERROR" << t << "internode_phase[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<internode::internode_phase SimpleModel<T>::*>(i_internode_phase[index]);}
+    template <> leaf::leaf_phase get<leaf::leaf_phase>(double t, unsigned int index)
+    {if(i_leaf_phase[index]==nullptr) cout<<"ERROR" << t << "leaf_phase[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<leaf::leaf_phase SimpleModel<T>::*>(i_leaf_phase[index]);}
+    template <> peduncle::peduncle_phase get<peduncle::peduncle_phase>(double t, unsigned int index)
+    {if(i_peduncle_phase[index]==nullptr) cout<<"ERROR" << t << "peduncle_phase[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<peduncle::peduncle_phase SimpleModel<T>::*>(i_peduncle_phase[index]);}
 
-    template < typename W > void put(double /*t*/, unsigned int index, W value) {}
+    template < typename W > void put(double /*t*/, unsigned int index, W value) {cout<<"nospecialization"<<"\n";}
     template <> void put<double>(double /*t*/, unsigned int index, double value)
-    {static_cast<SimpleModel<T>*>(this)->*static_cast<double SimpleModel<T>::*>(e_double[index]) = value;}
+    {if(e_double[index]==nullptr) cout << "Error " << "double[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<double SimpleModel<T>::*>(e_double[index]) = value;}
     template <> void put<int>(double /*t*/, unsigned int index, int value)
-    {static_cast<SimpleModel<T>*>(this)->*static_cast<int SimpleModel<T>::*>(e_int[index]) = value;}
+    {if(e_int[index]==nullptr) cout << "Error " << "int[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<int SimpleModel<T>::*>(e_int[index]) = value;}
     template <> void put<bool>(double /*t*/, unsigned int index, bool value)
-    {static_cast<SimpleModel<T>*>(this)->*static_cast<bool SimpleModel<T>::*>(e_bool[index]) = value;}
+    {if(e_bool[index]==nullptr) cout << "Error " << "bool[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<bool SimpleModel<T>::*>(e_bool[index]) = value;}
     template <> void put<plant::plant_state>(double /*t*/, unsigned int index, plant::plant_state value)
-    {static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_state SimpleModel<T>::*>(e_plant_state[index]) = value;}
+    {if(e_plant_state[index]==nullptr) cout << "Error " << "plant_state[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_state SimpleModel<T>::*>(e_plant_state[index]) = value;}
     template <> void put<plant::plant_phase>(double /*t*/, unsigned int index, plant::plant_phase value)
-    {static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_phase SimpleModel<T>::*>(e_plant_phase[index]) = value;}
+    {if(e_plant_phase[index]==nullptr) cout << "Error " << "plant_phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_phase SimpleModel<T>::*>(e_plant_phase[index]) = value;}
     template <> void put<culm::culm_phase>(double /*t*/, unsigned int index, culm::culm_phase value)
-    {static_cast<SimpleModel<T>*>(this)->*static_cast<culm::culm_phase SimpleModel<T>::*>(e_culm_phase[index]) = value;}
+    {if(e_culm_phase[index]==nullptr) cout << "Error " << "culm_phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<culm::culm_phase SimpleModel<T>::*>(e_culm_phase[index]) = value;}
     template <> void put<internode::internode_phase>(double /*t*/, unsigned int index, internode::internode_phase value)
-    {static_cast<SimpleModel<T>*>(this)->*static_cast<internode::internode_phase SimpleModel<T>::*>(e_internode_phase[index]) = value;}
+    {if(e_internode_phase[index]==nullptr) cout << "Error " << "phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<internode::internode_phase SimpleModel<T>::*>(e_internode_phase[index]) = value;}
     template <> void put<leaf::leaf_phase>(double /*t*/, unsigned int index, leaf::leaf_phase value)
-    {static_cast<SimpleModel<T>*>(this)->*static_cast<leaf::leaf_phase SimpleModel<T>::*>(e_leaf_phase[index]) = value;}
+    {if(e_leaf_phase[index]==nullptr) cout << "Error " << "leaf_phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<leaf::leaf_phase SimpleModel<T>::*>(e_leaf_phase[index]) = value;}
     template <> void put<peduncle::peduncle_phase>(double /*t*/, unsigned int index, peduncle::peduncle_phase value)
-    {static_cast<SimpleModel<T>*>(this)->*static_cast<peduncle::peduncle_phase SimpleModel<T>::*>(e_peduncle_phase[index]) = value;}
+    {if(e_peduncle_phase[index]==nullptr) cout << "Error " << "phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<peduncle::peduncle_phase SimpleModel<T>::*>(e_peduncle_phase[index]) = value;}
 
-    //voir les submodel internals
-    void link_internal_(unsigned int index, string var_name, AbstractSimpleModel * model, int sub_index, string sub_var_name)
-    {}
-
-    void setsubmodel(unsigned int index, AbstractSimpleModel * model)
-    {}
-
+    void setsubmodel(unsigned int /*index*/, AbstractSimpleModel * model) {
+        if(subModels.find( model->name() ) == subModels.end())
+            subModels[model->name()] = vector<AbstractSimpleModel*>();
+        subModels[model->name()].push_back(model);
+        model->parent = this;
+        model->childIndex = subModels[model->name()].size() - 1;
+    }
 };
 
 #define DOUBLEESCAPE(a) #a
 #define ESCAPEQUOTE(a) DOUBLEESCAPE(a)
 #define Internal(index, var) internal_(index, string(ESCAPEQUOTE(index)), var)
 #define External(index, var) external_(index, string(ESCAPEQUOTE(index)), var)
-#define InternalS(index, var, sub_index) link_internal_(index, string(ESCAPEQUOTE(index)), var, sub_index, string(ESCAPEQUOTE(index)))
 
 
 #endif // SIMPLEMODEL_H

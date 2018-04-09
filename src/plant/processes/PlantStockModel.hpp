@@ -111,7 +111,7 @@ public:
             }
             double tmp = std::min(5., mean);
 
-            if (tmp == 0 and _seed_res_[0] == 0 and _seed_res_[1] == 0 and
+            if (tmp == 0 && _seed_res_[0] == 0 && _seed_res_[1] == 0 &&
                     _seed_res_[2] == 0) {
                 _ic = 0.001;
                 _test_ic = 0.001;
