@@ -2,20 +2,25 @@
 #Authors : Florian Larue, Gregory Beurier, Lauriane Rouan, Delphine Luquet
 #-- (PAM, AGAP, BIOS, CIRAD)
 ###Set informations for parameter estimation###
-PPath <- "D:/Workspace/estimworkspace/riz/estim_1"
-VPath <- "D:/Workspace/estimworkspace/riz/estim_1"
-MPath <- "D:/Workspace/estimworkspace/riz/estim_1"
-VName <- "vobs_moy_T1.txt"
-VECName <- "vobs_et_T1.txt"
+PPath <- "D:/Workspace/estimworkspace/2015/ME/G9"
+VPath <- "D:/Workspace/estimworkspace/2015/ME/G9"
+MPath <- "D:/Workspace/estimworkspace/2015/ME/G9"
+VName <- "vobs_moy.txt"
+VECName <- "vobs_et.txt"
 
 #Temoin
 ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init", "ligulo_init", "coef_MGR_PI", "slope_length_IN", "density_IN2", "coef_plasto_PI", "coef_phyllo_PI", "coef_ligulo_PI", "slope_LL_BL_at_PI")
-MinValue <- c(3, 0.5, 6, 15, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
+MinValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
 MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
 ##Stress
 #ParamOfInterest <- c("thresAssim","thresINER","thresLER","thresLEN","stressBP","stressBP2")
 #MinValue <- c(1,1,1,1,0,1)
 #MaxValue <- c(20,20,20,20,10,10)
+##Rice
+#ParamOfInterest <- c("spike_creation_rate","grain_filling_rate","coef_ligulo_PI","coef_phyllo_PI","coef_plasto_PI","density_IN2","Ict","leaf_length_to_IN_length","slope_length_IN","Epsib","SLAp","MGR_init","coef_MGR_PI","slope_LL_BL_at_PI")
+#MinValue <- c(0.1,0.01,1.0,1.0,1.0,0.01,0.8,0.01,0.5,3,20,2,-0.5,0.0)
+#MaxValue <- c(1.5,0.05,3.0,3.0,3.0,0.3,2.5,0.2,2.0,8,60,10,0.5,0.5)
+
 
 coefIncrease <- 10
 Optimizer <- "D" #(D = DE, G = RGenoud)
