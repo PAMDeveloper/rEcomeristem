@@ -762,6 +762,7 @@ public:
         _predim_leaf_on_mainstem = 0;
 
         //internal variables (local)
+        _tae = 0;
         _nb_tillers = 0;
         _paniclenb = 0;
         _nbExistingTillers = 1;
