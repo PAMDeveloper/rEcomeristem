@@ -28,7 +28,6 @@
 
 #include <defines.hpp>
 
-#include <plant/processes/CulmStockModel.hpp>
 #include <plant/processes/IctModel.hpp>
 #include <plant/processes/ThermalTimeModelNG.hpp>
 #include <plant/processes/ThermalTimeModel.hpp>

@@ -2,16 +2,16 @@
 #Authors : Florian Larue, Gregory Beurier, Lauriane Rouan, Delphine Luquet
 #-- (PAM, AGAP, BIOS, CIRAD)
 ###Set informations for parameter estimation###
-PPath <- "D:/Workspace/estimworkspace/2015/ME/G9"
-VPath <- "D:/Workspace/estimworkspace/2015/ME/G9"
-MPath <- "D:/Workspace/estimworkspace/2015/ME/G9"
+PPath <- "D:/Workspace/estimworkspace/ME/G1"
+VPath <- "D:/Workspace/estimworkspace/ME/G1"
+MPath <- "D:/Workspace/estimworkspace/ME/G1"
 VName <- "vobs_moy.txt"
 VECName <- "vobs_et.txt"
 
 #Temoin
-ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init", "ligulo_init", "coef_MGR_PI", "slope_length_IN", "density_IN2", "coef_plasto_PI", "coef_phyllo_PI", "coef_ligulo_PI", "slope_LL_BL_at_PI")
-MinValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
-MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
+#ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init", "ligulo_init", "coef_MGR_PI", "slope_length_IN", "density_IN2", "coef_plasto_PI", "coef_phyllo_PI", "coef_ligulo_PI", "slope_LL_BL_at_PI")
+#MinValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
+#MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
 ##Stress
 #ParamOfInterest <- c("thresAssim","thresINER","thresLER","thresLEN","stressBP","stressBP2")
 #MinValue <- c(1,1,1,1,0,1)
@@ -20,12 +20,19 @@ MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
 #ParamOfInterest <- c("spike_creation_rate","grain_filling_rate","coef_ligulo_PI","coef_phyllo_PI","coef_plasto_PI","density_IN2","Ict","leaf_length_to_IN_length","slope_length_IN","Epsib","SLAp","MGR_init","coef_MGR_PI","slope_LL_BL_at_PI")
 #MinValue <- c(0.1,0.01,1.0,1.0,1.0,0.01,0.8,0.01,0.5,3,20,2,-0.5,0.0)
 #MaxValue <- c(1.5,0.05,3.0,3.0,3.0,0.3,2.5,0.2,2.0,8,60,10,0.5,0.5)
+##AllSorghum
+ParamOfInterest <- c("Epsib", "Ict", "MGR_init", "plasto_init", "phyllo_init",
+                     "ligulo_init", "coef_MGR_PI", "slope_length_IN", "density_IN2", "coef_plasto_PI",
+                     "coef_phyllo_PI", "coef_ligulo_PI", "slope_LL_BL_at_PI",
+                     "thresAssim","thresINER","thresLER","thresLEN","stressBP","stressBP2")
+MinValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0,1,1,1,1,0,1)
+MaxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4,20,20,20,20,10,10)
 
 
 coefIncrease <- 10
 Optimizer <- "D" #(D = DE, G = RGenoud)
 RmseM <- "RECC" #(RS = RSME-sum, REC = RMSE-ET, RC = RMSE-coef, RECC = RMSE-ET-coef)
-MaxIter <- 5000
+MaxIter <- 5
 Penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
 SolTol <- 0.01 #will be multiplied by the number of observed variables
 ACluster <- TRUE  #parallel for machines with at least 4 cores
@@ -306,9 +313,9 @@ resEPlot <- function(par = res$par) {
   }
   sapply(VarList, plotF)
 }
-savePar <- function(name = Sys.time()) {
-  resPar <- matrix(as.vector(res$par), ncol=length(ParamOfInterest))
-  write.table(resPar, file="par.csv", sep=",", append=T, dec=".",col.names = F,row.names = name)
+savePar <- function(name = Sys.Date()) {
+  resPar <- matrix(c(res$value,as.vector(res$par)), ncol=length(ParamOfInterest)+1)
+  write.table(resPar, file=paste("par_",name,".csv",sep=""), sep=",", append=F, dec=".",col.names = c("RMSE",ParamOfInterest),row.names = F)
 }
 savePlots <- function(name = Sys.Date()) {
   bestp <- as.vector(res$par)
