@@ -22,25 +22,31 @@ enum peduncle_phase {   INITIAL = 0,
 }
 
 namespace internode {
-enum internode_phase {  INITIAL, VEGETATIVE, REALIZATION,
-                        MATURITY, DEAD };
+enum internode_phase {  INITIAL = 0,
+                        VEGETATIVE = 1,
+                        REALIZATION = 2,
+                        MATURITY = 3,
+                        DEAD = 4 };
 }
 
 namespace leaf {
-enum leaf_phase   { INITIAL, VEGETATIVE, LIG, DEAD };
+enum leaf_phase   { INITIAL = 0,
+                    VEGETATIVE = 1,
+                    LIG = 2,
+                    DEAD = 3 };
 }
 
 namespace culm {
 enum culm_phase {   INITIAL = 0,
                     VEGETATIVE = 1,
-                    ELONG = 3,
-                    PRE_PI = 4,
-                    PI = 5,
-                    PRE_FLO = 6,
-                    FLO = 7,
-                    END_FILLING = 8,
-                    MATURITY = 9,
-                    DEAD = 10 };
+                    ELONG = 2,
+                    PRE_PI = 3,
+                    PI = 4,
+                    PRE_FLO = 5,
+                    FLO = 6,
+                    END_FILLING = 7,
+                    MATURITY = 8,
+                    DEAD = 9 };
 
 }
 

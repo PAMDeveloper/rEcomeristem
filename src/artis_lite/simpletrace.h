@@ -58,8 +58,8 @@ public:
         set_tgt_internal_var("");
     }
 
-    KernelInfo(const std::string& var, bool internal_var,
-               const std::string& value) :
+    KernelInfo(std::string var, bool internal_var,
+               std::string value) :
          _internal_var(internal_var), _empty(false)
     {
         set_var(var);
@@ -68,8 +68,8 @@ public:
         set_tgt_internal_var("");
     }
 
-    KernelInfo(const std::string& var, const std::string& tgt_model,
-               const std::string& tgt_internal_var) :
+    KernelInfo(std::string var, const std::string tgt_model,
+               std::string tgt_internal_var) :
         _internal_var(true), _empty(false)
     {
         set_var(var);
@@ -87,7 +87,7 @@ public:
         set_tgt_internal_var("");
     }
 
-    KernelInfo(const std::string& tgt_model) :
+    KernelInfo(std::string tgt_model) :
         _internal_var(false), _empty(false)
     {
         set_var("");
@@ -96,16 +96,16 @@ public:
         set_tgt_internal_var("");
     }
 
-    void set_var(const std::string& v)
+    void set_var(std::string v)
     { _var = KernelInfo::term(v); }
 
-    void set_value(const std::string& v)
+    void set_value(std::string v)
     { _value = KernelInfo::term(v); }
 
-    void set_tgt_model(const std::string& v)
+    void set_tgt_model(std::string v)
     { _tgt_model = KernelInfo::term(v); }
 
-    void set_tgt_internal_var(const std::string& v)
+    void set_tgt_internal_var(std::string v)
     { _tgt_internal_var = KernelInfo::term(v); }
 
 
@@ -171,7 +171,7 @@ class SimpleTraceElement {
 public:
     string _model_name; double _time; artis::utils::TraceType _type;
     KernelInfo _info;
-    SimpleTraceElement(const std::string& model_name, double time, artis::utils::TraceType type, const KernelInfo &info) :
+    SimpleTraceElement(std::string model_name, double time, artis::utils::TraceType type, KernelInfo info) :
         _time(time), _type(type), _model_name(model_name), _info(info) {}
 
     double get_time() const { return _time; }

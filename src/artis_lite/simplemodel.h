@@ -84,11 +84,11 @@ public:
     int childIndex;
 
 
-    double getIVal(double i, double j, bool before) {
-        return before ? before_compute_trace[i_names[i]][j] : after_compute_trace[i_names[i]][j];
-    }
+//    double getIVal(double i, double j, bool before) {
+//        return before ? before_compute_trace[i_names[i]][j] : after_compute_trace[i_names[i]][j];
+//    }
 
-    virtual string name() = 0;
+    virtual const string & name() = 0;
     virtual string path() = 0;
     virtual void compute(double t, bool update = false) = 0;
     virtual void init(double t, const ecomeristem::ModelParameters& parameters) = 0;
@@ -120,53 +120,81 @@ protected:
     vector<peduncle::peduncle_phase T::*> e_peduncle_phase;
 
 public:
-    SimpleModel() {childIndex = -1; parent = nullptr;}
+    string _name;
+    SimpleModel() {_name = typeid(T).name(); childIndex = -1; parent = nullptr;}
 
     string path() {
         return (parent == nullptr ? "" : parent->path() + "/") +
                 (childIndex == -1 ? "" : "[" + to_string(childIndex) + "]") +
-                typeid(T).name();
+                _name;
     }
 
-    string name() {
-        return typeid(T).name();
+    const string & name() {
+        return _name;
     }
 
-    double getIValue(unsigned int i) {
-        if(i_double.size() > i && i_double[i] != nullptr) return get<double>(0,i);
-        else if(i_int.size() > i && i_int[i] != nullptr) return static_cast<double>(get<int>(0,i));
-        else if(i_bool.size() > i && i_bool[i] != nullptr) return static_cast<double>(get<bool>(0,i));
-        else if(i_plant_state.size() > i && i_plant_state[i] != nullptr) return static_cast<double>(get<plant::plant_state>(0,i));
-        else if(i_plant_phase.size() > i && i_plant_phase[i] != nullptr) return static_cast<double>(get<plant::plant_phase>(0,i));
-        else if(i_culm_phase.size() > i && i_culm_phase[i] != nullptr) return static_cast<double>(get<culm::culm_phase>(0,i));
-        else if(i_internode_phase.size() > i && i_internode_phase[i] != nullptr) return static_cast<double>(get<internode::internode_phase>(0,i));
-        else if(i_leaf_phase.size() > i && i_leaf_phase[i] != nullptr) return static_cast<double>(get<leaf::leaf_phase>(0,i));
-        else if(i_peduncle_phase.size() > i && i_peduncle_phase[i] != nullptr) return static_cast<double>(get<peduncle::peduncle_phase>(0,i));
+    string getIValue(unsigned int i) {
+        if(i_double.size() > i && i_double[i] != nullptr) return to_string(get<double>(0,i));
+        else if(i_int.size() > i && i_int[i] != nullptr) return to_string(get<int>(0,i));
+        else if(i_bool.size() > i && i_bool[i] != nullptr) return get<bool>(0,i) ? "true" : "false";
+        else if(i_plant_state.size() > i && i_plant_state[i] != nullptr) return to_string(static_cast<int>(get<plant::plant_state>(0,i)));
+        else if(i_plant_phase.size() > i && i_plant_phase[i] != nullptr) return to_string(static_cast<int>(get<plant::plant_phase>(0,i)));
+        else if(i_culm_phase.size() > i && i_culm_phase[i] != nullptr) return to_string(static_cast<int>(get<culm::culm_phase>(0,i)));
+        else if(i_internode_phase.size() > i && i_internode_phase[i] != nullptr) to_string(static_cast<int>(get<internode::internode_phase>(0,i)));
+        else if(i_leaf_phase.size() > i && i_leaf_phase[i] != nullptr) return to_string(static_cast<int>(get<leaf::leaf_phase>(0,i)));
+        else if(i_peduncle_phase.size() > i && i_peduncle_phase[i] != nullptr) return to_string(static_cast<int>(get<peduncle::peduncle_phase>(0,i)));
+    }
+
+    string getEValue(unsigned int i) {
+        if(e_double.size() > i && e_double[i] != nullptr) return to_string(get_e<double>(0,i));
+        else if(e_int.size() > i && e_int[i] != nullptr) return to_string(get_e<int>(0,i));
+        else if(e_bool.size() > i && e_bool[i] != nullptr) return get_e<bool>(0,i) ? "true" : "false";
+        else if(e_plant_state.size() > i && e_plant_state[i] != nullptr) return to_string(static_cast<int>(get_e<plant::plant_state>(0,i)));
+        else if(e_plant_phase.size() > i && e_plant_phase[i] != nullptr) return to_string(static_cast<int>(get_e<plant::plant_phase>(0,i)));
+        else if(e_culm_phase.size() > i && e_culm_phase[i] != nullptr) return to_string(static_cast<int>(get_e<culm::culm_phase>(0,i)));
+        else if(e_internode_phase.size() > i && e_internode_phase[i] != nullptr) to_string(static_cast<int>(get_e<internode::internode_phase>(0,i)));
+        else if(e_leaf_phase.size() > i && e_leaf_phase[i] != nullptr) return to_string(static_cast<int>(get_e<leaf::leaf_phase>(0,i)));
+        else if(e_peduncle_phase.size() > i && e_peduncle_phase[i] != nullptr) return to_string(static_cast<int>(get_e<peduncle::peduncle_phase>(0,i)));
     }
 
     virtual void operator()(double t) {
 #ifdef WITH_TRACE
-        for (int i = 0; i < i_names.size(); ++i) {
-            KernelInfo k(i_names[i], true, to_string(getIValue(i)));
-            SimpleTraceElement t(path(), t, artis::utils::BEFORE_COMPUTE, k);
-            ::SimpleTrace::trace().addElement(t);
-            //                if(before_compute_trace.find( i_names[i] ) == before_compute_trace.end())
-            //                    before_compute_trace[i_names[i]] = vector<double>();
+//        string path  = this->path();
+//        KernelInfo c;
+//        SimpleTraceElement bst(path, t, artis::utils::BEFORE_COMPUTE, c);
+//        ::SimpleTrace::trace().addElement(bst);
 
-            //                before_compute_trace[i_names[i]].push_back(getIValue(i));
-        }
+//        for (int i = 0; i < i_names.size(); ++i) {
+//            if(i_names[i] == "") continue;
+//            string test = getIValue(i);
+////            KernelInfo k(i_names[i], true, getIValue(i));
+////            SimpleTraceElement bsst(path, t, artis::utils::BEFORE_COMPUTE, k);
+////            ::SimpleTrace::trace().addElement(bsst);
+////            //                if(before_compute_trace.find( i_names[i] ) == before_compute_trace.end())
+////            //                    before_compute_trace[i_names[i]] = vector<double>();
+////            //                before_compute_trace[i_names[i]].push_back(getIValue(i));
+//        }
+//        for (int i = 0; i < e_names.size(); ++i) {
+//            if(e_names[i] == "") continue;
+//            KernelInfo k("*" + e_names[i], true, getEValue(i));
+//            SimpleTraceElement bsst(path, t, artis::utils::BEFORE_COMPUTE, k);
+//            ::SimpleTrace::trace().addElement(bsst);
+//        }
 #endif
         this->compute(t);
 #ifdef WITH_TRACE
-        for (int i = 0; i < i_names.size(); ++i) {
-            KernelInfo k(i_names[i], true, to_string(getIValue(i)));
-            SimpleTraceElement t(path(), t, artis::utils::AFTER_COMPUTE, k);
-            ::SimpleTrace::trace().addElement(t);
-            //                if(after_compute_trace.find( i_names[i] ) == after_compute_trace.end())
-            //                    after_compute_trace[i_names[i]] = vector<double>();
+//        SimpleTraceElement ast(path, t, artis::utils::AFTER_COMPUTE, c);
+//        ::SimpleTrace::trace().addElement(ast);
+//        for (int i = 0; i < i_names.size(); ++i) {
+//            if(i_names[i] == "") continue;
+//            KernelInfo k(i_names[i], true, getIValue(i));
+//            SimpleTraceElement asst(path, t, artis::utils::AFTER_COMPUTE, k);
+//            ::SimpleTrace::trace().addElement(asst);
+//            //                if(after_compute_trace.find( i_names[i] ) == after_compute_trace.end())
+//            //                    after_compute_trace[i_names[i]] = vector<double>();
 
-            //                after_compute_trace[i_names[i]].push_back(getIValue(i));
-        }
+//            //                after_compute_trace[i_names[i]].push_back(getIValue(i));
+//        }
 #endif
     }
 
@@ -219,7 +247,7 @@ public:
     void external_(unsigned int index, const string& n, leaf::leaf_phase T::* var) {add_vec2<leaf::leaf_phase>(index,var,e_leaf_phase,n);}
     void external_(unsigned int index, const string& n, peduncle::peduncle_phase T::* var) {add_vec2<peduncle::peduncle_phase>(index,var,e_peduncle_phase,n);}
 
-    template < typename W > W get(double /*t*/, unsigned int index) { cout<<"nospecialization"<<"\n";return nullptr; }
+    template < typename W > W get(double t, unsigned int index) { cout<<"nospecialization"<<"\n";return nullptr; }
     template < typename W, typename U > W get(double t, unsigned int index) { return get<W>(t,index);}
     template <> double get<double>(double t, unsigned int index)
     {if(i_double[index]==nullptr) cout<<"ERROR" << t << "double[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<double SimpleModel<T>::*>(i_double[index]);}
@@ -240,25 +268,84 @@ public:
     template <> peduncle::peduncle_phase get<peduncle::peduncle_phase>(double t, unsigned int index)
     {if(i_peduncle_phase[index]==nullptr) cout<<"ERROR" << t << "peduncle_phase[index]" << index << i_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<peduncle::peduncle_phase SimpleModel<T>::*>(i_peduncle_phase[index]);}
 
-    template < typename W > void put(double /*t*/, unsigned int index, W value) {cout<<"nospecialization"<<"\n";}
-    template <> void put<double>(double /*t*/, unsigned int index, double value)
-    {if(e_double[index]==nullptr) cout << "Error " << "double[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<double SimpleModel<T>::*>(e_double[index]) = value;}
-    template <> void put<int>(double /*t*/, unsigned int index, int value)
-    {if(e_int[index]==nullptr) cout << "Error " << "int[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<int SimpleModel<T>::*>(e_int[index]) = value;}
-    template <> void put<bool>(double /*t*/, unsigned int index, bool value)
-    {if(e_bool[index]==nullptr) cout << "Error " << "bool[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<bool SimpleModel<T>::*>(e_bool[index]) = value;}
-    template <> void put<plant::plant_state>(double /*t*/, unsigned int index, plant::plant_state value)
-    {if(e_plant_state[index]==nullptr) cout << "Error " << "plant_state[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_state SimpleModel<T>::*>(e_plant_state[index]) = value;}
-    template <> void put<plant::plant_phase>(double /*t*/, unsigned int index, plant::plant_phase value)
-    {if(e_plant_phase[index]==nullptr) cout << "Error " << "plant_phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_phase SimpleModel<T>::*>(e_plant_phase[index]) = value;}
-    template <> void put<culm::culm_phase>(double /*t*/, unsigned int index, culm::culm_phase value)
-    {if(e_culm_phase[index]==nullptr) cout << "Error " << "culm_phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<culm::culm_phase SimpleModel<T>::*>(e_culm_phase[index]) = value;}
-    template <> void put<internode::internode_phase>(double /*t*/, unsigned int index, internode::internode_phase value)
-    {if(e_internode_phase[index]==nullptr) cout << "Error " << "phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<internode::internode_phase SimpleModel<T>::*>(e_internode_phase[index]) = value;}
-    template <> void put<leaf::leaf_phase>(double /*t*/, unsigned int index, leaf::leaf_phase value)
-    {if(e_leaf_phase[index]==nullptr) cout << "Error " << "leaf_phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<leaf::leaf_phase SimpleModel<T>::*>(e_leaf_phase[index]) = value;}
-    template <> void put<peduncle::peduncle_phase>(double /*t*/, unsigned int index, peduncle::peduncle_phase value)
-    {if(e_peduncle_phase[index]==nullptr) cout << "Error " << "phase[index] " << e_names[index] << "\n";static_cast<SimpleModel<T>*>(this)->*static_cast<peduncle::peduncle_phase SimpleModel<T>::*>(e_peduncle_phase[index]) = value;}
+    template < typename W > W get_e(double t, unsigned int index) { cout<<"nospecialization"<<"\n";return nullptr; }
+    template < typename W, typename U > W get_e(double t, unsigned int index) { return get_e<W>(t,index);}
+    template <> double get_e<double>(double t, unsigned int index)
+    {if(e_double[index]==nullptr) cout<<"ERROR" << t << "double[index]" << index << e_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<double SimpleModel<T>::*>(e_double[index]);}
+    template <> int get_e<int>(double t, unsigned int index)
+    {if(e_int[index]==nullptr) cout<<"ERROR" << t << "int[index]" << index << e_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<int SimpleModel<T>::*>(e_int[index]);}
+    template <> bool get_e<bool>(double t, unsigned int index)
+    {if(e_bool[index]==nullptr) cout<<"ERROR" << t << "bool[index]" << index << e_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<bool SimpleModel<T>::*>(e_bool[index]);}
+    template <> plant::plant_state get_e<plant::plant_state>(double t, unsigned int index)
+    {if(e_plant_state[index]==nullptr) cout<<"ERROR" << t << "plant_state[index]" << index << e_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_state SimpleModel<T>::*>(e_plant_state[index]);}
+    template <> plant::plant_phase get_e<plant::plant_phase>(double t, unsigned int index)
+    {if(e_plant_phase[index]==nullptr) cout<<"ERROR" << t << "plant_phase[index]" << index << e_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_phase SimpleModel<T>::*>(e_plant_phase[index]);}
+    template <> culm::culm_phase get_e<culm::culm_phase>(double t, unsigned int index)
+    {if(e_culm_phase[index]==nullptr) cout<<"ERROR" << t << "culm_phase[index]" << index << e_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<culm::culm_phase SimpleModel<T>::*>(e_culm_phase[index]);}
+    template <> internode::internode_phase get_e<internode::internode_phase>(double t, unsigned int index)
+    {if(e_internode_phase[index]==nullptr) cout<<"ERROR" << t << "internode_phase[index]" << index << e_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<internode::internode_phase SimpleModel<T>::*>(e_internode_phase[index]);}
+    template <> leaf::leaf_phase get_e<leaf::leaf_phase>(double t, unsigned int index)
+    {if(e_leaf_phase[index]==nullptr) cout<<"ERROR" << t << "leaf_phase[index]" << index << e_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<leaf::leaf_phase SimpleModel<T>::*>(e_leaf_phase[index]);}
+    template <> peduncle::peduncle_phase get_e<peduncle::peduncle_phase>(double t, unsigned int index)
+    {if(e_peduncle_phase[index]==nullptr) cout<<"ERROR" << t << "peduncle_phase[index]" << index << e_names[index] << "\n"; return static_cast<SimpleModel<T>*>(this)->*static_cast<peduncle::peduncle_phase SimpleModel<T>::*>(e_peduncle_phase[index]);}
+
+
+    void tracePut(int idx, string value, double t) {
+#ifdef WITH_TRACE
+        KernelInfo k(e_names[idx], false, value);
+        SimpleTraceElement asst(path(), t, artis::utils::PUT, k);
+        ::SimpleTrace::trace().addElement(asst);
+#endif
+    }
+
+    template < typename W > void put(double t, unsigned int index, W value) {
+        cout<<"nospecialization"<<"\n";
+    }
+    template <> void put<double>(double t, unsigned int index, double value) {
+        if(e_double[index]==nullptr) cout << "Error " << "double[index] " << e_names[index] << "\n";
+        tracePut(index, to_string(value), t);
+        static_cast<SimpleModel<T>*>(this)->*static_cast<double SimpleModel<T>::*>(e_double[index]) = value;
+    }
+    template <> void put<int>(double t, unsigned int index, int value) {
+        if(e_int[index]==nullptr) cout << "Error " << "int[index] " << e_names[index] << "\n";
+        tracePut(index, to_string(value), t);
+        static_cast<SimpleModel<T>*>(this)->*static_cast<int SimpleModel<T>::*>(e_int[index]) = value;
+    }
+    template <> void put<bool>(double t, unsigned int index, bool value) {
+        if(e_bool[index]==nullptr) cout << "Error " << "bool[index] " << e_names[index] << "\n";
+        tracePut(index, value ? "true" : "false", t);
+        static_cast<SimpleModel<T>*>(this)->*static_cast<bool SimpleModel<T>::*>(e_bool[index]) = value;
+    }
+    template <> void put<plant::plant_state>(double t, unsigned int index, plant::plant_state value) {
+        if(e_plant_state[index]==nullptr) cout << "Error " << "plant_state[index] " << e_names[index] << "\n";
+        tracePut(index, to_string(static_cast<int>(value)), t);
+        static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_state SimpleModel<T>::*>(e_plant_state[index]) = value;
+    }
+    template <> void put<plant::plant_phase>(double t, unsigned int index, plant::plant_phase value) {
+        if(e_plant_phase[index]==nullptr) cout << "Error " << "plant_phase[index] " << e_names[index] << "\n";
+        tracePut(index, to_string(static_cast<int>(value)), t);
+        static_cast<SimpleModel<T>*>(this)->*static_cast<plant::plant_phase SimpleModel<T>::*>(e_plant_phase[index]) = value;
+    }
+    template <> void put<culm::culm_phase>(double t, unsigned int index, culm::culm_phase value) {
+        if(e_culm_phase[index]==nullptr) cout << "Error " << "culm_phase[index] " << e_names[index] << "\n";
+        tracePut(index, to_string(static_cast<int>(value)), t);
+        static_cast<SimpleModel<T>*>(this)->*static_cast<culm::culm_phase SimpleModel<T>::*>(e_culm_phase[index]) = value;
+    }
+    template <> void put<internode::internode_phase>(double t, unsigned int index, internode::internode_phase value) {
+        if(e_internode_phase[index]==nullptr) cout << "Error " << "phase[index] " << e_names[index] << "\n";
+        tracePut(index, to_string(static_cast<int>(value)), t);
+        static_cast<SimpleModel<T>*>(this)->*static_cast<internode::internode_phase SimpleModel<T>::*>(e_internode_phase[index]) = value;
+    }
+    template <> void put<leaf::leaf_phase>(double t, unsigned int index, leaf::leaf_phase value) {
+        if(e_leaf_phase[index]==nullptr) cout << "Error " << "leaf_phase[index] " << e_names[index] << "\n";
+        tracePut(index, to_string(static_cast<int>(value)), t);
+        static_cast<SimpleModel<T>*>(this)->*static_cast<leaf::leaf_phase SimpleModel<T>::*>(e_leaf_phase[index]) = value;
+    }
+    template <> void put<peduncle::peduncle_phase>(double t, unsigned int index, peduncle::peduncle_phase value) {
+        if(e_peduncle_phase[index]==nullptr) cout << "Error " << "phase[index] " << e_names[index] << "\n";
+        tracePut(index, to_string(static_cast<int>(value)), t);
+        static_cast<SimpleModel<T>*>(this)->*static_cast<peduncle::peduncle_phase SimpleModel<T>::*>(e_peduncle_phase[index]) = value;
+    }
 
     void setsubmodel(unsigned int /*index*/, AbstractSimpleModel * model) {
         if(subModels.find( model->name() ) == subModels.end())
