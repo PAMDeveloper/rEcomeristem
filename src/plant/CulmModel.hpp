@@ -248,7 +248,7 @@ public:
                 if( _plant_phase == plant::PI) {
                     if(!_started_PI) {
                         _panicle_model = std::unique_ptr<PanicleModel>(new PanicleModel());
-                        setsubmodel(PANICLE, _panicle_model.get());
+                        subModel(PANICLE, _panicle_model.get());
                         _panicle_model->init(t, _parameters);
                         _started_PI = true;
                     }
@@ -259,7 +259,7 @@ public:
                     return;
                 }
                 _peduncle_model = std::unique_ptr<PeduncleModel>(new PeduncleModel(_index, _is_first_culm));
-                setsubmodel(PEDUNCLE, _peduncle_model.get());
+                subModel(PEDUNCLE, _peduncle_model.get());
                 _peduncle_model->init(t, _parameters);
                 _culm_phase = culm::PRE_FLO;
                 _culm_phenostage_at_pre_flo = _culm_phenostage;
@@ -350,7 +350,7 @@ public:
             _tt_ligulo = _ligulo;
         }
 
-        if(_creation_date == t) {
+        if(_creation_date == t && !_is_first_culm) {
             _culm_thermaltime_model->put(t, ThermalTimeModel::DELTA_T, _delta_t);
             _culm_thermaltime_model->put(t, ThermalTimeModel::PLASTO, _plasto);
             _culm_thermaltime_model->put(t, ThermalTimeModel::PHYLLO, _phyllo);
@@ -359,6 +359,7 @@ public:
             _culm_thermaltime_model->put(t, ThermalTimeModel::STOCK, _plant_stock);
             compute_thermaltime(t);
         }
+
         if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE or _is_first_day_pi) {
             if(_culm_thermaltime_model) {
                 _culm_DD = _culm_thermaltime_model->get < double >(t, ThermalTimeModel::DD);

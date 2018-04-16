@@ -64,10 +64,10 @@ public:
         _root_model(new RootModel)
     {
         // submodels
-        setsubmodel(WATER_BALANCE, _water_balance_model.get());
-        setsubmodel(STOCK, _stock_model.get());
-        setsubmodel(ASSIMILATION, _assimilation_model.get());
-        setsubmodel(ROOT, _root_model.get());
+        subModel(WATER_BALANCE, _water_balance_model.get());
+        subModel(STOCK, _stock_model.get());
+        subModel(ASSIMILATION, _assimilation_model.get());
+        subModel(ROOT, _root_model.get());
 
         // local internals
         Internal( LIG, &PlantModel::_lig );
