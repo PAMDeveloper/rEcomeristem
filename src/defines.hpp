@@ -135,12 +135,12 @@ typedef SimpleContext EcomeristemContext;
 typedef SimpleView View;
 typedef SimpleObserver Observer;
 
-#ifdef WITH_TRACE
+//#ifdef WITH_TRACE
 using Trace = SimpleTrace;
 //using KernelInfo = SimpleKernelInfo;
 template < class T > using TraceElement = SimpleTraceElement;
 template < class T > using TraceElements = std::vector < TraceElement <T> >;
-#endif
+//#endif
 
 #else
 #include <utils/juliancalculator.h>

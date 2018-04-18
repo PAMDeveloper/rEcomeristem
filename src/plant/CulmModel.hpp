@@ -921,6 +921,9 @@ public:
 
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
+        last_time = t-1;
+        first_day = t;
+
         _parameters = parameters;
         _nb_leaf_param2 = _parameters.get("nb_leaf_param2");
         _plasto_init = _parameters.get("plasto_init");
@@ -966,8 +969,6 @@ public:
         _culm_thermaltime_model->init(t, parameters);
         _culm_thermaltime_modelNG->init(t, parameters);
 
-        last_time = t-1;
-        first_day = t;
 
         //parameters
         _phenostage_pre_flo_to_flo  = _parameters.get("phenostage_PRE_FLO_to_FLO");

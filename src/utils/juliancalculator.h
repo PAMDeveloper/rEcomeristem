@@ -21,7 +21,7 @@ public:
 
     static int toJulianDay(string date, string format, string sep) {
         char cSep = sep.c_str()[0];
-        DateFormat dFormat;
+        DateFormat dFormat = DMY;
         if(format == "dmy" || format == "DMY") dFormat = DMY;
         if(format == "dym" || format == "DYM") dFormat = DYM;
         if(format == "myd" || format == "MYD") dFormat = MYD;
@@ -87,6 +87,7 @@ public:
         char * str = (char*)date.c_str();
         replace( str, str+strlen(str), sep, ' ' );
         double year, month ,day;
+		year = month = day = 0;
         switch (format) {
         case DMY:
             istringstream( str ) >> day >> month >> year;

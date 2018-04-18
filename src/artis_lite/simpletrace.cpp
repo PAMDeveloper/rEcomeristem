@@ -1,4 +1,4 @@
-#ifdef WITH_TRACE
+//#ifdef WITH_TRACE
 #include "simpletrace.h"
 SimpleTrace* SimpleTrace::lazy_singleton = nullptr;
 SimpleTrace& SimpleTrace::trace() {
@@ -12,4 +12,4 @@ SimpleTrace::SimpleTrace(){}
 std::map < std::string, int > KernelInfo::elt_dictionary;
 std::vector < std::string > KernelInfo::elt_names;
 
-#endif
+//#endif

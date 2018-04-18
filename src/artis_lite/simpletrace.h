@@ -1,10 +1,12 @@
 #ifndef SIMPLETRACE_H
 #define SIMPLETRACE_H
 
-
+#include <vector>
+#include <map>
+#include <sstream>
 using namespace std;
 
-#ifdef WITH_TRACE
+//#ifdef WITH_TRACE
 
 namespace artis { namespace utils {
 enum TraceType { NONE = 0, CHECK = 1, CONSTRUCT, SUBMODEL_ADD, INTERNAL_DECL,
@@ -181,7 +183,7 @@ public:
     const KernelInfo& get_kernel_info() const {return _info;}
     string to_string(int i = 0) const {
         std::ostringstream ss;
-        ss << "TRACE " << time << ": ";
+        ss << "TRACE " << _time << ": ";
         ss << "<" + TraceTypesStr[get_type()] + ">";
         ss << " " << get_model_name();
         if ( !get_kernel_info().empty()) {
@@ -213,6 +215,6 @@ private:
     SimpleTraceElements _trace;
 };
 
-#endif
+//#endif
 
 #endif // SIMPLETRACE_H
