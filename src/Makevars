@@ -1,5 +1,2 @@
-PKG_CXXFLAGS += `Rscript -e 'Rcpp:::CxxFlags()'` $(FPICFLAGS) $(SHLIB_FFLAGS) \
-PKG_LIBS +=`Rscript -e 'Rcpp:::LdFlags()'`\
-CXX_STD = CXX11 \
-PKG_CFLAGS= -Ofast \
-CFLAGS= -Ofast
+CFLAGS +=              -Ofast -Wall -pipe -pedantic -std=c++11
+CXXFLAGS +=            -Ofast -Wall -pipe -Wno-unused -pedantic

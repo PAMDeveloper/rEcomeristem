@@ -25,6 +25,7 @@
 
 #include <utils/ParametersReader.hpp>
 #include <utils/resultparser.h>
+#include <utils/juliancalculator.h>
 #include <plant/PlantModel.hpp>
 #include <observer/PlantView.hpp>
 #ifndef UNSAFE_RUN
