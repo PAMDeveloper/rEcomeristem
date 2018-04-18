@@ -41,6 +41,10 @@ public:
                 }
 
                 if (itp != itv->second.end()) {
+#ifdef UNSAFE_RUN
+                  double converted = itp->second;
+                  result[s].push_back(converted);
+#else
                     string c = itp->second;
                     char* p;
                     double converted = strtod(c.c_str(), &p);
@@ -49,6 +53,7 @@ public:
                     } else {
                         result[s].push_back(converted);
                     }
+#endif
                 } else {
                     result[s].push_back(nan(""));
                 }

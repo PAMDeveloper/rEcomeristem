@@ -1,7 +1,11 @@
 ifeq "$(WIN)" "64"
-PKG_CXXFLAGS += `Rscript -e 'Rcpp:::CxxFlags()'` -I"." -I"../../artis/src" -I"../../../ext_libs/include" $(FPICFLAGS) $(SHLIB_FFLAGS) `Rscript -e 'Rcpp:::LdFlags()'` -std=c++11
-PKG_LIBS += `Rscript -e 'Rcpp:::LdFlags()'` -L"../../../ext_libs/mingw-4.9.3/x64/static" -lboost_date_time-mgw49-mt-1_62 -lpq  -L"../../../libs/mingw-4.9.3/x64/static" -lartis $(FPICFLAGS) $(SHLIB_FFLAGS) `Rscript -e 'Rcpp:::LdFlags()'` -std=c++11
+PKG_CXXFLAGS += `Rscript -e 'Rcpp:::CxxFlags()'` -I"." $(FPICFLAGS) $(SHLIB_FFLAGS) `Rscript -e 'Rcpp:::LdFlags()'` -std=c++11
+PKG_CFLAGS= -Ofast
+CFLAGS= -Ofast
+PKG_LIBS += `Rscript -e 'Rcpp:::LdFlags()'` $(FPICFLAGS) $(SHLIB_FFLAGS) `Rscript -e 'Rcpp:::LdFlags()'` -std=c++11
 else
-PKG_CXXFLAGS += `Rscript -e 'Rcpp:::CxxFlags()'` -I"." -I"../../artis/src" -I"../../../ext_libs/include" $(FPICFLAGS) $(SHLIB_FFLAGS) `Rscript -e 'Rcpp:::LdFlags()'` -std=c++11
-PKG_LIBS += `Rscript -e 'Rcpp:::LdFlags()'` -L"../../../ext_libs/mingw-4.9.3/x86/static" -lboost_date_time-mgw49-mt-1_62 -lpq  -L"../../../libs/mingw-4.9.3/x86/static" -lartis $(FPICFLAGS) $(SHLIB_FFLAGS) `Rscript -e 'Rcpp:::LdFlags()'` -std=c++11
+PKG_CXXFLAGS += `Rscript -e 'Rcpp:::CxxFlags()'` -I"." $(FPICFLAGS) $(SHLIB_FFLAGS) `Rscript -e 'Rcpp:::LdFlags()'` -std=c++11
+PKG_LIBS += `Rscript -e 'Rcpp:::LdFlags()'` $(FPICFLAGS) $(SHLIB_FFLAGS) `Rscript -e 'Rcpp:::LdFlags()'` -std=c++11
+PKG_CFLAGS= -Ofast
+CFLAGS= -Ofast
 endif

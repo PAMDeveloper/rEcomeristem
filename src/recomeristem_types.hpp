@@ -20,14 +20,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define UNSAFE_RUN
 #include "defines.hpp"
 
 #include <utils/ParametersReader.hpp>
 #include <utils/resultparser.h>
 #include <plant/PlantModel.hpp>
 #include <observer/PlantView.hpp>
+#ifndef UNSAFE_RUN
 #include <boost/property_tree/ptree.hpp>
 #include <boost/lexical_cast.hpp>
-
+#endif
 
 
