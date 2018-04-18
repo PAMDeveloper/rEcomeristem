@@ -1,6 +1,9 @@
 #ifndef DEFINES_HPP
 #define DEFINES_HPP
 
+#define STRICT_R_HEADERS
+#undef PI
+
 #include "iso646.h"
 #include <type_traits> //necessary for enum type checking on states
 

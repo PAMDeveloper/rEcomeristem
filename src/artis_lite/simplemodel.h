@@ -42,7 +42,7 @@ public:
     }
 
     Values values() {return _values;}
-    void attachModel(AbstractSimpleModel * m) { _model = m; }
+    void attachModel(AbstractSimpleModel * m) { _model = m; _begin = -1; _values = Values();}
     double get(double t, string name) { return _values[name][t-_begin].second; }
     double begin() {return _begin;}
     double end() {return _values.begin()->second.back().first;}
