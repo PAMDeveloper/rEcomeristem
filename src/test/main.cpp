@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     const clock_t begin_time = clock();
     GlobalParameters globalParameters;
     EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
-    for(int i = 0; i < 100; i++) {
+    for(int i = 0; i < 1000; i++) {
         PlantModel * m = new PlantModel;
         EcomeristemSimulator simulator(m, globalParameters);
         observer::PlantView *view = new observer::PlantView();
@@ -29,6 +29,6 @@ int main(int argc, char *argv[]) {
         simulator.run(context);
         delete view;
     }
-    std::cout << float( clock () - begin_time ) /  (CLOCKS_PER_SEC * 100);
+    std::cout << float( clock () - begin_time ) /  (CLOCKS_PER_SEC * 1000);
     return 1;
 }

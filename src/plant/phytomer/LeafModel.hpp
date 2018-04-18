@@ -151,7 +151,7 @@ public:
             _is_app = _is_app;
             return;
         }
-        _p = _parameters.get(t).P;
+        _p = _parameters->get(t).P;
 
         if(t == _first_day) {
             if(_is_first_leaf) {
@@ -372,7 +372,7 @@ public:
               const ecomeristem::ModelParameters& parameters)
     {
         last_time = t-1;
-        _parameters = parameters;
+        _parameters = &parameters;
 
         //parameters
         _coeffLifespan = parameters.get("coeff_lifespan");
@@ -438,7 +438,7 @@ public:
     }
 
 private:
-    ecomeristem::ModelParameters _parameters;
+    const ecomeristem::ModelParameters * _parameters;
     // parameters
     double _coeffLifespan;
     double _mu;

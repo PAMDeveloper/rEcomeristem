@@ -94,7 +94,7 @@ public:
     { }
 
     void compute(double t, bool /* update */){
-        _p = _parameters.get(t).P;
+        _p = _parameters->get(t).P;
 
         if(t == _first_day) {
             _cste_ligulo = _ligulo;
@@ -243,9 +243,8 @@ public:
         }
     }
 
-    void init(double t,
-              const ecomeristem::ModelParameters& parameters) {
-        _parameters = parameters;
+    void init(double t, const ecomeristem::ModelParameters& parameters) {
+        _parameters = &parameters;
         //parameters
         _slope_length_IN = parameters.get("slope_length_IN");
         _leaf_length_to_IN_length = parameters.get("leaf_length_to_IN_length");
@@ -289,7 +288,7 @@ public:
     }
 
 private:
-    ecomeristem::ModelParameters _parameters;
+    const ecomeristem::ModelParameters * _parameters;
     // attributes
     int _index;
     bool _is_on_mainstem;
