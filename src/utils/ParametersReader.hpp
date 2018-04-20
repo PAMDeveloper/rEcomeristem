@@ -3,6 +3,7 @@
 
 #include <ModelParameters.hpp>
 #include <utils/juliancalculator.h>
+#include <defines.hpp>
 
 using namespace ecomeristem;
 using namespace std;
@@ -119,6 +120,51 @@ public:
 
 
     }
+
+    map<string, vector<double>> loadCleanObsFromFile(const std::string &file_path, const SimpleView & view) {
+        std::ifstream vObsFile(file_path);
+        std::string line;
+        std::getline(vObsFile, line); //headers
+        vector<string> headers;
+        istringstream iss(line);
+        copy(istream_iterator<string>(iss),
+             istream_iterator<string>(),
+             back_inserter(headers));
+
+        map<string, vector<double> > obs;
+        for (string h: headers) {
+            string * s = new string(h);
+            transform(s->begin(), s->end(), s->begin(), ::tolower);
+            if (view._selectors.find(*s) != view._selectors.end() || *s == "day")
+                obs.insert ( std::pair<string,vector<double> >(*s, vector<double>()) );
+            delete s;
+        }
+
+        while (std::getline(vObsFile, line))
+        {
+            vector<string> data = split(line, '\t');
+            for (int i = 0; i < data.size(); ++i) {
+                string s = data[i];
+                string * h = new string(headers[i]);
+                transform(h->begin(), h->end(), h->begin(), ::tolower);
+                if (view._selectors.find(*h) != view._selectors.end() || *h == "day") {
+                    char* p;
+                    double converted = strtod(s.c_str(), &p);
+                    if (*p) {
+                        obs[*h].push_back(nan(""));
+                    }
+                    else {
+                        obs[*h].push_back(converted);
+                    }
+                }
+                delete h;
+            }
+        }
+        vObsFile.close();
+
+        return obs;
+    }
+
 
     map<string, vector<double>> loadVObsFromFile(const std::string &file_path) {
         std::ifstream vObsFile(file_path);

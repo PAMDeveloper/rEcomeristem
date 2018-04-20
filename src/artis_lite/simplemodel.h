@@ -5,6 +5,7 @@
 #include <iterator>
 #include <list>
 #include <memory>
+#include <algorithm>
 #include <mutex>
 #include <ModelParameters.hpp>
 
@@ -28,17 +29,19 @@ public:
 class SimpleView {
 private:
     typedef std::map < std::string, vector < unsigned int > > Selectors;
-    Selectors _selectors;
     AbstractSimpleModel * _model;
     double _begin = -1;
 public:
+    Selectors _selectors;
     typedef std::vector < std::pair < double, double > > Value;
     typedef map < string, Value > Values; //var, <day,val>
     Values _values;
 
     void selector(const string& name, artis::kernel::ValueTypeID /*type*/, const vector < unsigned int >& chain)  {
-        _selectors[name] = chain;
-        _values[name] = vector < pair < double, double > >();
+		string n = name;
+		std::transform(n.begin(), n.end(), n.begin(), ::tolower);
+        _selectors[n] = chain;
+        _values[n] = vector < pair < double, double > >(0);
     }
 
     Values values() {return _values;}
@@ -86,13 +89,47 @@ public:
     }
 };
 
+class SimulatorFilter {
+public:
+    vector < vector < vector <unsigned int> > > selector;
+    vector < double > days;
+    vector < string > names;
+    void SimulatorFiler(){}
+
+    void init(SimpleView * view, map <string, vector<double> > filter, string dayColName) {
+        int idx = 0;
+        for(auto token: filter) {
+            string name = token.first;
+            vector <double> vals = token.second;
+            if(name == dayColName) {
+                days = vals;
+            } else {
+				if (view->_selectors.find(name) != view->_selectors.end()) {
+					names.push_back(name);
+					vector<vector <unsigned int> > s;
+					for (double v : vals) {
+						if (v != v)
+							s.push_back(vector<unsigned int>(0));
+						else
+							s.push_back(view->_selectors[name]);
+					}
+					selector.push_back(s);
+				}
+            }
+            idx++;
+        }
+    }
+};
+
 class SimpleContext {
 private:
     double _start, _end;
 public:
-    SimpleContext(double start, double end): _start(start), _end(end) {}
+    SimpleContext(double start = -1, double end = -1): _start(start), _end(end) {}
     double begin() {return _start;}
     double end() {return _end;}
+    void setBegin(double start) {_start = start;}
+    void setEnd(double end) {_end = end;}
 };
 
 template < typename T, typename U, typename V >
@@ -111,6 +148,58 @@ public:
             (*_model)(t);
             _observer.observe(t);
         }
+    }
+	
+	double getVal(double idx, double step, SimulatorFilter * filter) {
+        AbstractSimpleModel * model = _model;
+        if (filter->selector[idx][step].size() > 1) {
+            size_t i = 0;
+            while (i < filter->selector[idx][step].size() - 1 and model) {
+                model = model->subModels[filter->selector[idx][step][i]][0];
+                ++i;
+            }
+        }
+
+        if (model && filter->selector[idx][step].size() > 0) {
+            return model->getVal(filter->selector[idx][step].back());
+        }
+        return nan("");
+    }
+
+//    void display(map<string, vector<double>> map) {
+//        for (auto token : map) {
+//            //        if(token.first != "LIG" && token.first != "lig")
+//            //            continue;
+//            cout << "**************" << token.first << "**************" << "\n";
+//            string vals = "";
+//            for (double val : token.second) {
+//                vals += to_string(val) + ",";
+//            }
+//            cout << vals << "\n";
+//        }
+//    }
+
+    map<string,vector<double>> runOptim(SimpleContext & context, SimulatorFilter & filter) {
+        map<string,vector<double>> results;
+        for(string name: filter.names) {
+            results.insert(make_pair(name, vector<double>(filter.selector[0].size())));
+        }
+
+        int selectorIdx = 0;
+        int step = 0;
+        for (double t = context.begin(); t <= context.end(); t++) {
+            (*_model)(t);
+            if(selectorIdx < filter.days.size() && filter.days[selectorIdx] == step) {
+                for (int i = 0; i < filter.names.size(); ++i) {
+                    results[filter.names[i]][selectorIdx] = getVal(i, selectorIdx, &filter);
+                }
+                selectorIdx++;
+            }
+            step++;
+        }
+        results.insert(make_pair("day",filter.days));
+//        display(results);
+		return results;
     }
 };
 
