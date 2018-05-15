@@ -71,6 +71,8 @@ public:
                      PlantModel::BIOMLEAFMAINSTEM});
         selector("BIOMINMAINSTEM", artis::kernel::DOUBLE, {
                      PlantModel::BIOMINMAINSTEM});
+        selector("BIOMMAINSTEM", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMMAINSTEM});
         selector("AREALFEL", artis::kernel::DOUBLE, {
                      PlantModel::AREALFEL});
         selector("BIOMINMAINSTEMSTRUCT", artis::kernel::DOUBLE, {
@@ -109,6 +111,12 @@ public:
                      PlantModel::BOOL_CROSSED_PHYLLO});
         selector("PANICLENB", artis::kernel::DOUBLE, {
                      PlantModel::PANICLENB});
+        selector("SLAPLANT", artis::kernel::DOUBLE, {
+                     PlantModel::SLAPLANT});
+        selector("PLA", artis::kernel::DOUBLE, {
+                     PlantModel::PAI});
+        selector("BIOMLEAFTOT", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMLEAFTOT});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {
