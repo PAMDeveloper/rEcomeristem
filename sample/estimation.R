@@ -13,7 +13,7 @@ paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligu
 minValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0,1,1,1,1,0,1)
 maxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4,20,20,20,20,10,10)
 coefIncrease <- 10
-maxIter <- 10
+maxIter <- 10000
 penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
 solTol <- 0.01 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps

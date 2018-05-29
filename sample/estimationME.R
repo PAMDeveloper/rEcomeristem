@@ -13,7 +13,7 @@ paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligu
 minValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0,1,1,1,1,0,1)
 maxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4,20,20,20,20,10,10)
 coefIncrease <- 10
-maxIter <- 1000
+maxIter <- 10000
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
 stepTol <- 10000
 penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
@@ -82,9 +82,9 @@ optimEcomeristem <- function(p) {
 }
 optimisation <- function(Optimizer, maxIter, solTol, bounds) {
   if(clusterA && detectCores() >= 4) {
-    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(VTR=solTol,itermax=maxIter,strategy=2,cluster=cl,packages=c("recomeristem"),parVar=c("meteo","meteo_s","obs_s","obsET_s","obs", "paramOfInterest", "obsET", "coeff_s","penalty","coeff","isInit","param")))
+    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(reltol=relTol,steptol=stepTol,VTR=solTol,itermax=maxIter,strategy=2,cluster=cl,packages=c("recomeristem"),parVar=c("meteo","meteo_s","obs_s","obsET_s","obs", "paramOfInterest", "obsET", "coeff_s","penalty","coeff","isInit","param")))
   } else {
-    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(VTR=solTol,itermax=maxIter,strategy=2))
+    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(reltol=relTol,steptol=stepTol,VTR=solTol,itermax=maxIter,strategy=2))
   }
   result$optimizer <- "Diffential Evolution Optimization"
   result$par <- resOptim$optim$bestmem
@@ -190,8 +190,10 @@ resMPlot <- function() {
   sapply(VarList, plotF)
 }
 
-
-
+savePar <- function(name = Sys.Date()) {
+  resPar <- matrix(as.vector(c(result$value, result$par)), ncol=length(paramOfInterest)+1)
+  write.table(resPar, file=paste("par_",name,".csv"), sep=",", append=F, dec=".",col.names=c("RMSE",paramOfInterest),row.names = F)
+}
 
 ###OPTIMISATION RUN###
 set.seed(1337)
