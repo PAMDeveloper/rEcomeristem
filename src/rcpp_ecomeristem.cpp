@@ -103,7 +103,7 @@ std::map <std::string, Simulation*> simulations;
 // [[Rcpp::export]]
 void init_simu(List dfParameters, List dfMeteo, List obs, Rcpp::String name) {
   Simulation * s = new Simulation();
-  simulations.insert(std::make_pair(name, s));
+  simulations[name] = s;
   CharacterVector names = dfParameters[0];
   NumericVector values = dfParameters[1];
   for (int i = 0; i < names.size(); ++i) {

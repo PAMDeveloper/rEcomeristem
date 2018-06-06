@@ -1,0 +1,12 @@
+//load module
+module load bioinfo/R/3.4.3
+
+//BUILD
+R CMD build rEcomeristem
+R CMD INSTALL --library=/home/beurier/src/R/library recomeristem_1.0.tar.gz
+
+//Configure nb core in pbh and R file
+
+
+//LAUNCH
+qsub myScript myFolder
