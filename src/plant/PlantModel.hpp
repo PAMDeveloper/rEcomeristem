@@ -55,7 +55,8 @@ public:
                      MAINSTEM_STOCK_IN, BIOMINMAINSTEMSTRUCT, BIOMLEAFMAINSTEMSTRUCT, MAINSTEM_STOCK,
                      DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW,
                      PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
-                     MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB };
+                     MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
+                     TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -140,6 +141,10 @@ public:
         Internal( NB_CR_TILLERS, &PlantModel:: _nb_tillers);
         Internal( TAE, &PlantModel:: _tae);
         Internal( PANICLENB, &PlantModel:: _paniclenb);
+        Internal( TOTAL_LENGTH_MAINSTEM, &PlantModel::_total_length_mainstem);
+        Internal( BIOMMAINSTEM, &PlantModel::_biomMainstem);
+        Internal( SLAPLANT, &PlantModel::_slaplant);
+        Internal( BIOMLEAFTOT, &PlantModel::_biomLeafTot);
     }
 
     virtual ~PlantModel()
@@ -551,8 +556,12 @@ public:
         _biomInMainstem = (*visumainstem)->get< double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) + _mainstem_stock_IN;
         _areaLFEL = (*visumainstem)->get < double, CulmModel >(t, CulmModel::LAST_LEAF_BLADE_AREA);
         _nbleaf = (*visumainstem)->get < double, CulmModel >(t, CulmModel::NBLEAF); // nombre de feuilles vertes (>= 50% blade area)
-        _internode_length_mainstem = (*visumainstem)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM) + (*visumainstem)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
+        _internode_length_mainstem = (*visumainstem)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM);
+        _total_length_mainstem = (*visumainstem)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM) + (*visumainstem)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
         _panicleMainstemDW = (*visumainstem)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
+        _biomMainstem = _biomLeafMainstem + _biomInMainstem + _panicleMainstemDW;
+        _slaplant = _leaf_blade_area_sum / _leaf_biom_struct ;
+        _biomLeafTot = _leaf_biomass_sum + _senesc_dw_sum;
     }
 
     void create_culm(double t, int n)
@@ -854,6 +863,10 @@ public:
         _visi = 0;
         _ms_index = 1;
         _predim_app_leaf_on_mainstem = 0;
+        _total_length_mainstem = 0;
+        _biomMainstem = 0;
+        _slaplant = 0;
+        _biomLeafTot = 0;
     }
 
 private:
@@ -985,6 +998,10 @@ private:
     double _visi;
     double _predim_app_leaf_on_mainstem;
     double _paniclenb;
+    double _total_length_mainstem;
+    double _biomMainstem;
+    double _slaplant;
+    double _biomLeafTot;
 
     //internal states
     plant::plant_state _plant_state;
