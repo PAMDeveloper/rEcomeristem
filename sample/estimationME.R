@@ -3,7 +3,7 @@
 #-- (PAM, AGAP, BIOS, CIRAD)
 
 ###SET INFORMATION FOR ESTIMATION###
-path <- "D:/Workspace/estimworkspace/2015/ME/G1"
+path <- "D:/Workspace/estimworkspace/2015/ME/G5"
 vName <- "vobs_moy.txt"
 vETName <- "vobs_et.txt"
 paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
@@ -12,7 +12,7 @@ paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligu
                      "thresINER","thresLER","thresLEN","stressBP","stressBP2")
 minValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0,1,1,1,1,0,1)
 maxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4,20,20,20,20,10,10)
-coefIncrease <- 10
+coefIncrease <- 1
 maxIter <- 10000
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
 stepTol <- 10000
@@ -170,7 +170,7 @@ resMPlot <- function() {
   resS <<- recomeristem::launch_simu("total_resS", paramOfInterest, p)
 
   plotF <- function(x) {
-    plot(resT[[x]], type="l", pch=3, xlab="DAS", ylab=x,ylim=c(0,(max(max(resS[[x]], na.rm=T),max(resT[[x]], na.rm=T),max(obs[[x]]+obsET[[x]], na.rm=T),max(obs_s[[x]]+obsET_s[[x]], na.rm=T)))*1.1), xlim=c(0,max(obs$day,na.rm=T)+5),xaxs="i", yaxs="i", col="blue")
+    plot(resT[[x]], type="l", pch=3, xlab="DAS", ylab=x,ylim=c(0,(max(max(resS[[x]], na.rm=T),max(resT[[x]], na.rm=T),max(obs[[x]]+obsET[[x]], na.rm=T),max(obs_s[[x]]+obsET_s[[x]], na.rm=T)))*1.1), xlim=c(0,max(obs$day,obs_s$day,na.rm=T)+5),xaxs="i", yaxs="i", col="blue")
     lines(resS[[x]], type="l", pch=3, col="red")
     points(obs$day, obs[[x]], type="p", col="blue")
     if(!is.null(obsET[[x]])) {
@@ -178,7 +178,7 @@ resMPlot <- function() {
     }
     points(obs_s$day, obs_s[[x]], type="p", col="red")
     if(!is.null(obsET_s[[x]])) {
-      arrows(obs_s$day,obs[[x]]-obsET_s[[x]],obs_s$day,obs_s[[x]]+obsET_s[[x]], code=3, length=0.02, angle = 90)
+      arrows(obs_s$day,obs_s[[x]]-obsET_s[[x]],obs_s$day,obs_s[[x]]+obsET_s[[x]], code=3, length=0.02, angle = 90)
     }
     diff <- ((obs[[x]] - res[[x]])/obs[[x]])^2
     diff_t <- sqrt((sum(diff, na.rm=T))/(sum(!is.na(diff))))
@@ -193,6 +193,42 @@ resMPlot <- function() {
 savePar <- function(name = Sys.Date()) {
   resPar <- matrix(as.vector(c(result$value, result$par)), ncol=length(paramOfInterest)+1)
   write.table(resPar, file=paste("par_",name,".csv"), sep=",", append=F, dec=".",col.names=c("RMSE",paramOfInterest),row.names = F)
+}
+
+saveMPlot <- function(name = Sys.Date()) {
+  pdf(paste(name,"_ME.pdf",sep=""))
+  resMPlot()
+  dev.off()
+}
+
+stockBiom <- function() {
+  p <- result$par
+  recomeristem::init_simu(param, meteo, obs, "t")
+  res <<- recomeristem::launch_simu("t", paramOfInterest, p)
+  recomeristem::init_simu(param, meteo_s, obs_s, "s")
+  res_s <<- recomeristem::launch_simu("s", paramOfInterest, p)
+  obsT <- data.frame(day = seq(1,max(obs$day,na.rm=T)))
+  obsS <- data.frame(day = seq(1,max(obs_s$day,na.rm=T)))
+  for(v in VarList) {
+    if(v != "day") {
+      obsT[,v] <- 1
+      obsS[,v] <- 1
+    }
+  }
+  recomeristem::init_simu(param, meteo, obsT, "total_resT")
+  resT <<- recomeristem::launch_simu("total_resT", paramOfInterest, p)
+  recomeristem::init_simu(param, meteo_s, obsS, "total_resS")
+  resS <<- recomeristem::launch_simu("total_resS", paramOfInterest, p)
+
+  obs$stock_biom <<- obs$mainstem_stock_in/obs$biominmainstem
+  obs_s$stock_biom <<- obs_s$mainstem_stock_in/obs_s$biominmainstem
+  resT$stock_biom <<- resT$mainstem_stock_in/resT$biominmainstem
+  resS$stock_biom <<- resS$mainstem_stock_in/resS$biominmainstem
+
+  plot(resT$stock_biom, type="l", pch=3, xlab="DAS", ylab="stockIN/biomIN", col="blue", ylim=c(0,1), xlim=c(25,120))
+  lines(resS$stock_biom, col="red")
+  abline(v=42)
+  abline(v=66)
 }
 
 ###OPTIMISATION RUN###
