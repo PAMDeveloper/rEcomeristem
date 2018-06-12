@@ -46,6 +46,8 @@ public:
         selector("BIOMIN", artis::kernel::DOUBLE, {
                      PlantModel::INTERNODE_BIOM_STRUCT });
         selector("SENESC_DW", artis::kernel::DOUBLE, {
+                     PlantModel::SENESC_DW });
+        selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
                      PlantModel::SENESC_DW_SUM });
         selector("PHT", artis::kernel::DOUBLE, {
                      PlantModel::HEIGHT });

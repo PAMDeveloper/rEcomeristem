@@ -3,15 +3,14 @@
 #-- (PAM, AGAP, BIOS, CIRAD)
 
 ###SET INFORMATION FOR ESTIMATION###
-path <- "D:/Workspace/estimworkspace/2015/ME/G1"
+path <- "D:/Workspace/estimworkspace/2015/all/G15"
 vName <- "vobs_moy.txt"
 vETName <- "vobs_et.txt"
 paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
                      "coef_MGR_PI","slope_length_IN","density_IN2","coef_plasto_PI",
-                     "coef_phyllo_PI","coef_ligulo_PI","slope_LL_BL_at_PI","thresAssim",
-                     "thresINER","thresLER","thresLEN","stressBP","stressBP2")
-minValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0,1,1,1,1,0,1)
-maxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4,20,20,20,20,10,10)
+                     "coef_phyllo_PI","coef_ligulo_PI","slope_LL_BL_at_PI")
+minValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
+maxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
 coefIncrease <- 10
 maxIter <- 10000
 penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
@@ -116,6 +115,12 @@ resPlot <- function() {
 savePar <- function(name = Sys.Date()) {
   resPar <- matrix(as.vector(c(result$value, result$par)), ncol=length(paramOfInterest)+1)
   write.table(resPar, file=paste("par_",name,".csv"), sep=",", append=F, dec=".",col.names=c("RMSE",paramOfInterest),row.names = F)
+}
+
+savePlot <- function(name = Sys.Date()) {
+  pdf(paste(name,"_T.pdf",sep=""))
+  resPlot()
+  dev.off()
 }
 
 ###OPTIMISATION RUN###

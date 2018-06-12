@@ -64,7 +64,7 @@ public:
                      LIG_INDEX, MS_INDEX_CST, CULM_NBLEAF_PARAM2, CULM_PHENO_STAGE_CSTE,
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, PLASTO, PHYLLO, LIGULO, TT_PLASTO,
                      TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2,
-                     STEM_APP_LEAF_PREDIM, CULM_MAXLEAVES, GRAIN_NB };
+                     STEM_APP_LEAF_PREDIM, CULM_MAXLEAVES, GRAIN_NB, SENESC_DW, DELETED_SENESC_DW_SUM };
 
     enum externals { PLANT_BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, FCSTRI, FCSTRL, FCSTRLLEN,
                      PLANT_PHENOSTAGE, PLANT_APPSTAGE, PLANT_LIGSTAGE, PREDIM_LEAF_ON_MAINSTEM, SLA,
@@ -143,6 +143,8 @@ public:
         Internal(STEM_APP_LEAF_PREDIM, &CulmModel::_stem_app_leaf_predim);
         Internal(CULM_MAXLEAVES, &CulmModel::_culm_maxleaves);
         Internal(GRAIN_NB, &CulmModel::_grain_nb);
+        Internal(SENESC_DW, &CulmModel::_senesc_dw);
+        Internal(DELETED_SENESC_DW_SUM, &CulmModel::_deleted_senesc_dw_sum);
 
         //    externals
         External(PLANT_BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -325,6 +327,7 @@ public:
             _panicle_day_demand = 0;
             _peduncle_day_demand = 0;
             _deleted_senesc_dw = 0;
+            _senesc_dw = 0;
 
             auto it = _phytomer_models.begin();
             while (it != _phytomer_models.end()) {
@@ -439,6 +442,7 @@ public:
                 }
             }
         }
+        _deleted_senesc_dw_sum = _deleted_senesc_dw_sum + _deleted_senesc_dw;
 
         auto it = _phytomer_models.begin();
         std::deque < PhytomerModel* >::iterator previous_it;
@@ -462,6 +466,8 @@ public:
         _nb_app_leaves_tot = 0;
         _reductionLER = 1.;
         _sheath_LLL = _ms_sheath_LLL;
+        _senesc_dw = 0;
+        _senesc_dw_sum = 0;
 
         while (it != _phytomer_models.end()) {
             //Phytomers
@@ -725,7 +731,9 @@ public:
                     t, PhytomerModel::REALLOC_BIOMASS);
         _senesc_dw_sum +=
                 (*it)->get < double, LeafModel >(
-                    t, PhytomerModel::SENESC_DW);
+                    t, PhytomerModel::SENESC_DW_SUM);
+        _senesc_dw +=
+                (*it)->get < double, LeafModel >(t, PhytomerModel::SENESC_DW);
     }
 
     void create_phytomer(double t)
@@ -994,6 +1002,7 @@ public:
         _last_ligulated_leaf_len = 0;
         _realloc_biomass_sum = 0;
         _senesc_dw_sum = 0;
+        _senesc_dw = 0;
         _last_leaf_biomass_sum = 0;
         _panicle_day_demand = 0;
         _panicle_weight = 0;
@@ -1062,6 +1071,7 @@ public:
         _stem_app_leaf_predim = 0;
         _culm_maxleaves = 0;
         _grain_nb = 0;
+        _deleted_senesc_dw_sum = 0;
     }
 
 private:
@@ -1178,6 +1188,8 @@ private:
     double _stem_app_leaf_predim;
     int _culm_maxleaves;
     double _grain_nb;
+    double _senesc_dw;
+    double _deleted_senesc_dw_sum;
 
     //    externals
     int _plant_phenostage;
