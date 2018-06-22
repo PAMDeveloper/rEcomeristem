@@ -119,6 +119,14 @@ public:
                      PlantModel::PAI});
         selector("BIOMLEAFTOT", artis::kernel::DOUBLE, {
                      PlantModel::BIOMLEAFTOT});
+        selector("BIOMINSHEATHMAINSTEM", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMINSHEATHMS});
+        selector("BIOMINSHEATH", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMINSHEATH});
+        selector("BIOMAEROTOT", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMAEROTOT});
+        selector("TOTAL_LENGTH_MAINSTEM", artis::kernel::DOUBLE, {
+                     PlantModel::TOTAL_LENGTH_MAINSTEM});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {

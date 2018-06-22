@@ -130,7 +130,7 @@ public:
 
         //INER
         if(_is_last_internode) {
-            _iner = _inter_predim * _reduction_iner / (_cste_ligulo);
+            _iner = _inter_predim * _reduction_iner / (_phenostage_pre_flo_to_flo * _cste_ligulo);
 
         } else {
             _iner = _inter_predim * _reduction_iner / (3*_cste_ligulo);
@@ -262,6 +262,7 @@ public:
         _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
         _wbmodel = parameters.get("wbmodel");
         _maxleaves = parameters.get("maxleaves");
+
 
         //internals
         _inter_phase = internode::INITIAL;
