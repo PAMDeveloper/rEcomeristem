@@ -121,6 +121,7 @@ public:
 
     }
 
+#ifdef UNSAFE_RUN
     map<string, vector<double>> loadCleanObsFromFile(const std::string &file_path, const SimpleView & view) {
         std::ifstream vObsFile(file_path);
         std::string line;
@@ -164,7 +165,7 @@ public:
 
         return obs;
     }
-
+#endif
 
     map<string, vector<double>> loadVObsFromFile(const std::string &file_path) {
         std::ifstream vObsFile(file_path);
