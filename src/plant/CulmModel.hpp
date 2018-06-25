@@ -255,7 +255,7 @@ public:
                     }
                 }
             }
-            if (_culm_ligstage == _culm_maxleaves + 1) {
+            if (_culm_ligstage == _culm_maxleaves) {
                 if(_is_first_culm and _plant_phase == plant::PI) {
                     return;
                 }
@@ -269,7 +269,7 @@ public:
         }
         case culm::PRE_FLO: {
             _last_phase = _culm_phase ;
-            if(_culm_ligstage == _culm_maxleaves + 2) { //+1 to pre_flo; +1 to end peduncle growth)
+            if(_culm_ligstage == _culm_maxleaves + _phenostage_pre_flo_to_flo) {
                 _culm_phase = culm::FLO;
             }
             break;

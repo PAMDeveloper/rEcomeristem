@@ -220,13 +220,13 @@ public:
         }
         case plant::PI: {
             _is_first_day_pi = false;
-            if (_ligstage == _maxleaves + 1) {
+            if (_ligstage == _maxleaves) {
                 _plant_phase = plant::PRE_FLO;
             }
             break;
         }
         case plant::PRE_FLO: {
-            if (_ligstage == _maxleaves + 2) { //+1 to pre_flo; +1 to end peduncle growth
+            if (_ligstage == _maxleaves + _phenostage_pre_flo_to_flo) {
                 _plant_phase = plant::FLO;
                 _phenostage_at_flo = _phenostage;
             }
