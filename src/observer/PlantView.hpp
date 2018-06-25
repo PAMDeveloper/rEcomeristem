@@ -46,6 +46,8 @@ public:
         selector("BIOMIN", artis::kernel::DOUBLE, {
                      PlantModel::INTERNODE_BIOM_STRUCT });
         selector("SENESC_DW", artis::kernel::DOUBLE, {
+                     PlantModel::SENESC_DW });
+        selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
                      PlantModel::SENESC_DW_SUM });
         selector("PHT", artis::kernel::DOUBLE, {
                      PlantModel::HEIGHT });
@@ -117,6 +119,14 @@ public:
                      PlantModel::PAI});
         selector("BIOMLEAFTOT", artis::kernel::DOUBLE, {
                      PlantModel::BIOMLEAFTOT});
+        selector("BIOMINSHEATHMAINSTEM", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMINSHEATHMS});
+        selector("BIOMINSHEATH", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMINSHEATH});
+        selector("BIOMAEROTOT", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMAEROTOT});
+        selector("TOTAL_LENGTH_MAINSTEM", artis::kernel::DOUBLE, {
+                     PlantModel::TOTAL_LENGTH_MAINSTEM});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {

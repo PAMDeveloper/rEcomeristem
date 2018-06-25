@@ -96,7 +96,7 @@ public:
                 }
             }
 
-            _iner = _length_predim * _reduction_iner / (_ligulo);
+            _iner = _length_predim * _reduction_iner / (_phenostage_pre_flo_to_flo * _ligulo);
 
             //Length and Exp time
             if (t == _first_day) {
@@ -140,6 +140,7 @@ public:
         _respINER = _parameters.get("resp_LER");
         _density = _parameters.get("density_IN2");
         _wbmodel = _parameters.get("wbmodel");
+        _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
 
         // internals
         _is_mature = false;
@@ -171,6 +172,7 @@ private:
     double _respINER;
     double _density;
     double _wbmodel;
+    double _phenostage_pre_flo_to_flo;
 
     // internals
     bool _is_mature;

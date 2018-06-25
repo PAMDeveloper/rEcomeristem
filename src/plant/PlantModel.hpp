@@ -56,7 +56,7 @@ public:
                      DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW,
                      PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
                      MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
-                     TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT };
+                     TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS, BIOMINSHEATH, BIOMAEROTOT };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -145,6 +145,11 @@ public:
         Internal( BIOMMAINSTEM, &PlantModel::_biomMainstem);
         Internal( SLAPLANT, &PlantModel::_slaplant);
         Internal( BIOMLEAFTOT, &PlantModel::_biomLeafTot);
+        Internal( SENESC_DW, &PlantModel::_senesc_dw);
+        Internal( BIOMINSHEATHMS, &PlantModel::_biomInSheathMainstem);
+        Internal( BIOMINSHEATH, &PlantModel::_biomInSheath);
+        Internal( BIOMAEROTOT, &PlantModel::_biomAeroTot);
+
     }
 
     virtual ~PlantModel()
@@ -215,13 +220,13 @@ public:
         }
         case plant::PI: {
             _is_first_day_pi = false;
-            if (_ligstage == _maxleaves + 1) {
+            if (_ligstage == _maxleaves) {
                 _plant_phase = plant::PRE_FLO;
             }
             break;
         }
         case plant::PRE_FLO: {
-            if (_ligstage == _maxleaves + 2) { //+1 to pre_flo; +1 to end peduncle growth
+            if (_ligstage == _maxleaves + _phenostage_pre_flo_to_flo) {
                 _plant_phase = plant::FLO;
                 _phenostage_at_flo = _phenostage;
             }
@@ -545,6 +550,7 @@ public:
             itnbc++;
         }
         _biomAero2 = _biomAero2 +  _stock_model->get< double > (t, PlantStockModel::STOCK);
+        _biomAeroTot = _biomAero2 + _senesc_dw_sum;
 
         // VISU
         _tillerNb_1 = nbc;
@@ -561,7 +567,9 @@ public:
         _panicleMainstemDW = (*visumainstem)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
         _biomMainstem = _biomLeafMainstem + _biomInMainstem + _panicleMainstemDW;
         _slaplant = _leaf_blade_area_sum / _leaf_biom_struct ;
-        _biomLeafTot = _leaf_biomass_sum + _senesc_dw_sum;
+        _biomLeafTot = _leaf_biom_struct + _senesc_dw_sum;
+        _biomInSheathMainstem = (_biomLeafMainstem * ((1-_G_L)/_G_L)) + _biomInMainstem;
+        _biomInSheath = (_leaf_biom_struct * ((1-_G_L)/_G_L)) + _internode_biom_struct;
     }
 
     void create_culm(double t, int n)
@@ -620,6 +628,7 @@ public:
         _leaf_blade_area_sum = 0;
         _realloc_biomass_sum = 0;
         _senesc_dw_sum = 0;
+        _senesc_dw = 0;
         _panicle_demand_sum = 0;
         _peduncle_demand_sum = 0;
         _peduncle_last_demand_sum = 0;
@@ -646,7 +655,8 @@ public:
             _peduncle_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS);
             _leaf_blade_area_sum += (*it)->get < double, CulmModel>(t, CulmModel::LEAF_BLADE_AREA_SUM);
             _realloc_biomass_sum += (*it)->get < double, CulmModel>(t, CulmModel::REALLOC_BIOMASS_SUM);
-            _senesc_dw_sum += (*it)->get < double, CulmModel>(t, CulmModel::SENESC_DW_SUM) + (*it)->get < double, CulmModel>(t, CulmModel::DELETED_SENESC_DW);
+            _senesc_dw_sum += (*it)->get < double, CulmModel>(t, CulmModel::SENESC_DW_SUM) + (*it)->get < double, CulmModel>(t, CulmModel::DELETED_SENESC_DW_SUM);
+            _senesc_dw += (*it)->get < double, CulmModel>(t, CulmModel::SENESC_DW) + (*it)->get < double, CulmModel>(t, CulmModel::DELETED_SENESC_DW);
             _realloc_sum_supply += (*it)->get < double, CulmModel >(t, CulmModel::REALLOC_SUPPLY);
             _leaf_delay = (*it)->get< double, CulmModel>(t, CulmModel::LEAF_DELAY);
             ++it;
@@ -749,6 +759,7 @@ public:
         _SLAp = _parameters.get("SLAp");
         _Tb = _parameters.get("Tb");
         _maxleaves = _parameters.get("maxleaves");
+        _G_L = parameters.get("G_L");
 
         //Attributes for culmmodel
         _LL_BL = _LL_BL_init;
@@ -867,6 +878,10 @@ public:
         _biomMainstem = 0;
         _slaplant = 0;
         _biomLeafTot = 0;
+        _senesc_dw = 0;
+        _biomInSheathMainstem = 0;
+        _biomInSheath = 0;
+        _biomAeroTot = 0;
     }
 
 private:
@@ -903,6 +918,7 @@ private:
     double _Tb;
     double _maxleaves;
     double _tae;
+    double _G_L;
 
 
     // vars
@@ -1002,6 +1018,10 @@ private:
     double _biomMainstem;
     double _slaplant;
     double _biomLeafTot;
+    double _senesc_dw;
+    double _biomInSheathMainstem;
+    double _biomInSheath;
+    double _biomAeroTot;
 
     //internal states
     plant::plant_state _plant_state;
