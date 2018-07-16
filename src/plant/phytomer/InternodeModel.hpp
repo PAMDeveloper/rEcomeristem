@@ -37,7 +37,8 @@ public:
     enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
                      DELTA_T, PLASTO, LIGULO, NB_LIG, CULM_DEFICIT, CULM_STOCK,
                      BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX, PREVIOUS_IN_PREDIM, PHENOSTAGE, LIGSTAGE,
-                     TEST_IC, FCSTR, FCSTRI, FCSTRL, CULM_NBLEAF_PARAM2 };
+                     TEST_IC, FCSTR, FCSTRI, FCSTRL, CULM_NBLEAF_PARAM2, CULM_NBLEAF_STEM_ELONG,
+                     PREVIOUS_IN_DIAM, IN_DIAM_PREDIM_MS, CULM_INDEX };
 
     InternodeModel(int index, bool is_on_mainstem, bool is_last_internode):
         _index(index),
@@ -88,6 +89,10 @@ public:
         External(FCSTRI, &InternodeModel::_fcstrI);
         External(FCSTRL, &InternodeModel::_fcstrL);
         External(CULM_NBLEAF_PARAM2, &InternodeModel::_culm_nb_leaf_param2);
+        External(CULM_NBLEAF_STEM_ELONG, &InternodeModel::_culm_nbleaf_stem_elong);
+        External(PREVIOUS_IN_DIAM, &InternodeModel::_previous_inter_diameter);
+        External(IN_DIAM_PREDIM_MS, &InternodeModel::_in_diam_predim_MS);
+        External(CULM_INDEX, &InternodeModel::_culm_index);
     }
 
     virtual ~InternodeModel()
@@ -166,7 +171,18 @@ public:
         }
 
         //DiameterPredim
-        _inter_diameter = _IN_length_to_IN_diam * std::max(0.,(_index - _nb_leaf_stem_elong + 1)) + _coef_lin_IN_diam;
+        //_inter_diameter = _IN_length_to_IN_diam * std::max(0.,(_index - _nb_leaf_stem_elong + 1)) + _coef_lin_IN_diam;
+        if(_inter_phase_1 == internode::VEGETATIVE and _inter_phase == internode::REALIZATION) {
+            if(_index <= _culm_nbleaf_stem_elong) {
+                if(_is_on_mainstem) {
+                    _inter_diameter = _coef_lin_IN_diam * _test_ic;
+                } else {
+                    _inter_diameter = (_coef_lin_IN_diam * std::pow(_coeff_in_diam,_culm_index-1)) * _test_ic;
+                }
+            } else {
+                _inter_diameter = _previous_inter_diameter * _coeff_in_diam * _test_ic;
+            }
+        }
 
         //Volume
         double radius = _inter_diameter / 2;
@@ -262,6 +278,7 @@ public:
         _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
         _wbmodel = parameters.get("wbmodel");
         _maxleaves = parameters.get("maxleaves");
+        _coeff_in_diam = parameters.get("coeff_in_diam");
 
 
         //internals
@@ -312,6 +329,7 @@ private:
     double _wbmodel;
     double _maxleaves;
     double _p;
+    double _coeff_in_diam;
 
     // internals
     double _density;
@@ -360,6 +378,12 @@ private:
     double _fcstrI;
     double _fcstrL;
     double _culm_nb_leaf_param2;
+    double _culm_nbleaf_stem_elong;
+
+    double _previous_inter_diameter;
+    double _in_diam_predim_MS;
+    double _culm_index;
+
 };
 
 } // namespace model

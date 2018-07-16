@@ -64,7 +64,8 @@ public:
                      LIG_INDEX, MS_INDEX_CST, CULM_NBLEAF_PARAM2, CULM_PHENO_STAGE_CSTE,
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, PLASTO, PHYLLO, LIGULO, TT_PLASTO,
                      TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2,
-                     STEM_APP_LEAF_PREDIM, CULM_MAXLEAVES, GRAIN_NB, SENESC_DW, DELETED_SENESC_DW_SUM };
+                     STEM_APP_LEAF_PREDIM, CULM_MAXLEAVES, GRAIN_NB, SENESC_DW, DELETED_SENESC_DW_SUM,
+                     CULM_NBLEAF_STEM_ELONG, INTER_DIAM_PREDIM_MS };
 
     enum externals { PLANT_BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, FCSTRI, FCSTRL, FCSTRLLEN,
                      PLANT_PHENOSTAGE, PLANT_APPSTAGE, PLANT_LIGSTAGE, PREDIM_LEAF_ON_MAINSTEM, SLA,
@@ -145,6 +146,8 @@ public:
         Internal(GRAIN_NB, &CulmModel::_grain_nb);
         Internal(SENESC_DW, &CulmModel::_senesc_dw);
         Internal(DELETED_SENESC_DW_SUM, &CulmModel::_deleted_senesc_dw_sum);
+        Internal(CULM_NBLEAF_STEM_ELONG, &CulmModel::_culm_nbleaf_stem_elong);
+        Internal(INTER_DIAM_PREDIM_MS, &CulmModel::_in_diam_predim_ms);
 
         //    externals
         External(PLANT_BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -235,6 +238,7 @@ public:
             if(_plant_phase == plant::ELONG) {
                 if(_nb_lig > 0) {
                     _culm_phase  = culm::ELONG;
+                    _culm_nbleaf_stem_elong = _culm_ligstage;
                 }
             }
             break;
@@ -628,12 +632,18 @@ public:
         (*it)->internode()->put(t, InternodeModel::PHENOSTAGE, _plant_phenostage);
         (*it)->internode()->put(t, InternodeModel::LIGSTAGE, _plant_ligstage);
         (*it)->internode()->put(t, InternodeModel::CULM_NBLEAF_PARAM2, _culm_nbleaf_param_2);
+        (*it)->internode()->put(t, InternodeModel::CULM_NBLEAF_STEM_ELONG, _culm_nbleaf_stem_elong);
+        (*it)->internode()->put(t, InternodeModel::CULM_INDEX, _index);
+
         if(i == 0) {
             (*it)->internode()->put(t, InternodeModel::PREVIOUS_IN_PREDIM, 0.);
+            (*it)->internode()->put(t, InternodeModel::PREVIOUS_IN_DIAM, 0.);
         } else {
             (*it)->internode()->put(t, InternodeModel::PREVIOUS_IN_PREDIM, (*previous_it)->internode()->get < double >(t, InternodeModel::POT_PREDIM));
+            (*it)->internode()->put(t, InternodeModel::PREVIOUS_IN_DIAM, (*previous_it)->internode()->get < double >(t, InternodeModel::INTER_DIAMETER));
         }
         if (_is_first_culm) {
+            (*it)->internode()->put(t, InternodeModel::IN_DIAM_PREDIM_MS, 0.);
             if (i == 0) {
                 (*it)->put(t, PhytomerModel::PREDIM_LEAF_ON_MAINSTEM, 0.);
             } else {
@@ -642,6 +652,7 @@ public:
             }
         } else {
             (*it)->put(t, PhytomerModel::PREDIM_LEAF_ON_MAINSTEM, _predim_leaf_on_mainstem);
+            (*it)->internode()->put(t, InternodeModel::IN_DIAM_PREDIM_MS, _in_diam_predim_ms);
         }
 
         if (i == 0) {
@@ -680,6 +691,7 @@ public:
 
             if (_index == 1) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
+                _in_diam_predim_ms = (*it)->internode()->get < double >(t, InternodeModel::INTER_DIAMETER);
                 if((*it)->leaf()->get < bool >(t, LeafModel::IS_APP)) {
                     _stem_app_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
                 }
@@ -1072,6 +1084,8 @@ public:
         _culm_maxleaves = 0;
         _grain_nb = 0;
         _deleted_senesc_dw_sum = 0;
+        _culm_nbleaf_stem_elong = _parameters.get("nb_leaf_stem_elong");
+        _in_diam_predim_ms = 0;
     }
 
 private:
@@ -1190,6 +1204,8 @@ private:
     double _grain_nb;
     double _senesc_dw;
     double _deleted_senesc_dw_sum;
+    double _culm_nbleaf_stem_elong;
+    double _in_diam_predim_ms;
 
     //    externals
     int _plant_phenostage;
