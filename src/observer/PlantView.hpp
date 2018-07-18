@@ -127,6 +127,10 @@ public:
                      PlantModel::BIOMAEROTOT});
         selector("TOTAL_LENGTH_MAINSTEM", artis::kernel::DOUBLE, {
                      PlantModel::TOTAL_LENGTH_MAINSTEM});
+        selector("INTERC1", artis::kernel::DOUBLE, {
+                     PlantModel::INTERC1});
+        selector("INTERC2", artis::kernel::DOUBLE, {
+                     PlantModel::INTERC2});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {

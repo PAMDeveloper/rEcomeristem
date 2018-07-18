@@ -31,13 +31,14 @@
 #include <plant/processes/WaterBalanceModel.hpp>
 #include <plant/processes/PlantStockModel.hpp>
 #include <plant/processes/AssimilationModel.hpp>
+#include <plant/processes/InterceptionModel.hpp>
 
 using namespace model;
 
 class PlantModel : public CoupledModel < PlantModel >
 {
 public:
-    enum submodels { WATER_BALANCE, STOCK, ASSIMILATION,
+    enum submodels { WATER_BALANCE, STOCK, ASSIMILATION, INTERCEPTION,
                      ROOT, CULMS};
 
     enum internals { LIG, APP, LEAF_BIOMASS_SUM, INTERNODE_BIOMASS_SUM,
@@ -56,18 +57,21 @@ public:
                      DEAD_LEAF_NB, INTERNODE_LENGTH_MAINSTEM, PANICLE_MAINSTEM_DW,
                      PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
                      MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
-                     TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS, BIOMINSHEATH, BIOMAEROTOT };
+                     TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
+                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2 };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
         _stock_model(new PlantStockModel),
         _assimilation_model(new AssimilationModel),
+        _interception_model(new InterceptionModel),
         _root_model(new RootModel)
     {
         // submodels
         subModel(WATER_BALANCE, _water_balance_model.get());
         subModel(STOCK, _stock_model.get());
         subModel(ASSIMILATION, _assimilation_model.get());
+        subModel(INTERCEPTION, _interception_model.get());
         subModel(ROOT, _root_model.get());
 
         // local internals
@@ -150,6 +154,9 @@ public:
         Internal( BIOMINSHEATH, &PlantModel::_biomInSheath);
         Internal( BIOMAEROTOT, &PlantModel::_biomAeroTot);
 
+        Internal( INTERC1, &PlantModel::_interc1);
+        Internal( INTERC2, &PlantModel::_interc2);
+
     }
 
     virtual ~PlantModel()
@@ -158,6 +165,7 @@ public:
         _water_balance_model.reset(nullptr);
         _stock_model.reset(nullptr);
         _assimilation_model.reset(nullptr);
+        _interception_model.reset(nullptr);
 
         auto it = _culm_models.begin();
         while (it != _culm_models.end()) {
@@ -417,6 +425,14 @@ public:
         _assimilation_model->put < double >(t, AssimilationModel::LEAFBIOMASS, _leaf_biomass_sum);
         _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, _internode_biomass_sum);
         (*_assimilation_model)(t);
+
+        //_interc1 = _assimilation_model->get < double >(t, AssimilationModel::INTERC) * _parameters.get(t).Par;
+
+        //Interception TESTS
+        /*_interception_model->put < double >(t, InterceptionModel::PAI, _leaf_blade_area_sum);
+        (*_interception_model)(t);
+
+        _interc2 = _interception_model->get < double >(t, InterceptionModel::INTERC);*/
 
         //CulmStockModel
         if(_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
@@ -777,6 +793,7 @@ public:
         _water_balance_model->init(t, parameters);
         _stock_model->init(t, parameters);
         _assimilation_model->init(t, parameters);
+        _interception_model->init(t, parameters);
         _root_model->init(t, parameters);
 
         //vars
@@ -893,6 +910,7 @@ private:
     std::unique_ptr < model::WaterBalanceModel > _water_balance_model;
     std::unique_ptr < model::PlantStockModel > _stock_model;
     std::unique_ptr < model::AssimilationModel > _assimilation_model;
+    std::unique_ptr < model::InterceptionModel > _interception_model;
     std::unique_ptr < model::RootModel > _root_model;
 
     // parameters
@@ -1022,6 +1040,11 @@ private:
     double _biomInSheathMainstem;
     double _biomInSheath;
     double _biomAeroTot;
+
+
+    // test
+    double _interc1;
+    double _interc2;
 
     //internal states
     plant::plant_state _plant_state;
