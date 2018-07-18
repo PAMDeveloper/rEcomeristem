@@ -153,6 +153,27 @@ List launch_simu(Rcpp::String name, CharacterVector names = CharacterVector(), N
 }
 
 // [[Rcpp::export]]
+List launch_simu_meteo(Rcpp::String name, List dfMeteo) {
+  Simulation * s = simulations[name];
+  NumericVector Temperature = dfMeteo[0];
+  NumericVector Par = dfMeteo[1];
+  NumericVector Etp = dfMeteo[2];
+  NumericVector Irrigation = dfMeteo[3];
+  NumericVector P = dfMeteo[4];
+  s->parameters.meteoValues.clear();
+  for (int i = 0; i < Temperature.size(); ++i) {
+    ecomeristem::Climate c(Temperature(i), Par(i), Etp(i), Irrigation(i), P(i));
+    s->parameters.meteoValues.push_back(c);
+  }
+
+  EcomeristemSimulator simulator(new PlantModel(), s->globalParameters);
+  simulator.init(s->beginDate, s->parameters);
+  map<string,vector<double>> res = simulator.runOptim(s->context, s->filter);
+  return mapOfVectorToDF(res);
+}
+
+
+// [[Rcpp::export]]
 List get_clean_obs(Rcpp::String vObsPath) {
   utils::ParametersReader reader;
   observer::PlantView view;
