@@ -37,7 +37,7 @@ public:
                      LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL_, PLASTO, PHYLLO, LIGULO, FIRST_DAY,
                      SHEATH_LEN, LAST_BLADE_AREA, LAST_VISIBLE_BLADE_AREA, SHEATH_LLL_CST,
                      IS_APP, IS_DEAD, IS_FIRST, GROWTH_DELAY, POT_LER, RED_LENGTH, POT_PREDIM,
-                     WIDTH_LER, POT_LEN, BLADE_LEN };
+                     WIDTH_LER, POT_LEN, BLADE_LEN, VISIBLE_LEN, LAST_LEN };
 
     enum externals { DELTA_T, FTSW, FCSTR, FCSTRL, FCSTRLLEN,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
@@ -101,6 +101,8 @@ public:
         Internal(WIDTH_LER, &LeafModel::_width_ler);
         Internal(POT_LEN, &LeafModel::_pot_len);
         Internal(BLADE_LEN, &LeafModel::_blade_len);
+        Internal(VISIBLE_LEN, &LeafModel::_visible_len);
+        Internal(LAST_LEN, &LeafModel::_last_len);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);
@@ -236,11 +238,19 @@ public:
         //LeafLen
         if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
             if(_leaf_phase == leaf::INITIAL) {
-                _len = std::min(_sheath_LLL_cst, _len+_ler*std::min(_delta_t, _exp_time));
+                //_len = std::min(_sheath_LLL_cst, _len+_ler*std::min(_delta_t, _exp_time));
+                _len = _len+_ler*_delta_t;
                 _pot_len = _len;
+                _visible_len = _len;
             } else {
                 _len = std::min(_predim, _len+_ler*std::min(_delta_t, _exp_time));
                 _pot_len = std::min(_pot_predim, _pot_len+_width_ler*std::min(_delta_t, _exp_time));
+                _visible_len = _len;
+                 if(_len >= _predim and !_is_lig) {
+                     _last_len = _len;
+                 } else if(_is_lig) {
+                     _visible_len = std::max(0.,_last_len * (1 - _TT_Lig / _life_span));
+                 }
             }
         }
 
@@ -435,6 +445,8 @@ public:
         _width_ler = 0;
         _pot_len = 0;
         _blade_len = 0;
+        _last_len = 0;
+        _visible_len = 0;
     }
 
 private:
@@ -505,7 +517,8 @@ private:
     double _width_ler;
     double _pot_len;
     double _blade_len;
-
+    double _last_len;
+    double _visible_len;
 
     // external variables
     double _MGR;

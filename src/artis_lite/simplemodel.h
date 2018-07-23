@@ -222,14 +222,14 @@ protected:
 
 public:
     SimpleModel() {
-        i_double = vector<double T::*>(80);
-        i_int = vector<int T::*>(80);
-        i_bool = vector<bool T::*>(80);
-        i_flag = vector<flag T::*>(80);
-        e_double = vector<double T::*>(80);
-        e_int = vector<int T::*>(80);
-        e_bool = vector<bool T::*>(80);
-        e_flag = vector<flag T::*>(80);
+        i_double = vector<double T::*>(90);
+        i_int = vector<int T::*>(90);
+        i_bool = vector<bool T::*>(90);
+        i_flag = vector<flag T::*>(90);
+        e_double = vector<double T::*>(90);
+        e_int = vector<int T::*>(90);
+        e_bool = vector<bool T::*>(90);
+        e_flag = vector<flag T::*>(90);
     }
 
     const double getVal (unsigned int i) {

@@ -131,6 +131,8 @@ public:
                      PlantModel::INTERC1});
         selector("INTERC2", artis::kernel::DOUBLE, {
                      PlantModel::INTERC2});
+        selector("MS_LEAF2_LEN", artis::kernel::DOUBLE, {
+                     PlantModel::MS_LEAF2_LEN});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {

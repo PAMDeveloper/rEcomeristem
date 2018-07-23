@@ -3,14 +3,21 @@
 #-- (PAM, AGAP, BIOS, CIRAD)
 
 ###SET INFORMATION FOR ESTIMATION###
-path <- "D:/Workspace/estimworkspace/2015/all/G15"
+path <- "D:/Workspace/estimworkspace/2016_tallage/G26_LD"
 vName <- "vobs_moy.txt"
 vETName <- "vobs_et.txt"
 paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
                      "coef_MGR_PI","slope_length_IN","density_IN2","coef_plasto_PI",
-                     "coef_phyllo_PI","coef_ligulo_PI","slope_LL_BL_at_PI")
-minValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
-maxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
+                     "coef_phyllo_PI","coef_ligulo_PI","slope_LL_BL_at_PI", "coeff_in_diam")
+minValue <- c(3, 0.5, 6, 25, 25, 25, -0.5, 0.5, 0.08, 1, 1, 1, 0.0, 0.8)
+maxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4, 1.0)
+
+#paramOfInterest <- c("Epsib","Ict","plasto_init","phyllo_init","ligulo_init",
+#                     "density_IN2","coef_plasto_PI",
+#                     "coef_phyllo_PI","coef_ligulo_PI","coeff_in_diam")
+#minValue <- c(3, 0.5, 20, 20, 20, 0.08, 1, 1, 1, 0.8)
+#maxValue <- c(8, 2.5, 45, 45, 45, 0.3, 3.0, 3.0, 3.0, 1.0)
+
 coefIncrease <- 10
 maxIter <- 10000
 penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)

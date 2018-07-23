@@ -58,7 +58,7 @@ public:
                      PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
                      MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
-                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2 };
+                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -153,9 +153,9 @@ public:
         Internal( BIOMINSHEATHMS, &PlantModel::_biomInSheathMainstem);
         Internal( BIOMINSHEATH, &PlantModel::_biomInSheath);
         Internal( BIOMAEROTOT, &PlantModel::_biomAeroTot);
-
         Internal( INTERC1, &PlantModel::_interc1);
         Internal( INTERC2, &PlantModel::_interc2);
+        Internal( MS_LEAF2_LEN, &PlantModel::_ms_leaf2_len);
 
     }
 
@@ -571,6 +571,7 @@ public:
         // VISU
         _tillerNb_1 = nbc;
         std::deque < CulmModel* >::const_iterator visumainstem = _culm_models.begin();
+        _ms_leaf2_len = (*visumainstem)->get< double, CulmModel >(t, CulmModel::FIRST_LEAF_TOT_LEN); //feuille numéro 2 pour avoir la croissance totale
         _ms_index = (*visumainstem)->get_phytomer_number();
         _biomLeafMainstemstruct = (*visumainstem)->get< double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM);
         _biomLeafMainstem = (*visumainstem)->get< double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) + (_mainstem_stock - _mainstem_stock_IN);
@@ -899,6 +900,7 @@ public:
         _biomInSheathMainstem = 0;
         _biomInSheath = 0;
         _biomAeroTot = 0;
+        _ms_leaf2_len = 0;
     }
 
 private:
@@ -1040,6 +1042,7 @@ private:
     double _biomInSheathMainstem;
     double _biomInSheath;
     double _biomAeroTot;
+    double _ms_leaf2_len;
 
 
     // test

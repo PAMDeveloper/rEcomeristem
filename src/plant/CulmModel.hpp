@@ -54,7 +54,7 @@ public:
                      LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN,
                      LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND, PEDUNCLE_BIOMASS,
                      PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND,
-                     FIRST_LEAF_LEN, DELETED_SENESC_DW, PEDUNCLE_LEN, KILL_CULM,
+                     FIRST_LEAF_LEN, FIRST_LEAF_TOT_LEN, DELETED_SENESC_DW, PEDUNCLE_LEN, KILL_CULM,
                      LAST_LIGULATED_LEAF_SHEATH_LEN, DELETED_REALLOC_BIOMASS, CULM_TEST_IC,
                      CULM_DEFICIT, CULM_STOCK, LAST_LEAF_INDEX, REALLOC_SUPPLY, PANICLE_WEIGHT,
                      LAST_LEAF_BLADE_AREA, NBLEAF,
@@ -102,6 +102,7 @@ public:
         Internal(PEDUNCLE_DAY_DEMAND, &CulmModel::_peduncle_day_demand);
         Internal(PEDUNCLE_LAST_DEMAND, &CulmModel::_peduncle_last_demand);
         Internal(FIRST_LEAF_LEN, &CulmModel::_first_leaf_len);
+        Internal(FIRST_LEAF_TOT_LEN, &CulmModel::_first_leaf_tot_len);
         Internal(DELETED_SENESC_DW, &CulmModel::_deleted_senesc_dw);
         Internal(NB_LIG_TOT, &CulmModel::_nb_lig_tot);
         Internal(PEDUNCLE_LEN, &CulmModel::_peduncle_len);
@@ -472,6 +473,7 @@ public:
         _sheath_LLL = _ms_sheath_LLL;
         _senesc_dw = 0;
         _senesc_dw_sum = 0;
+        _first_leaf_tot_len = 0;
 
         while (it != _phytomer_models.end()) {
             //Phytomers
@@ -488,6 +490,9 @@ public:
                     _last_ligulated_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::LEAF_LEN);
                     _last_ligulated_leaf_sheath_len = (*it)->leaf()->get < double >(t, LeafModel::SHEATH_LEN);
                 }
+            }
+            if(i == 1) { //second leaf in reality
+                _first_leaf_tot_len = (*it)->leaf()->get < double >(t, LeafModel::VISIBLE_LEN);
             }
 
             previous_it = it;
@@ -698,6 +703,7 @@ public:
                 if(!((*it)->is_leaf_dead(t)) and (*it)->is_leaf_lig(t)) {
                     _last_leaf_blade_area = (*it)->leaf()->get < double >(t, LeafModel::LAST_BLADE_AREA);
                 }
+
             }
             if (_index == 1 and (*it)->is_leaf_lig(t) and t != (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
                 _last_ligulated_leaf = i;
@@ -1025,6 +1031,7 @@ public:
         _peduncle_day_demand = 0;
         _peduncle_len = 0;
         _first_leaf_len = 0;
+        _first_leaf_tot_len = 0;
         _deleted_leaf_number = 0;
         _deleted_senesc_dw = 0;
         _nb_lig_tot = 0;
@@ -1163,6 +1170,7 @@ private:
     double _culm_phenostage_at_pi;
     double _culm_phenostage_at_pre_flo;
     double _first_leaf_len;
+    double _first_leaf_tot_len;
     double _deleted_leaf_number;
     double _deleted_senesc_dw;
     double _nb_lig_tot;
