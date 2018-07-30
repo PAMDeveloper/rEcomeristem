@@ -25,13 +25,13 @@ vName <- "vobs_moy.txt"
 vETName <- "vobs_et.txt"
 paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
                      "coef_MGR_PI","slope_length_IN","density_IN2","coef_plasto_PI",
-                     "coef_phyllo_PI","coef_ligulo_PI","slope_LL_BL_at_PI")
-minValue <- c(3, 0.5, 6, 20, 20, 20, -0.5, 0.5, 0.08, 1, 1, 1, 0.0)
-maxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4)
+                     "coef_phyllo_PI","coef_ligulo_PI","slope_LL_BL_at_PI","coeff_in_diam")
+minValue <- c(3.0, 0.5, 6.0, 25.0, 25.0, 25.0, -0.5, 0.5, 0.08, 1.0, 1.0, 1.0, 0.0,0.8)
+maxValue <- c(8.0, 2.5, 14.0, 45.0, 45.0, 45.0, 0.5, 1.0, 0.3, 3.0, 3.0, 3.0, 0.4,1.0)
 coefIncrease <- 10
-maxIter <- 20000
+maxIter <- 50000
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
-stepTol <- 20000
+stepTol <- 50000
 penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
 solTol <- 0.01 #will be multiplied by the number of observed variables
 clusterA <- TRUE  #parallel for machines with at least 4 cores
@@ -44,7 +44,9 @@ obsET <- recomeristem::get_clean_obs(paste(DataDir,"/",vETName,sep=""))
 
 ###INIT ESTIMATION###
 isInit <- FALSE
-bounds <- matrix(c(minValue,maxValue),ncol=2)
+minV <- rep(0,length(minValue))
+maxV <- rep(1,length(maxValue))
+bounds <- matrix(c(minV,maxV),ncol=2)
 obsCoef <- rep(1,ncol(obs))
 nbParam <- length(paramOfInterest)
 result <- list()
@@ -56,6 +58,9 @@ optimEcomeristem <- function(p) {
     recomeristem::init_simu(param, meteo, obs, "env1")
     isInit <<- TRUE
   }
+  #transform param over real interval
+  p <- (p-bounds[,1])/(bounds[,2]-bounds[,1]) * (maxValue-minValue) + minValue
+  
   if("phyllo_init" %in% paramOfInterest && "plasto_init" %in% paramOfInterest && "ligulo_init" %in% paramOfInterest) {
     if(p[match("phyllo_init",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]) {
       return(99999)
@@ -78,7 +83,7 @@ optimEcomeristem <- function(p) {
 }
 optimisation <- function(maxIter, solTol, relTol, stepTol, bounds) {
   if(clusterA && detectCores() >= 4) {
-    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(reltol=relTol,steptol=stepTol,VTR=solTol,itermax=maxIter,strategy=2,cluster=cl,packages=c("recomeristem"),parVar=c("meteo","obs", "paramOfInterest", "obsET","penalty","coeff","isInit","param")))
+    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(reltol=relTol,steptol=stepTol,VTR=solTol,itermax=maxIter,strategy=2,cluster=cl,packages=c("recomeristem"),parVar=c("meteo","obs", "paramOfInterest", "obsET","penalty","coeff","isInit","param",,"bounds","minValue","maxValue")))
   } else {
     resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(reltol=relTol,steptol=stepTol,VTR=solTol,itermax=maxIter,strategy=2))
   }
@@ -111,5 +116,6 @@ if(clusterA) {
 } #parallel
 system.time(resOptim <- optimisation(maxIter, solTol, relTol, stepTol, bounds))
 result <- resOptim[[1]]
+result$par <- (result$par-bounds[,1])/(bounds[,2]-bounds[,1]) * (maxValue-minValue) + minValue
 savePar()
 stopCluster(cl)
