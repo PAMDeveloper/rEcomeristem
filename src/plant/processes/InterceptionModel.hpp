@@ -164,22 +164,22 @@ public:
         _mean = _sunrise + (_sunset-_sunrise)/2;
         _sigma = 0.15 * (_sunset-_sunrise);
 
-
-        //@TODO : find truncated normal distribution code in c++
-        const int nrolls=1000000;
-        std::default_random_engine generator;
-        generator.seed(1337);
-        std::normal_distribution<double> distribution(_mean,_sigma);
-
         double p[24]={};
-        for(int i=0; i<nrolls; ++i) {
-            double number = distribution(generator);
-            if(number>=0.0 && number < 24.0) {
-                ++p[int(number)];
+        for(int i=0; i<24; ++i) {
+            double x = ((i+1)-_mean)/_sigma;
+            if(x < 5) {
+                p[i] = 1/std::sqrt(2*_pi)*std::exp(-0.5*x*x)/_sigma;
+            } else if(x > std::sqrt(-2*std::log(2)*-1073)) {
+                p[i] = 0;
+            } else {
+                double x1 = std::ldexp(std::ldexp(x,16),-16);
+                double x2 = x-x1;
+                p[i] = 1/std::sqrt(2*_pi) / _sigma * (std::exp(-0.5 * x1 * x1) * std::exp((-0.5*x2-x1)*x2));
             }
         }
+
         for(int i=0;i<24;i++) {
-            _rgHourly_[i] = (p[i]*_Rg)/nrolls;
+            _rgHourly_[i] = (p[i]*_Rg);
             _sinBeta_[i] = std::max(0.0,std::sin(_latitudeRad)*std::sin(_declination)+std::cos(_latitudeRad)*std::cos(_declination)*cos(2*_pi*(i+12)/24));
             _rgHourly_diff_[i] = _propRgRd * _rgHourly_[i];
             _rgHourly_dir_[i] = _rgHourly_[i] - _rgHourly_diff_[i];

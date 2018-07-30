@@ -35,7 +35,7 @@ class AssimilationModel : public AtomicModel < AssimilationModel >
 public:
     enum internals { ASSIM, ASSIM_POT, INTERC, LAI, RESP_MAINT };
 
-    enum externals { CSTR, FCSTR, FCSTRA, PAI, LEAFBIOMASS, INTERNODEBIOMASS };
+    enum externals { CSTR, FCSTR, FCSTRA, PAI, LEAFBIOMASS, INTERNODEBIOMASS, EXT_INTERC };
 
 
     AssimilationModel() {
@@ -53,6 +53,7 @@ public:
         External(PAI, &AssimilationModel::_PAI);
         External(LEAFBIOMASS, &AssimilationModel::_LeafBiomass);
         External(INTERNODEBIOMASS, &AssimilationModel::_InternodeBiomass);
+        External(EXT_INTERC, &AssimilationModel::_ext_interc);
     }
 
     virtual ~AssimilationModel()
@@ -67,7 +68,11 @@ public:
         _lai = _PAI * (_rolling_B + _rolling_A * _fcstr) * (_density / 1.e4);
 
         //  interc
-        _interc = 1. - std::exp(-_kdf * _lai);
+        if(_intercmodel == 1) {
+            _interc = 1. - std::exp(-_kdf * _lai);
+        } else {
+            _interc = _ext_interc;
+        }
 
         //  assimPot
         if(_wbmodel == 1) {
@@ -102,6 +107,7 @@ public:
         _Tresp = parameters.get("Tresp");
         _thresAssim = parameters.get("thresAssim");
         _wbmodel = parameters.get("wbmodel");
+        _intercmodel = parameters.get("intercmodel");
 
         //  computed variables (internal)
         _assim = 0;
@@ -125,6 +131,7 @@ private:
     double _Kresp_leaf;
     double _Kresp_internode;
     double _Tresp;
+    double _intercmodel;
 
     double _thresAssim;
     double _wbmodel;
@@ -147,6 +154,7 @@ private:
     double _PAI;
     double _LeafBiomass;
     double _InternodeBiomass;
+    double _ext_interc;
 };
 
 } // namespace model

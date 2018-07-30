@@ -413,6 +413,15 @@ public:
             _IH = _lig + std::min(1., _TT_lig / _ligulo_visu);
         }
 
+        //Interception TESTS
+        if(_intercmodel != 1) {
+            _interception_model->put < double >(t, InterceptionModel::PAI, _leaf_blade_area_sum);
+            (*_interception_model)(t);
+            _assimilation_model->put < double >(t, AssimilationModel::EXT_INTERC,
+                                                _interception_model->get < double >(t, InterceptionModel::INTERC)/_parameters.get(t).Par);
+        } else {
+            _assimilation_model->put < double >(t, AssimilationModel::EXT_INTERC,0);
+        }
 
         //Assimilation
         _assimilation_model->put < double >(t, AssimilationModel::CSTR,
@@ -425,14 +434,6 @@ public:
         _assimilation_model->put < double >(t, AssimilationModel::LEAFBIOMASS, _leaf_biomass_sum);
         _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, _internode_biomass_sum);
         (*_assimilation_model)(t);
-
-        //_interc1 = _assimilation_model->get < double >(t, AssimilationModel::INTERC) * _parameters.get(t).Par;
-
-        //Interception TESTS
-        /*_interception_model->put < double >(t, InterceptionModel::PAI, _leaf_blade_area_sum);
-        (*_interception_model)(t);
-
-        _interc2 = _interception_model->get < double >(t, InterceptionModel::INTERC);*/
 
         //CulmStockModel
         if(_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
@@ -777,6 +778,7 @@ public:
         _Tb = _parameters.get("Tb");
         _maxleaves = _parameters.get("maxleaves");
         _G_L = parameters.get("G_L");
+        _intercmodel = parameters.get("intercmodel");
 
         //Attributes for culmmodel
         _LL_BL = _LL_BL_init;
@@ -939,6 +941,7 @@ private:
     double _maxleaves;
     double _tae;
     double _G_L;
+    double _intercmodel;
 
 
     // vars
