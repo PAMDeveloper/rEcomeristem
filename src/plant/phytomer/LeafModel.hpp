@@ -215,12 +215,18 @@ public:
                 _exp_time = (_sheath_LLL_cst-_len)/_ler;
             } else {
                 double time = (((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo))-(((std::max(0.,_index-tmp1-_nbinitleaves))*_plasto_init)+(tmp1*_plasto));
+                if(time <= 0) {
+                    time = 1;
+                }
                 _ler = (_sheath_LLL_cst/time)*_reduction_ler;
                 _exp_time = (_sheath_LLL_cst-_len)/_ler;
             }
             _width_ler = _ler;
         } else {
             double time = (((_index-tmp2)*_ligulo_init)+(tmp2*_ligulo))-(((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo));
+            if(time <= 0) {
+                time = 1;
+            }
             _ler = ((_predim-_sheath_LLL_cst)/time)*_reduction_ler;
             _width_ler = ((_pot_predim-_sheath_LLL_cst)/time)*_reduction_ler;
             _exp_time = (_predim-_len)/_ler;

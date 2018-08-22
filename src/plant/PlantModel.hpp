@@ -346,14 +346,12 @@ public:
         // Manager
         step_state(t);
 
-        //LLBL - Plasto
-        std::deque < CulmModel* >::const_iterator mainstem = _culm_models.begin();
-        int nb_leaves = (*mainstem)->get_phytomer_number();
-        if ( _phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _stock > 0) {
-            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves + 1 - _nb_leaf_param2);
+        //LLBL - MGR
+        if (_phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _stock > 0) {
+            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI;
             _MGR = _MGR * _coeff_MGR_PI;
-        } else if ( _phenostage > _nb_leaf_param2 and _bool_crossed_plasto > 0 and nb_leaves < _maxleaves + 1) {
-            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (std::min(nb_leaves, (int)_maxleaves) - _nb_leaf_param2);
+        } else if (_phenostage > _nb_leaf_param2 and _bool_crossed_plasto > 0 and _phenostage <= _maxleaves) {
+            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (_phenostage+1-_nb_leaf_param2);
         }
 
         //Tillering
@@ -392,7 +390,7 @@ public:
 
         //Lig update
         _lig_1 = _lig;
-        mainstem = _culm_models.begin();
+        std::deque < CulmModel* >::const_iterator mainstem = _culm_models.begin();
         _lig = (*mainstem)->get <double, CulmModel>(t, CulmModel::NB_LIG_TOT);
         _app = (*mainstem)->get < double, CulmModel >(t, CulmModel::NB_APP_LEAVES_TOT);
         _visi = (*mainstem)->get < double, CulmModel >(t, CulmModel::NB_APP_LEAVES);
@@ -683,12 +681,10 @@ public:
 
     void compute_height(double t)
     {
-
         _height = 0;
         if (_culm_models.empty()) {
             return;
         }
-
         auto it = _culm_models.begin();
         _height += (*it)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM);
         _height_ped = _height;

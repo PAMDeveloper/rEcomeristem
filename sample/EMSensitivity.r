@@ -3,9 +3,9 @@
 #(PAM, AGAP, BIOS, CIRAD)
 
 ##############################Input/Output management##########################
-PPath <- "D:/Workspace/PAM/estim/estimlisa"  #path to parameter and valparam files
-MPath <- "D:/Workspace/PAM/estim/estimlisa"  #path to weither files
-OVariable <- "biomaero2"              #name of observed variable
+PPath <- "D:/Workspace/estimworkspace/AS"  #path to parameter and valparam files
+MPath <- "D:/Workspace/estimworkspace/AS"  #path to weither files
+OVariable <- "mainstem_stock_in"              #name of observed variable
 Method <- "F"                         #SA method (M = morris, C = complete, F = fast)
 ValParamName <- "ValParam.txt"        #name of valparam file
 ###############################################################################
@@ -18,13 +18,24 @@ if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only=TRUE)
 
 #Files
-parameterFilename <- paste(PPath, "ECOMERISTEM_parameters.txt", sep = "")
-ValParamFilename <- paste(PPath, ValParamName, sep = "")
+parameterFilename <- paste(PPath, "ECOMERISTEM_parameters.txt", sep = "/")
+ValParamFilename <- paste(PPath, ValParamName, sep = "/")
 meteo <- recomeristem::getMeteo_from_files(MPath)
 parameterFileContents <- recomeristem::getParameters_from_files(PPath)
-ValParam <- read.table(ValParamFilename, blank.lines.skip = TRUE, col.names = c("Name", "BInf", "BSup", "Step"))
+ValParam <- read.table(ValParamFilename, blank.lines.skip = TRUE, header = TRUE)
 nbFact <- nrow(ValParam)
 ParamAFaireVarier <- as.vector(ValParam[,1])
+
+#obs for init simu
+obs <- recomeristem::get_clean_obs(paste(PPath,"/vobs_moy.txt",sep=""))
+VarList <- names(obs)
+obsT <- data.frame(day = seq(1,max(obs$day,na.rm=T)))
+for(v in VarList) {
+  if(v != "day") {
+    obsT[,v] <- 1
+  }
+}
+recomeristem::init_simu(parameterFileContents, meteo, obsT, "envAS")
 
 #Bounds
 BornesParamAEstimer <- as.matrix(ValParam[,2:4])
@@ -32,20 +43,11 @@ B1 <- BornesParamAEstimer[,1]
 B2 <- BornesParamAEstimer[,2]
 Step <- BornesParamAEstimer[,3]
 NbParam <- length(as.vector(B1))
-
 bounds <- apply(cbind(B1, B2), 1, function(x){list(min = x[1], max = x[2])})
 
 EcoMerist <- function(x) {
-  ind <- match(ParamAFaireVarier,parameterFileContents$Name)
-  parameterFileContents$Values[ind] <- x
-  write.table(parameterFileContents,
-            file = parameterFilename,
-            quote = FALSE,
-            sep = "=",
-            row.names = FALSE,
-            col.names = FALSE)
-  EcoSim <- recomeristem::rcpp_run_from_dataframe(parameterFileContents, meteo)
-  ValSimTot <- EcoSim[[OVariable]]
+  res <- recomeristem::launch_simu("envAS", ParamAFaireVarier, x)
+  ValSimTot <- res[[OVariable]]
   ValSim <- as.numeric(ValSimTot[length(ValSimTot)])
   return(ValSim)
 }
@@ -55,7 +57,7 @@ EcoMerist.fun <- function(m) {toto=apply(m, 1, EcoMerist); return(toto)}
 ##########################Sensitivity Analysis#################################
 #Morris
 SensitivityEcoMerist <- function() {
-  sa<-morris(model=NULL,
+  sa<<-morris(model=NULL,
              factors = ParamAFaireVarier,
              r = 100,
              binf=B1,
@@ -66,6 +68,7 @@ SensitivityEcoMerist <- function() {
   print(sa)
   plot(sa)
   plot3d.morris(sa)
+  plot3d(sa)
 }
 
 #Complete
@@ -78,7 +81,7 @@ PlanComplet <- function() {
   y <- EcoMerist.fun(PlanComplet)
   sortie <- cbind(PlanComplet, y)
   write.table(sortie,
-              paste(PPath, "sortie_plan_complet.txt", sep = ""),
+              paste(PPath, "sortie_plan_complet.txt", sep = "/"),
               sep="\t",
               row.names = FALSE,
               col.names = FALSE,
@@ -98,7 +101,7 @@ IndicesSensitivityEcoMerist <- function() {
 
   sortie <- cbind(sa$X, sa$y)
   write.table(sortie,
-              paste(PPath, "sortie_plan_fast.txt", sep = ""),
+              paste(PPath, "sortie_plan_fast2.txt", sep = "/"),
               sep="\t",
               row.names = FALSE,
               col.names = FALSE,

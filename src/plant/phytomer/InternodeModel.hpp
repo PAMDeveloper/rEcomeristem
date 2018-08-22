@@ -268,8 +268,7 @@ public:
         _thresINER = parameters.get("thresINER");
         _respINER = parameters.get("resp_LER");
         _slopeINER = parameters.get("slopeINER");
-        _IN_length_to_IN_diam =
-                parameters.get("IN_length_to_IN_diam");
+        _IN_length_to_IN_diam = parameters.get("IN_length_to_IN_diam");
         _coef_lin_IN_diam = parameters.get("coef_lin_IN_diam");
         _density_IN1 = parameters.get("density_IN1");
         _density_IN2 = parameters.get("density_IN2");
