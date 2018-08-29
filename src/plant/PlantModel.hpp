@@ -345,8 +345,6 @@ public:
 
         // Manager
         step_state(t);
-        std::cout << t - _parameters.beginDate << std::endl;
-        std::cout << _plant_phase << std::endl;
 
 
         //LLBL - MGR
