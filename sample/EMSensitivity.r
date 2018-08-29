@@ -5,7 +5,7 @@
 ##############################Input/Output management##########################
 PPath <- "D:/Workspace/estimworkspace/AS"  #path to parameter and valparam files
 MPath <- "D:/Workspace/estimworkspace/AS"  #path to weither files
-OVariable <- "mainstem_stock_in"              #name of observed variable
+OVariable <- "stockin"              #name of observed variable
 Method <- "F"                         #SA method (M = morris, C = complete, F = fast)
 ValParamName <- "ValParam.txt"        #name of valparam file
 ###############################################################################
@@ -29,7 +29,11 @@ ParamAFaireVarier <- as.vector(ValParam[,1])
 #obs for init simu
 obs <- recomeristem::get_clean_obs(paste(PPath,"/vobs_moy.txt",sep=""))
 VarList <- names(obs)
-obsT <- data.frame(day = seq(1,max(obs$day,na.rm=T)))
+if(!OVariable %in% VarList) {
+  VarList <- c(VarList,OVariable)
+}
+VarList
+obsT <- data.frame(day = seq(1,nrow(meteo)))
 for(v in VarList) {
   if(v != "day") {
     obsT[,v] <- 1
@@ -48,7 +52,7 @@ bounds <- apply(cbind(B1, B2), 1, function(x){list(min = x[1], max = x[2])})
 EcoMerist <- function(x) {
   res <- recomeristem::launch_simu("envAS", ParamAFaireVarier, x)
   ValSimTot <- res[[OVariable]]
-  ValSim <- as.numeric(ValSimTot[length(ValSimTot)])
+  ValSim <- as.numeric(ValSimTot[length(ValSimTot)-1])
   return(ValSim)
 }
 
@@ -69,6 +73,7 @@ SensitivityEcoMerist <- function() {
   plot(sa)
   plot3d.morris(sa)
   plot3d(sa)
+  return(sa)
 }
 
 #Complete
@@ -86,14 +91,15 @@ PlanComplet <- function() {
               row.names = FALSE,
               col.names = FALSE,
               dec = ".")
+  return(sortie)
 }
 
 #Fast
 IndicesSensitivityEcoMerist <- function() {
   sa <- fast99(model = NULL,
              factors = nbFact,
-             n = 450,
-             q = rep("qunif", nbFact),
+             n = 50000,
+             q = rep("qunif",nbFact),
              q.arg=bounds)
   y <- EcoMerist.fun(sa$X)
 
@@ -101,24 +107,25 @@ IndicesSensitivityEcoMerist <- function() {
 
   sortie <- cbind(sa$X, sa$y)
   write.table(sortie,
-              paste(PPath, "sortie_plan_fast2.txt", sep = "/"),
+              paste(PPath, "sortie_plan_fast.txt", sep = "/"),
               sep="\t",
               row.names = FALSE,
               col.names = FALSE,
               dec = ".")
   print(sa)
   plot(sa)
+  return(sa)
 }
 
 ################################Start Analyse##################################
 switch(Method,
        "M" = {
-         SensitivityEcoMerist()
+         result <<- SensitivityEcoMerist()
        },
        "F" = {
-         IndicesSensitivityEcoMerist()
+         result <<- IndicesSensitivityEcoMerist()
        },
        "C" = {
-         PlanComplet()
+         result <<- PlanComplet()
        }
 )

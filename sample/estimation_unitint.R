@@ -3,21 +3,15 @@
 #-- (PAM, AGAP, BIOS, CIRAD)
 
 ###SET INFORMATION FOR ESTIMATION###
-path <- "D:/Workspace/estimworkspace/2015/ME/G5"
+path <- "F:/result26aout2018/G5"
 vName <- "vobs_moy.txt"
 vETName <- "vobs_et.txt"
 paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
-                     "coef_MGR_PI","density_IN2","coef_phyllo_PI","coef_ligulo_PI",
-                     "slope_LL_BL_at_PI","slope_length_IN","leaf_length_to_IN_length","coeff_in_diam")
-minValue <- c(3, 0.5, 6, 25, 25, 25, -0.5, 0.08, 1.5, 1.5, 0.0, 0.85, 0.1, 0.85)
-maxValue <- c(8, 2.5, 14, 35, 35, 35, 0.0, 0.3, 3.0, 3.0, 0.4, 1.0, 0.2, 1.0)
-
-#paramOfInterest <- c("Epsib","Ict","plasto_init","phyllo_init","ligulo_init",
-#                     "density_IN2","coef_plasto_PI",
-#                     "coef_phyllo_PI","coef_ligulo_PI","coeff_in_diam")
-#minValue <- c(3, 0.5, 20, 20, 20, 0.08, 1, 1, 1, 0.8)
-#maxValue <- c(8, 2.5, 45, 45, 45, 0.3, 3.0, 3.0, 3.0, 1.0)
-
+                     "coef_MGR_PI","density_IN2","coef_plasto_PI","coef_phyllo_PI","coef_ligulo_PI",
+                     "slope_LL_BL_at_PI","slope_length_IN","leaf_length_to_IN_length","coeff_in_diam",
+                     "density_IN1","SLAp","coeff_lifespan")
+minValue <- c(3,0.5,6,25,25,25,-0.5,0.08,1.0,1.0,1.0,0.0,0.85,0.1,0.85,0.01,30,1500)
+maxValue <- c(8,2.5,14,40,45,45,0.5,0.3,3.0,3.0,3.0,0.4,1.0,0.2,1.0,0.05,40,2000)
 coefIncrease <- 10
 maxIter <- 20000
 penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
@@ -25,9 +19,10 @@ solTol <- 0.001 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
 stepTol <- 20000 #see above
 clusterA <- TRUE  #parallel for machines with at least 4 cores
+secRun <- TRUE #launch DEoptim again with initial pop = estimated param
 
 ###START INSTALL AND PACKAGES LOAD###
-list.of.packages <- c("Rcpp","recomeristem","parallel","DEoptim")
+list.of.packages <- c("Rcpp","recomeristem","parallel","DEoptim","msm")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 invisible(lapply(list.of.packages, library, character.only=TRUE))
@@ -132,8 +127,8 @@ resPlot <- function() {
 }
 
 savePar <- function(name = Sys.Date()) {
-  resPar <- matrix(as.vector(c(result$value, result$par)), ncol=length(paramOfInterest)+1)
-  write.table(resPar, file=paste("par_",name,".csv"), sep=",", append=F, dec=".",col.names=c("RMSE",paramOfInterest),row.names = F)
+  resPar <- matrix(as.vector(c(result$value, result$par)), ncol=1+length(paramOfInterest))
+  write.table(resPar, file=paste("par_",name,".csv",sep=""), sep=",", append=F, dec=".",col.names=c("RMSE",paramOfInterest),row.names = F)
 }
 
 savePlot <- function(name = Sys.Date()) {
@@ -149,8 +144,13 @@ saveParF <- function() {
   write.table(parameters, "ECOMERISTEM_parameters.txt", sep="=", dec=".", quote=F, row.names=F, col.names=F)
 }
 
+genP <- function(par,populationSize) {
+  #generate parameter set with par as mean and 50% of par as sd
+  return(rtnorm(populationSize,mean=par,sd=0.1*par, lower=0, upper=1))
+}
+
 ###OPTIMISATION RUN###
-set.seed(1337)
+#set.seed(1337)
 coeff <<- coefCompute(nrow(obs),obsCoef)
 if(clusterA && detectCores() >= 4) {
   nbCores <- detectCores()
@@ -162,7 +162,27 @@ time <- system.time(resOptim <- optimisation(Optimizer, maxIter, solTol, bounds)
 result <- resOptim[[1]]
 result$time <- time
 resOptim <- resOptim[[2]]
+initPop <- sapply(1:nbParam,function(x) genP(result$par,(nbParam*nbParam)-1))
+initPop <- rbind(initPop,result$par)
 result$par <- (result$par-bounds[,1])/(bounds[,2]-bounds[,1]) * (maxValue-minValue) + minValue
 
 print(paste("End of Estimation. Elapsed time :", time[[3]],"s"))
 stopCluster(cl)
+
+# if(secRun) {
+#   if(clusterA && detectCores() >= 4) {
+#     nbCores <- detectCores()
+#     cl <- makeCluster(nbCores, outfile="clusterlog.txt")
+#     clusterEvalQ(cl, library(recomeristem,DEoptim))
+#     clusterExport(cl, varlist = c("meteo","obs","param","paramOfInterest","obsET","penalty","coeff","isInit","bounds","minValue","maxValue","nbParam","initPop"))
+#   } #parallel
+#   time2 <- system.time(resOptim2 <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(initialpop=initPop,reltol=relTol,steptol=stepTol,NP=nbParam*nbParam,VTR=solTol,itermax=maxIter,strategy=2,cluster=cl,packages=c("recomeristem"),parVar=c("initPop","meteo","obs", "paramOfInterest", "obsET","penalty","coeff","isInit","param","bounds","minValue","maxValue","nbParam"))))
+#   result2 <- list()
+#   result2$par <- resOptim2$optim$bestmem
+#   result2$rmse <- resOptim2$optim$bestval
+#   result2$par <- (result2$par-bounds[,1])/(bounds[,2]-bounds[,1]) * (maxValue-minValue) + minValue
+#   tmpres <- result$par
+#   result$par <- result2$par
+#   print(paste("End of Second Estimation. Elapsed time :", time[[3]],"s"))
+#   stopCluster(cl)
+# }

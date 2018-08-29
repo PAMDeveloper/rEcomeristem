@@ -24,10 +24,11 @@ DataDir <- paste(WorkDir,FPath,sep="")
 vName <- "vobs_moy.txt"
 vETName <- "vobs_et.txt"
 paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
-                     "coef_MGR_PI","slope_length_IN","density_IN2","coef_plasto_PI",
-                     "coef_phyllo_PI","coef_ligulo_PI","slope_LL_BL_at_PI","coeff_in_diam")
-minValue <- c(3.0, 0.5, 6.0, 25.0, 25.0, 25.0, -0.5, 0.5, 0.08, 1.0, 1.0, 1.0, 0.0,0.8)
-maxValue <- c(8.0, 2.5, 14.0, 45.0, 45.0, 45.0, 0.5, 1.0, 0.3, 3.0, 3.0, 3.0, 0.4,1.0)
+                     "coef_MGR_PI","density_IN2","coef_plasto_PI","coef_phyllo_PI","coef_ligulo_PI",
+                     "slope_LL_BL_at_PI","slope_length_IN","leaf_length_to_IN_length","coeff_in_diam",
+                     "density_IN1","SLAp","coeff_lifespan")
+minValue <- c(3,0.5,6,25,25,25,-0.5,0.08,1.0,1.0,1.0,0.0,0.85,0.1,0.85,0.01,30,1500)
+maxValue <- c(8,2.5,14,45,45,45,0.5,0.3,3.0,3.0,3.0,0.4,1.0,0.2,1.0,0.05,40,2000)
 coefIncrease <- 10
 maxIter <- 50000
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
@@ -66,10 +67,6 @@ optimEcomeristem <- function(p) {
       return(99999)
     } else if(p[match("ligulo_init",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]) {
       return(99999)
-    } else if(p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]*p[match("coef_plasto_PI",paramOfInterest)]) {
-      return(99999)
-    } else if(p[match("ligulo_init",paramOfInterest)]*p[match("coef_ligulo_PI",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)]) {
-      return(99999)
     }
   }
   res <- recomeristem::launch_simu("env1", paramOfInterest, p)
@@ -82,7 +79,7 @@ optimEcomeristem <- function(p) {
   return(diff)
 }
 optimisation <- function(maxIter, solTol, relTol, stepTol, bounds) {
-  if(clusterA && detectCores() >= 4) {
+  if(clusterA) {
     resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(reltol=relTol,steptol=stepTol,VTR=solTol,itermax=maxIter,strategy=2,cluster=cl,packages=c("recomeristem"),parVar=c("meteo","obs", "paramOfInterest", "obsET","penalty","coeff","isInit","param",,"bounds","minValue","maxValue")))
   } else {
     resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(reltol=relTol,steptol=stepTol,VTR=solTol,itermax=maxIter,strategy=2))

@@ -345,6 +345,9 @@ public:
 
         // Manager
         step_state(t);
+        std::cout << t - _parameters.beginDate << std::endl;
+        std::cout << _plant_phase << std::endl;
+
 
         //LLBL - MGR
         if (_phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _stock > 0) {
@@ -381,7 +384,11 @@ public:
             _nb_tillers = std::min(_nb_tillers, _tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
             if(_plant_phase != plant::ELONG and _plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::DEAD and _plant_phase != plant::MATURITY) {
-                create_culm(t, _nb_tillers);
+                if(_tillerNb_1 + _nb_tillers < 50) {
+                    create_culm(t, _nb_tillers);
+                } else {
+                    _plant_phase = plant::DEAD;
+                }
             }
         }
 
@@ -582,7 +589,11 @@ public:
         _total_length_mainstem = (*visumainstem)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM) + (*visumainstem)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
         _panicleMainstemDW = (*visumainstem)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
         _biomMainstem = _biomLeafMainstem + _biomInMainstem + _panicleMainstemDW;
-        _slaplant = _leaf_blade_area_sum / _leaf_biom_struct ;
+        if(_leaf_biom_struct > 0) {
+            _slaplant = _leaf_blade_area_sum / _leaf_biom_struct ;
+        } else {
+            _slaplant = 0;
+        }
         _biomLeafTot = _leaf_biom_struct + _senesc_dw_sum;
         _biomInSheathMainstem = (_biomLeafMainstem * ((1-_G_L)/_G_L)) + _biomInMainstem;
         _biomInSheath = (_leaf_biom_struct * ((1-_G_L)/_G_L)) + _internode_biom_struct;
