@@ -148,6 +148,7 @@ public:
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
                 string * h = new string(headers[i]);
+                std::cout << s << " " << data[i] << " " << *h << "\n";
                 transform(h->begin(), h->end(), h->begin(), ::tolower);
                 if (view._selectors.find(*h) != view._selectors.end() || *h == "day") {
                     char* p;
