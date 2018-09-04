@@ -11,14 +11,26 @@ using namespace std;
 #include <iostream>
 #include <fstream>
 
-template<typename Out>
-void split(const std::string &s, char delim, Out result) {
-    std::istringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        *(result++) = item;
+//template<typename Out>
+//void split(const std::string &s, char delim, Out result) {
+//    std::istringstream ss(s);
+//    std::string item;
+//    while (std::getline(ss, item, delim)) {
+//        *(result++) = item;
+//    }
+//}
+
+vector<string> split(const std::string &line, char delim) {
+    vector<string> strings;
+    istringstream f(line);
+    string s;
+    while (getline(f, s, delim)) {
+        cout << s << "\n";
+        strings.push_back(s);
     }
+    return strings;
 }
+
 
 inline std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
