@@ -143,7 +143,7 @@ public:
 
         while (std::getline(vObsFile, line))
         {
-            std::cout << line << std::end;
+            std::cout << line << "\n";
             vector<string> data = split(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
