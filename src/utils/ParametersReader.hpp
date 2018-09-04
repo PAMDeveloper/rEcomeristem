@@ -153,11 +153,11 @@ public:
                     char* p;
                     double converted = strtod(s.c_str(), &p);
                     if (*p) {
-                        std::cout << "ADD NAN" << std::end;
+                        std::cout << "ADD NAN \n";
                         obs[*h].push_back(nan(""));
                     }
                     else {
-                        std::cout << converted << std::end;
+                        std::cout << converted << "\n";
                         obs[*h].push_back(converted);
                     }
                 }
