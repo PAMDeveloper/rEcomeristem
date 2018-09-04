@@ -98,7 +98,7 @@ PlanComplet <- function() {
 IndicesSensitivityEcoMerist <- function() {
   sa <- fast99(model = NULL,
              factors = nbFact,
-             n = 50000,
+             n = 100000,
              q = rep("qunif",nbFact),
              q.arg=bounds)
   y <- EcoMerist.fun(sa$X)
