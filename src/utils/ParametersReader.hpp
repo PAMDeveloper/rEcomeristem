@@ -13,8 +13,7 @@ using namespace std;
 
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {
-    std::stringstream ss;
-    ss.str(s);
+    std::istringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim)) {
         *(result++) = item;
