@@ -143,6 +143,7 @@ public:
 
         while (std::getline(vObsFile, line))
         {
+            std::cout << line << std::end;
             vector<string> data = split(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
@@ -152,9 +153,11 @@ public:
                     char* p;
                     double converted = strtod(s.c_str(), &p);
                     if (*p) {
+                        std::cout << "ADD NAN" << std::end;
                         obs[*h].push_back(nan(""));
                     }
                     else {
+                        std::cout << converted << std::end;
                         obs[*h].push_back(converted);
                     }
                 }
