@@ -20,7 +20,7 @@ using namespace std;
 //    }
 //}
 
-vector<string> split(const std::string &line, char delim) {
+vector<string> manualSplit(const std::string &line, char delim) {
     vector<string> strings;
     istringstream f(line);
     string s;
@@ -155,7 +155,7 @@ public:
         while (std::getline(vObsFile, line))
         {
             std::cout << line << "\n";
-            vector<string> data = split(line, '\t');
+            vector<string> data = manualSplit(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
                 string * h = new string(headers[i]);
