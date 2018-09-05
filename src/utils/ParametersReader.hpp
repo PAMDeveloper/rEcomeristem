@@ -155,6 +155,7 @@ public:
         while (std::getline(vObsFile, line))
         {
             std::cout << line << "\n";
+            line.erase( std::remove(line.begin(), line.end(), '\r'), line.end() );
             vector<string> data = manualSplit(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
