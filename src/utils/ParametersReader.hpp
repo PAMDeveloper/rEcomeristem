@@ -203,7 +203,8 @@ public:
 
         while (std::getline(vObsFile, line))
         {
-            vector<string> data = split(line, '\t');
+            line.erase( std::remove(line.begin(), line.end(), '\r'), line.end() );
+            vector<string> data = manualSplit(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
                 string * h = new string(headers[i]);
