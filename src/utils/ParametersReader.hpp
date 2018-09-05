@@ -20,23 +20,23 @@ using namespace std;
 //    }
 //}
 
-vector<string> manualSplit(const std::string &line, char delim) {
-    vector<string> strings;
-    istringstream f(line);
-    string s;
-    while (getline(f, s, delim)) {
-        cout << s << "\n";
-        strings.push_back(s);
-    }
-    return strings;
-}
-
-
-//inline std::vector<std::string> split(const std::string &s, char delim) {
-//    std::vector<std::string> elems;
-//    split(s, delim, std::back_inserter(elems));
-//    return elems;
+//vector<string> manualSplit(const std::string &line, char delim) {
+//    vector<string> strings;
+//    istringstream f(line);
+//    string s;
+//    while (getline(f, s, delim)) {
+//        cout << s << "\n";
+//        strings.push_back(s);
+//    }
+//    return strings;
 //}
+
+
+inline std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, std::back_inserter(elems));
+    return elems;
+}
 
 
 inline double round( double val, int decimal )
@@ -190,7 +190,7 @@ public:
         {
             std::cout << line << "\n";
             line.erase (line.begin(), line.end()-2);
-            vector<string> data = manualSplit(line, '\t');
+            vector<string> data = split(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
                 string * h = new string(headers[i]);
@@ -238,7 +238,7 @@ public:
         while (std::getline(vObsFile, line))
         {
             line.erase( std::remove(line.begin(), line.end(), '\r'), line.end() );
-            vector<string> data = manualSplit(line, '\t');
+            vector<string> data = split(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
                 string * h = new string(headers[i]);
