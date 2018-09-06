@@ -186,25 +186,25 @@ public:
             delete s;
         }
 
-        while (safeGetline(vObsFile, line))
+        while (getline(vObsFile, line))
         {
-            std::cout << line << "\n";
-            line.erase (line.begin(), line.end()-2);
+            //std::cout << line << "\n";
+            //line.erase (line.begin(), line.end()-2);
             vector<string> data = split(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
                 string * h = new string(headers[i]);
-                std::cout << s << " " << s.size() << " " << data[i] << " " << data[i].size() << " " << *h << " " << headers[i] << "\n";
+                //std::cout << s << " " << s.size() << " " << data[i] << " " << data[i].size() << " " << *h << " " << headers[i] << "\n";
                 transform(h->begin(), h->end(), h->begin(), ::tolower);
                 if (view._selectors.find(*h) != view._selectors.end() || *h == "day") {
                     char* p;
                     double converted = strtod(s.c_str(), &p);
                     if (*p) {
-                        std::cout << "ADD NAN \n";
+                        //std::cout << "ADD NAN \n";
                         obs[*h].push_back(nan(""));
                     }
                     else {
-                        std::cout << converted << "\n";
+                        //std::cout << converted << "\n";
                         obs[*h].push_back(converted);
                     }
                 }
