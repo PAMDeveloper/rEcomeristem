@@ -13,13 +13,24 @@ using namespace std;
 
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {
-    std::stringstream ss;
-    ss.str(s);
+    std::istringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim)) {
         *(result++) = item;
     }
 }
+
+//vector<string> manualSplit(const std::string &line, char delim) {
+//    vector<string> strings;
+//    istringstream f(line);
+//    string s;
+//    while (getline(f, s, delim)) {
+//        cout << s << "\n";
+//        strings.push_back(s);
+//    }
+//    return strings;
+//}
+
 
 inline std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
@@ -121,7 +132,41 @@ public:
 
     }
 
+
 #ifdef UNSAFE_RUN
+    std::istream& safeGetline(std::istream& is, std::string& t)
+    {
+        t.clear();
+
+        // The characters in the stream are read one-by-one using a std::streambuf.
+        // That is faster than reading them one-by-one using the std::istream.
+        // Code that uses streambuf this way must be guarded by a sentry object.
+        // The sentry object performs various tasks,
+        // such as thread synchronization and updating the stream state.
+
+        std::istream::sentry se(is, true);
+        std::streambuf* sb = is.rdbuf();
+
+        for(;;) {
+            int c = sb->sbumpc();
+            switch (c) {
+            case '\n':
+                return is;
+            case '\r':
+                if(sb->sgetc() == '\n')
+                    sb->sbumpc();
+                return is;
+            case std::streambuf::traits_type::eof():
+                // Also handle the case when the last line has no line ending
+                if(t.empty())
+                    is.setstate(std::ios::eofbit);
+                return is;
+            default:
+                t += (char)c;
+            }
+        }
+    }
+
     map<string, vector<double>> loadCleanObsFromFile(const std::string &file_path, const SimpleView & view) {
         std::ifstream vObsFile(file_path);
         std::string line;
@@ -141,20 +186,25 @@ public:
             delete s;
         }
 
-        while (std::getline(vObsFile, line))
+        while (getline(vObsFile, line))
         {
+            //std::cout << line << "\n";
+            //line.erase (line.begin(), line.end()-2);
             vector<string> data = split(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
                 string * h = new string(headers[i]);
+                //std::cout << s << " " << s.size() << " " << data[i] << " " << data[i].size() << " " << *h << " " << headers[i] << "\n";
                 transform(h->begin(), h->end(), h->begin(), ::tolower);
                 if (view._selectors.find(*h) != view._selectors.end() || *h == "day") {
                     char* p;
                     double converted = strtod(s.c_str(), &p);
                     if (*p) {
+                        //std::cout << "ADD NAN \n";
                         obs[*h].push_back(nan(""));
                     }
                     else {
+                        //std::cout << converted << "\n";
                         obs[*h].push_back(converted);
                     }
                 }
@@ -187,6 +237,7 @@ public:
 
         while (std::getline(vObsFile, line))
         {
+            line.erase( std::remove(line.begin(), line.end(), '\r'), line.end() );
             vector<string> data = split(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
