@@ -44,7 +44,9 @@ public:
         selector("BIOMLEAF", artis::kernel::DOUBLE, {
                      PlantModel::LEAF_BIOM_STRUCT });
         selector("BIOMIN", artis::kernel::DOUBLE, {
-                     PlantModel::INTERNODE_BIOM_STRUCT });
+                     PlantModel::BIOMIN });
+        selector("BIOMINSTRUCT", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMINSTRUCT });
         selector("SENESC_DW", artis::kernel::DOUBLE, {
                      PlantModel::SENESC_DW });
         selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
@@ -131,6 +133,8 @@ public:
                      PlantModel::INTERC1});
         selector("INTERC2", artis::kernel::DOUBLE, {
                      PlantModel::INTERC2});
+        selector("PARI", artis::kernel::DOUBLE, {
+                     PlantModel::PARI});
         selector("MS_LEAF2_LEN", artis::kernel::DOUBLE, {
                      PlantModel::MS_LEAF2_LEN});
 

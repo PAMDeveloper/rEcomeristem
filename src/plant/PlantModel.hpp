@@ -47,7 +47,7 @@ public:
                      INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, HEIGHT_P,
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, TT_LIG, IH,
-                     LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, INTERNODE_STOCK_SUM,
+                     LEAF_BIOM_STRUCT, BIOMIN, BIOMINSTRUCT, INTERNODE_STOCK_SUM,
                      REALLOC_BIOMASS_SUM, PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM,
                      CULM_SURPLUS_SUM, QTY, LL_BL, PLANT_STOCK, REALLOC_SUM_SUPPLY,
                      TA, DELTA_T, TT, BOOL_CROSSED_PLASTO, BOOL_CROSSED_PHYLLO, BOOL_CROSSED_LIGULO,
@@ -58,7 +58,7 @@ public:
                      PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
                      MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
-                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN };
+                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -96,7 +96,8 @@ public:
         Internal( TT_LIG, &PlantModel::_TT_lig );
         Internal( IH, &PlantModel::_IH );
         Internal( LEAF_BIOM_STRUCT, &PlantModel::_leaf_biom_struct );
-        Internal( INTERNODE_BIOM_STRUCT, &PlantModel::_internode_biom_struct );
+        Internal( BIOMIN, &PlantModel::_biomin );
+        Internal( BIOMINSTRUCT, &PlantModel::_biominstruct );
         Internal( INTERNODE_STOCK_SUM, &PlantModel::_internode_stock_sum );
         Internal( REALLOC_BIOMASS_SUM, &PlantModel::_realloc_biomass_sum );
         Internal( PEDUNCLE_BIOMASS_SUM, &PlantModel::_peduncle_biomass_sum );
@@ -156,6 +157,7 @@ public:
         Internal( INTERC1, &PlantModel::_interc1);
         Internal( INTERC2, &PlantModel::_interc2);
         Internal( MS_LEAF2_LEN, &PlantModel::_ms_leaf2_len);
+        Internal( PARI, &PlantModel::_pari);
 
     }
 
@@ -438,6 +440,9 @@ public:
         _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, _internode_biomass_sum);
         (*_assimilation_model)(t);
 
+        _interc1 = _assimilation_model->get < double >(t, AssimilationModel::INTERC);
+        _pari = _assimilation_model->get < double >(t, AssimilationModel::PARI);
+
         //CulmStockModel
         if(_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
             _tmp_culm_stock_sum = 0;
@@ -541,7 +546,8 @@ public:
 
         //Variables de visu
         _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get< double > (t, PlantStockModel::STOCK) - _internode_stock_sum;
-        _internode_biom_struct = _internode_biomass_sum + _internode_stock_sum;
+        _biomin = _internode_biomass_sum + _internode_stock_sum;
+        _biominstruct = _internode_biomass_sum;
 
         // Search leaf to kill
         search_deleted_leaf(t);
@@ -594,7 +600,7 @@ public:
         }
         _biomLeafTot = _leaf_biom_struct + _senesc_dw_sum;
         _biomInSheathMainstem = (_biomLeafMainstem * ((1-_G_L)/_G_L)) + _biomInMainstem;
-        _biomInSheath = (_leaf_biom_struct * ((1-_G_L)/_G_L)) + _internode_biom_struct;
+        _biomInSheath = (_leaf_biom_struct * ((1-_G_L)/_G_L)) + _biomin;
     }
 
     void create_culm(double t, int n)
@@ -841,7 +847,8 @@ public:
         _peduncle_biomass_sum = 0;
         _peduncle_demand_sum = 0;
         _peduncle_last_demand_sum = 0;
-        _internode_biom_struct = 0;
+        _biomin = 0;
+        _biominstruct = 0;
         _deleted_leaf_biomass = 0;
         _deleted_leaf_blade_area = 0;
         _culm_index = -1;
@@ -908,6 +915,9 @@ public:
         _biomInSheath = 0;
         _biomAeroTot = 0;
         _ms_leaf2_len = 0;
+        _interc1 = 0;
+        _interc2 = 0;
+        _pari = 0;
     }
 
 private:
@@ -980,7 +990,8 @@ private:
     double _last_leaf_biomass_sum;
     bool _is_first_day_pi;
     double _internode_stock_sum;
-    double _internode_biom_struct;
+    double _biomin;
+    double _biominstruct;
     double _peduncle_biomass_sum;
     double _peduncle_demand_sum;
     double _peduncle_last_demand_sum;
@@ -1051,6 +1062,7 @@ private:
     double _biomInSheath;
     double _biomAeroTot;
     double _ms_leaf2_len;
+    double _pari;
 
 
     // test

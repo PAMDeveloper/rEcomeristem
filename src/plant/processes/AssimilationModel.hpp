@@ -33,7 +33,7 @@ namespace model {
 class AssimilationModel : public AtomicModel < AssimilationModel >
 {
 public:
-    enum internals { ASSIM, ASSIM_POT, INTERC, LAI, RESP_MAINT };
+    enum internals { ASSIM, ASSIM_POT, INTERC, LAI, RESP_MAINT, PARI };
 
     enum externals { CSTR, FCSTR, FCSTRA, PAI, LEAFBIOMASS, INTERNODEBIOMASS, EXT_INTERC };
 
@@ -42,9 +42,10 @@ public:
         //  computed variables
         Internal(ASSIM, &AssimilationModel::_assim);
         Internal(ASSIM_POT, &AssimilationModel::_assim_pot);
-        Internal(RESP_MAINT, &AssimilationModel::_resp_maint);
         Internal(INTERC, &AssimilationModel::_interc);
         Internal(LAI, &AssimilationModel::_lai);
+        Internal(RESP_MAINT, &AssimilationModel::_resp_maint);
+        Internal(PARI, &AssimilationModel::_pari);
 
         //  external variables
         External(CSTR, &AssimilationModel::_cstr);
@@ -73,6 +74,8 @@ public:
         } else {
             _interc = _ext_interc;
         }
+
+        _pari = _interc * _radiation * _kpar;
 
         //  assimPot
         if(_wbmodel == 1) {
@@ -115,6 +118,7 @@ public:
         _assim_pot = 0;
         _interc = 0;
         _lai = 0;
+        _pari = 0;
     }
 
 private:
@@ -146,6 +150,7 @@ private:
     double _assim_pot;
     double _interc;
     double _lai;
+    double _pari;
 
     //  externals
     double _cstr;
