@@ -395,8 +395,8 @@ public:
         _mu = parameters.get("mu");
         _Lef1 = parameters.get("Lef1");
         _thresLER = parameters.get("thresLER");
-        _respLER = parameters.get("resp_LER");
         _WLR = parameters.get("WLR");
+        _respLER = parameters.get("resp_LER");
         _allo_area = parameters.get("allo_area");
         _G_L = parameters.get("G_L");
         _realocationCoeff = parameters.get("realocationCoeff");

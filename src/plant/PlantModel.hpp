@@ -778,7 +778,6 @@ public:
         _phenostage_to_end_filling = _parameters.get("phenostage_to_end_filling");
         _phenostage_to_maturity = _parameters.get("phenostage_to_maturity");
         _Ict = _parameters.get("Ict");
-        _resp_Ict = _parameters.get("resp_Ict");
         _leaf_stock_max = _parameters.get("leaf_stock_max");
         _realocationCoeff = _parameters.get("realocationCoeff");
         _FSLA = _parameters.get("FSLA");
@@ -943,7 +942,6 @@ private:
     double _phenostage_to_end_filling;
     double _phenostage_to_maturity;
     double _Ict;
-    double _resp_Ict;
     double _leaf_stock_max;
     double _nb_leaf_enabling_tillering;
     double _realocationCoeff;

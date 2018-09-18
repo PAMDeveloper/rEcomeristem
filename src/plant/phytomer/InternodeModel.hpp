@@ -171,7 +171,6 @@ public:
         }
 
         //DiameterPredim
-        //_inter_diameter = _IN_length_to_IN_diam * std::max(0.,(_index - _nb_leaf_stem_elong + 1)) + _coef_lin_IN_diam;
         if(_inter_phase_1 == internode::VEGETATIVE and _inter_phase == internode::REALIZATION) {
             if(_index <= _culm_nbleaf_stem_elong) {
                 if(_is_on_mainstem) {
@@ -267,12 +266,9 @@ public:
         _nb_leaf_param2 = parameters.get("nb_leaf_param2");
         _thresINER = parameters.get("thresINER");
         _respINER = parameters.get("resp_LER");
-        _slopeINER = parameters.get("slopeINER");
-        _IN_length_to_IN_diam = parameters.get("IN_length_to_IN_diam");
         _coef_lin_IN_diam = parameters.get("coef_lin_IN_diam");
         _density_IN1 = parameters.get("density_IN1");
         _density_IN2 = parameters.get("density_IN2");
-        _coeff_species = parameters.get("coeff_species");
         _nb_leaf_stem_elong = parameters.get("nb_leaf_stem_elong");
         _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
         _wbmodel = parameters.get("wbmodel");
@@ -318,10 +314,7 @@ private:
     double _leaf_length_to_IN_length;
     double _thresINER;
     double _respINER;
-    double _slopeINER;
-    double _IN_length_to_IN_diam;
     double _coef_lin_IN_diam;
-    double _coeff_species;
     double _nb_leaf_stem_elong;
     double _density_IN1;
     double _density_IN2;

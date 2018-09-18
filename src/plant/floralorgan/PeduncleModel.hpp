@@ -137,8 +137,8 @@ public:
         // parameters
         _ratio_in_ped = _parameters.get("ratio_INPed");
         _peduncle_diam = _parameters.get("peduncle_diam");
-        _thresINER = _parameters.get("thresINER");
         _respINER = _parameters.get("resp_LER");
+        _thresINER = _parameters.get("thresINER");
         _density = _parameters.get("density_IN2");
         _wbmodel = _parameters.get("wbmodel");
         _phenostage_pre_flo_to_flo = parameters.get("phenostage_PRE_FLO_to_FLO");
