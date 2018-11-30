@@ -60,6 +60,7 @@ public:
     void compute(double t, bool /* update */) {
         //parameters
         _etp = _parameters.get(t).Etp;
+        // _etp = computeETP();
         _water_supply = 0;
         if(_wbmodel == 1) {
             //Waterbalance model
@@ -99,6 +100,50 @@ public:
                 _stressdays = 0;
             }
         }
+    }
+
+    double computeETP(double t) {
+        // Weather and param variables TODO
+        double RgMax;
+        double RgCalc;
+        double TMin;
+        double TMax;
+        double HMin;
+        double HMax;
+        double HMoyCalc;
+        double TMoyCalc;
+        double Vt;
+        double Altitude;
+        double TMoyPrec;
+        double VPDCalc;
+
+        double eActual; double eSat; double RgRgMax; double TLat; double delta; double KPsy; double Eaero; double Erad; double Rn; double G; double ETo;
+        eSat = 0.3054 * (exp(17.27 * TMax * 1.0 / (TMax + 237.3)) + exp(17.27 * TMin * 1.0 / (TMin + 237.3)));
+        if ((HMax == 0)) {
+            eActual = eSat * HMoyCalc * 1.0 / 100;
+        }
+        else {
+            eActual = 0.3054 * (exp(17.27 * TMax * 1.0 / (TMax + 237.3)) * HMin * 1.0 / 100 + exp(17.27 * TMin * 1.0 / (TMin + 237.3)) * HMax * 1.0 / 100);
+        }
+
+        // VPD calc or weather file ?
+        VPDCalc = eSat - eActual;
+        RgRgMax = min(1.0,RgCalc * 1.0 / RgMax);
+        Rn = 0.77 * RgCalc - (1.35 * RgRgMax - 0.35) * (0.34 - 0.14 * std::pow(eActual, 0.5)) * (pow(TMax + 273.16, 4) + std::pow(TMin + 273.16, 4)) * 2.45015 * std::pow(10, -9);
+
+        // chaleur latente de vaporisation de l'eau
+        TLat = 2.501 - 2.361 * std::pow(10, -3) * TMoyCalc;
+        //  pente de la courbe de pression de vapeur saturante en kPa/°C
+        delta = 4098 * (0.6108 * exp(17.27 * TMoyCalc * 1.0 / (TMoyCalc + 237.3))) * 1.0 / std::pow(TMoyCalc + 237.3, 2);
+        // constante psychrométrique en kPa/°C
+        KPsy = 0.00163 * 101.3 * std::pow(1 - (0.0065 * Altitude * 1.0 / 293), 5.26) * 1.0 / TLat;
+        // Radiative
+        G = 0.38 * (TMoyCalc - TMoyPrec);
+        Erad = 0.408 * (Rn - G) * delta * 1.0 / (delta + KPsy * (1 + 0.34 * Vt));
+        // Partie évaporative de ET0 = Eaéro
+        Eaero = (900 * 1.0 / (TMoyCalc + 273.16)) * ((eSat - eActual) * Vt) * KPsy * 1.0 / (delta + KPsy * (1 + 0.34 * Vt));
+        ETo = Erad + Eaero;
+        return(ETo);
     }
 
 

@@ -3,7 +3,7 @@
 #-- (PAM, AGAP, BIOS, CIRAD)
 
 ###SET INFORMATION FOR ESTIMATION###
-path <- "F:/result26aout2018/G5"
+path <- "D:/Workspace/estimworkspace/2015/results_article/G5"
 vName <- "vobs_moy.txt"
 vETName <- "vobs_et.txt"
 paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
@@ -12,9 +12,9 @@ paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligu
                      "density_IN1","SLAp","coeff_lifespan")
 minValue <- c(3,0.5,6,25,25,25,-0.5,0.08,1.0,1.0,1.0,0.0,0.85,0.1,0.85,0.01,30,1500)
 maxValue <- c(8,2.5,14,40,45,45,0.5,0.3,3.0,3.0,3.0,0.4,1.0,0.2,1.0,0.05,40,2000)
-coefIncrease <- 10
-maxIter <- 20000
-penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
+coefIncrease <- 0
+maxIter <- 50000
+penalty <- 1 #Penalty for simulation outside of SD (RMSE * Penalty)
 solTol <- 0.001 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
 stepTol <- 20000 #see above

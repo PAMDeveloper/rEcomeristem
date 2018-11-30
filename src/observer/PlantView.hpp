@@ -137,6 +137,8 @@ public:
                      PlantModel::PARI});
         selector("MS_LEAF2_LEN", artis::kernel::DOUBLE, {
                      PlantModel::MS_LEAF2_LEN});
+        selector("BIOMAEROFW", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMAEROFW});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {

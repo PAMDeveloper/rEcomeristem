@@ -58,7 +58,7 @@ public:
                      PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
                      MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
-                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI };
+                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -158,6 +158,7 @@ public:
         Internal( INTERC2, &PlantModel::_interc2);
         Internal( MS_LEAF2_LEN, &PlantModel::_ms_leaf2_len);
         Internal( PARI, &PlantModel::_pari);
+        Internal( BIOMAEROFW, &PlantModel::_biomAeroFW);
 
     }
 
@@ -558,6 +559,7 @@ public:
         // NB Alive Culms
         double nbc = 0;
         _biomAero2 = 0;
+        _biomAeroFW = 0;
         _deadleafNb = 0;
         _panicleDW = 0;
         _paniclenb = 0;
@@ -568,6 +570,10 @@ public:
             }
             _biomAero2 += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
+                    (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
+                    (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
+            _biomAeroFW += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) * _leaf_FW_DW +
+                    (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) * _internode_FW_DW +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
             _deadleafNb += (*itnbc)->get_dead_phytomer_number(t);
@@ -789,6 +795,8 @@ public:
         _maxleaves = _parameters.get("maxleaves");
         _G_L = parameters.get("G_L");
         _intercmodel = parameters.get("intercmodel");
+        _leaf_FW_DW = parameters.get("leaf_FW_DW");
+        _internode_FW_DW = parameters.get("internode_FW_DW");
 
         //Attributes for culmmodel
         _LL_BL = _LL_BL_init;
@@ -917,6 +925,7 @@ public:
         _interc1 = 0;
         _interc2 = 0;
         _pari = 0;
+        _biomAeroFW = 0;
     }
 
 private:
@@ -955,6 +964,8 @@ private:
     double _tae;
     double _G_L;
     double _intercmodel;
+    double _leaf_FW_DW;
+    double _internode_FW_DW;
 
 
     // vars
@@ -1061,6 +1072,7 @@ private:
     double _biomAeroTot;
     double _ms_leaf2_len;
     double _pari;
+    double _biomAeroFW;
 
 
     // test
