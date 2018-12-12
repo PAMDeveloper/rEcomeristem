@@ -139,6 +139,8 @@ public:
                      PlantModel::MS_LEAF2_LEN});
         selector("BIOMAEROFW", artis::kernel::DOUBLE, {
                      PlantModel::BIOMAEROFW});
+        selector("TILLERFW", artis::kernel::DOUBLE, {
+                     PlantModel::TILLERFW});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {
