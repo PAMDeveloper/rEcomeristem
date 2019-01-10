@@ -58,7 +58,7 @@ public:
                      PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
                      MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
-                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW, TILLERFW, MAINSTEMFW };
+                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW, TILLERFW, MAINSTEMFW, MAINSTEMBLADEFW };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -161,6 +161,7 @@ public:
         Internal( BIOMAEROFW, &PlantModel::_biomAeroFW);
         Internal( TILLERFW, &PlantModel::_tillerFW);
         Internal( MAINSTEMFW, &PlantModel::_biomMainstemFW);
+        Internal( MAINSTEMBLADEFW, &PlantModel::_biomBladeMainstemFW);
 
     }
 
@@ -614,7 +615,8 @@ public:
         _total_length_mainstem = (*visumainstem)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM) + (*visumainstem)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
         _panicleMainstemDW = (*visumainstem)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
         _biomMainstem = _biomLeafMainstem + _biomInMainstem + _panicleMainstemDW;
-        _biomMainstemFW = (_biomLeafMainstem * _leaf_FW_DW) + (_biomInMainstem * _internode_FW_DW) + _panicleMainstemDW; //* _panicle_FW_DW;
+        _biomMainstemFW = (_biomLeafMainstem * _leaf_FW_DW) + (_biomInMainstem * _internode_FW_DW); //+ _panicleMainstemDW * _panicle_FW_DW;
+        _biomBladeMainstemFW = _biomMainstemFW - (((_biomLeafMainstem * ((1-_G_L)/_G_L)) * _leaf_FW_DW) + (_biomInMainstem * _internode_FW_DW));
         _tillerFW = _biomAeroFW - _biomMainstemFW;
         if(_leaf_biom_struct > 0) {
             _slaplant = _leaf_blade_area_sum / _leaf_biom_struct ;
@@ -945,6 +947,7 @@ public:
         _biomAeroFW = 0;
         _biomMainstemFW = 0;
         _tillerFW = 0;
+        _biomBladeMainstemFW = 0;
     }
 
 private:
@@ -1094,6 +1097,7 @@ private:
     double _biomAeroFW;
     double _biomMainstemFW;
     double _tillerFW;
+    double _biomBladeMainstemFW;
 
     // test
     double _interc1;

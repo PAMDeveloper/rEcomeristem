@@ -141,6 +141,10 @@ public:
                      PlantModel::BIOMAEROFW});
         selector("TILLERFW", artis::kernel::DOUBLE, {
                      PlantModel::TILLERFW});
+        selector("BLADEFW", artis::kernel::DOUBLE, { //MAINSTEM blade FW
+                     PlantModel::MAINSTEMBLADEFW});
+        selector("MAINSTEMFW", artis::kernel::DOUBLE, { //MAINSTEM blade FW
+                     PlantModel::MAINSTEMFW});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {
