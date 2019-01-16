@@ -145,6 +145,8 @@ public:
                      PlantModel::MAINSTEMBLADEFW});
         selector("MAINSTEMFW", artis::kernel::DOUBLE, { //MAINSTEM blade FW
                      PlantModel::MAINSTEMFW});
+        selector("TILLERLEAFFW", artis::kernel::DOUBLE, {
+                     PlantModel::TILLERLEAFFW});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {

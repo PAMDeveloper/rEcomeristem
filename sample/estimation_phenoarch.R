@@ -9,8 +9,8 @@ paramOfInterest <- c("Epsib","Ict","MGR_init","plasto_init","phyllo_init","ligul
                      "coef_phyllo_PI","coef_ligulo_PI","leaf_length_to_IN_length")
 minValue <- c(6, 0.5, 6, 25, 25, 25, 0.01, 1.0, 1.0, 1.0, 0.1)
 maxValue <- c(20, 2.5, 14, 45, 45, 45, 0.3, 3.0, 3.0, 3.0, 0.2)
-coefIncrease <- 10
-maxIter <- 5000
+coefIncrease <- 2
+maxIter <- 10000
 solTol <- 0.01 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
 stepTol <- maxIter #see above
@@ -24,7 +24,7 @@ if(length(new.packages)) install.packages(new.packages)
 invisible(lapply(list.of.packages, library, character.only=TRUE))
 
 ###INIT SIMULATIONS###
-setwd(path)
+setwd(paste(path,"/rep2/",sep=""))
 meteo1 <- recomeristem::getMeteo_from_files(paste(path,"/rep1",sep=""))
 meteo2 <- recomeristem::getMeteo_from_files(paste(path,"/rep2",sep=""))
 meteo3 <- recomeristem::getMeteo_from_files(paste(path,"/rep3",sep=""))
@@ -79,24 +79,24 @@ optimEcomeristem <- function(p) {
       return(99999)
     }
   }
-  res1 <- recomeristem::launch_simu("env1", paramOfInterest, p)
+  #res1 <- recomeristem::launch_simu("env1", paramOfInterest, p)
   res2 <- recomeristem::launch_simu("env2", paramOfInterest, p)
-  res3 <- recomeristem::launch_simu("env3", paramOfInterest, p)
-  res4 <- recomeristem::launch_simu("env4", paramOfInterest, p)
+  #res3 <- recomeristem::launch_simu("env3", paramOfInterest, p)
+  #res4 <- recomeristem::launch_simu("env4", paramOfInterest, p)
 
-  diff1 <- ((((obs1 - res1)/obs1)^2))*coeff1
-  diff1 <- sum(sqrt((colSums(diff1, na.rm=T))/(colSums(!is.na(diff1)))),na.rm=T)
+  #diff1 <- ((((obs1 - res1)/obs1)^2))*coeff1
+  #diff1 <- sum(sqrt((colSums(diff1, na.rm=T))/(colSums(!is.na(diff1)))),na.rm=T)
 
   diff2 <- ((((obs2 - res2)/obs2)^2))*coeff2
   diff2 <- sum(sqrt((colSums(diff2, na.rm=T))/(colSums(!is.na(diff2)))),na.rm=T)
 
-  diff3 <- ((((obs3 - res3)/obs3)^2))*coeff3
-  diff3 <- sum(sqrt((colSums(diff3, na.rm=T))/(colSums(!is.na(diff3)))),na.rm=T)
+  #diff3 <- ((((obs3 - res3)/obs3)^2))*coeff3
+  #diff3 <- sum(sqrt((colSums(diff3, na.rm=T))/(colSums(!is.na(diff3)))),na.rm=T)
 
-  diff4 <- ((((obs4 - res4)/obs4)^2))*coeff4
-  diff4 <- sum(sqrt((colSums(diff4, na.rm=T))/(colSums(!is.na(diff4)))),na.rm=T)
+  #diff4 <- ((((obs4 - res4)/obs4)^2))*coeff4
+  #diff4 <- sum(sqrt((colSums(diff4, na.rm=T))/(colSums(!is.na(diff4)))),na.rm=T)
 
-  return((diff1+diff2+diff3+diff4)/4)
+  return(diff2)
 }
 optimisation <- function(Optimizer, maxIter, solTol, bounds) {
   if(clusterA && detectCores() >= 4) {
@@ -111,6 +111,7 @@ optimisation <- function(Optimizer, maxIter, solTol, bounds) {
   return(list(result,resOptim))
 }
 resPlot <- function(obs,meteo,param) {
+  VarList <- names(obs)
   p <- result$par
   recomeristem::init_simu(param, meteo, obs, "resP")
   res <<- recomeristem::launch_simu("resP", paramOfInterest, p)
@@ -191,9 +192,15 @@ savePar <- function(name = Sys.Date()) {
   resPar <- matrix(as.vector(c(result$value, result$par)), ncol=length(paramOfInterest)+1)
   write.table(resPar, file=paste("par_",name,".csv"), sep=",", append=F, dec=".",col.names=c("RMSE",paramOfInterest),row.names = F)
 }
-savePlot <- function(name = Sys.Date()) {
+saveAPlot <- function(name = Sys.Date()) {
   pdf(paste(name,"_T.pdf",sep=""))
   resAPlot()
+  dev.off()
+}
+
+savePlot <- function(obs,meteo,param) {
+  pdf(paste("rep.pdf",sep=""))
+  resPlot(obs,meteo,param)
   dev.off()
 }
 saveParF <- function() {

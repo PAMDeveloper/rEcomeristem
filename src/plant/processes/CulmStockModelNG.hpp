@@ -221,7 +221,6 @@ public:
         _leaf_stock_init = 0;
         _culm_surplus = 0;
         _max_reservoir_dispo = 0;
-
     }
 
 private:

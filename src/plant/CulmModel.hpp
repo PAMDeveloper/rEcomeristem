@@ -1001,6 +1001,7 @@ public:
         _coeff_pi_lag = _parameters.get("coeff_PI_lag");
         _realocationCoeff = _parameters.get("realocationCoeff");
         _maxleaves = _parameters.get("maxleaves");
+        _nb_leaf_stem_elong = _parameters.get("nb_leaf_stem_elong");
 
         //    internals
         _tt_plasto = _plasto_init;
@@ -1124,6 +1125,7 @@ private:
     double _coeff_Plasto_PI;
     double _coeff_Phyllo_PI;
     double _coeff_Ligulo_PI;
+    double _nb_leaf_stem_elong;
 
     double first_day;
 

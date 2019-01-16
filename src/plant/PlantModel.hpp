@@ -58,7 +58,8 @@ public:
                      PANICLE_DW, LEAF_DELAY, PHENOSTAGE_AT_FLO, LIG_INDEX,
                      MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
-                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW, TILLERFW, MAINSTEMFW, MAINSTEMBLADEFW };
+                     BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW, TILLERFW,
+                     MAINSTEMFW, MAINSTEMBLADEFW, TILLERLEAFFW };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -162,6 +163,7 @@ public:
         Internal( TILLERFW, &PlantModel::_tillerFW);
         Internal( MAINSTEMFW, &PlantModel::_biomMainstemFW);
         Internal( MAINSTEMBLADEFW, &PlantModel::_biomBladeMainstemFW);
+        Internal( TILLERLEAFFW, &PlantModel::_tillerleafFW);
 
     }
 
@@ -579,6 +581,7 @@ public:
         _deadleafNb = 0;
         _panicleDW = 0;
         _paniclenb = 0;
+        _tillerleafFW = 0;
         std::deque < CulmModel* >::const_iterator itnbc = _culm_models.begin();
         while(itnbc != _culm_models.end()) {
             if(!((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM)) and (*itnbc)->get < bool, CulmModel >(t, CulmModel::IS_COMPUTED)) {
@@ -592,12 +595,15 @@ public:
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) * _internode_FW_DW +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) * _internode_FW_DW +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT); //* _panicle_FW_DW;
+            _tillerleafFW += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) * _leaf_FW_DW;
             _deadleafNb += (*itnbc)->get_dead_phytomer_number(t);
             _panicleDW += (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
             _paniclenb += (*itnbc)->get < double, CulmModel >(t, CulmModel::GRAIN_NB) > 0 ? 1 : 0;
             itnbc++;
         }
-        _biomAero2 = _biomAero2 +  _stock_model->get< double > (t, PlantStockModel::STOCK);
+        _biomAero2 = _biomAero2 +  _stock_model->get< double >(t, PlantStockModel::STOCK);
+        _biomAeroFW = _biomAeroFW + (_internode_stock_sum * _internode_FW_DW) + ((_stock_model->get< double >(t, PlantStockModel::STOCK) - _internode_stock_sum) * _leaf_FW_DW);
+        _tillerleafFW = _tillerleafFW + ((_stock_model->get< double >(t, PlantStockModel::STOCK) - _internode_stock_sum - (_mainstem_stock - _mainstem_stock_IN)) * _leaf_FW_DW) - (_biomLeafMainstem * _leaf_FW_DW);
         _biomAeroTot = _biomAero2 + _senesc_dw_sum;
 
         // VISU
@@ -948,6 +954,7 @@ public:
         _biomMainstemFW = 0;
         _tillerFW = 0;
         _biomBladeMainstemFW = 0;
+        _tillerleafFW = 0;
     }
 
 private:
@@ -1098,6 +1105,7 @@ private:
     double _biomMainstemFW;
     double _tillerFW;
     double _biomBladeMainstemFW;
+    double _tillerleafFW;
 
     // test
     double _interc1;
