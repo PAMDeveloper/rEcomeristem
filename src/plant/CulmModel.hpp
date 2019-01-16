@@ -711,7 +711,10 @@ public:
                 _last_ligulated_leaf_sheath_len = (*it)->leaf()->get < double >(t, LeafModel::SHEATH_LEN);
             }
         } else {
-            ++_nb_lig_tot;
+            if((*it)->is_leaf_ligged(t)) {
+               ++_nb_lig_tot;
+            }
+
             if((*it)->is_leaf_ligged(t) or (*it)->is_leaf_apped(t)) {
                 ++ _nb_app_leaves_tot;
             }

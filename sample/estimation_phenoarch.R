@@ -10,7 +10,7 @@ paramOfInterest <- c("Epsib","Ict","MGR_init","plasto_init","phyllo_init","ligul
 minValue <- c(6, 0.5, 6, 25, 25, 25, 0.01, 1.0, 1.0, 1.0, 0.1)
 maxValue <- c(20, 2.5, 14, 45, 45, 45, 0.3, 3.0, 3.0, 3.0, 0.2)
 coefIncrease <- 2
-maxIter <- 10000
+maxIter <- 5000
 solTol <- 0.01 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
 stepTol <- maxIter #see above

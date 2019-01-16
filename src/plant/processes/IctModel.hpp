@@ -33,7 +33,7 @@ namespace model {
 class IctModel : public AtomicModel < IctModel >
 {
 public:    
-    enum internals { IS_COMPUTED, SURVIVED, IC_1, IC };
+    enum internals { IS_COMPUTED, SURVIVED, IC_1, IC, TOTAL, N };
     enum externals { BOOL_CROSSED_PHYLLO, DAY_DEMAND, SEEDRES, SUPPLY };
 
 
@@ -43,6 +43,8 @@ public:
         Internal(SURVIVED, &IctModel::_survived);
         Internal(IC_1, &IctModel::_ic_1);
         Internal(IC, &IctModel::_ic);
+        Internal(TOTAL, &IctModel::total);
+        Internal(N, &IctModel::n);
 
         //    external variables
         External(BOOL_CROSSED_PHYLLO, &IctModel::_bool_crossed_phyllo);
@@ -76,8 +78,8 @@ public:
                     _is_computed = true;
                 } else {
                     //declaration variables
-                    double total = 0;
-                    double n = 0;
+                    total = 0;
+                    n = 0;
                     double mean = 0;
                     _ic_1 = _ic;
 
@@ -119,6 +121,8 @@ public:
         //internals
         _is_computed = false;
         _survived = true;
+        total = 0;
+        n = 1;
         _ic_1 = 0.0001;
         _ic = 0.0001;
     }
@@ -134,6 +138,8 @@ private:
 
     double _ic_1;
     double _ic;
+    double total;
+    double n;
 
     std::vector<double> _seed_res_;
     std::vector<double> _day_demand_;

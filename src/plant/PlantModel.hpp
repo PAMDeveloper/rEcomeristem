@@ -365,7 +365,10 @@ public:
         (*_water_balance_model)(t);
 
         // Manager
+        //std::cout << t - _parameters.beginDate << std::endl;
+        //std::cout << "Plant state :" << _plant_state << std::endl;
         step_state(t);
+        //std::cout << "Plant state :" << _plant_state << std::endl;
 
 
         //LLBL - MGR
@@ -412,6 +415,7 @@ public:
         }
 
         //CulmModel
+
         compute_culms(t);
 
         //Lig update

@@ -242,6 +242,7 @@ public:
         }
 
         //LeafLen
+
         if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
             if(_leaf_phase == leaf::INITIAL) {
                 //_len = std::min(_sheath_LLL_cst, _len+_ler*std::min(_delta_t, _exp_time));
