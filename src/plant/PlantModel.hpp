@@ -310,9 +310,7 @@ public:
         std::deque < CulmModel* >::const_iterator culms = _culm_models.begin();
         int i = 0;
         while(culms != _culm_models.end()) {
-            (*culms)->ictmodel()->put < double >(t, IctModel::SEEDRES, _stock_model->get <double> (t-1, PlantStockModel::SEED_RES));
-            (*culms)->ictmodel()->put < double >(t, IctModel::DAY_DEMAND, _stock_model->get <double> (t-1, PlantStockModel::DAY_DEMAND));
-            (*culms)->ictmodel()->put < double >(t, IctModel::SUPPLY, _stock_model->get <double> (t-1, PlantStockModel::SUPPLY));
+            (*culms)->ictmodel()->put < double >(t, IctModel::IC_plant, _stock_model->get <double> (t-1, PlantStockModel::IC));
             (*culms)->compute_ictmodel(t);
             if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
                 if(!(*culms)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM)) {

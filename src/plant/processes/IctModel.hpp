@@ -34,7 +34,7 @@ class IctModel : public AtomicModel < IctModel >
 {
 public:    
     enum internals { IS_COMPUTED, SURVIVED, IC_1, IC, TOTAL, N };
-    enum externals { BOOL_CROSSED_PHYLLO, DAY_DEMAND, SEEDRES, SUPPLY };
+    enum externals { BOOL_CROSSED_PHYLLO, IC_plant };
 
 
     IctModel() {
@@ -48,9 +48,7 @@ public:
 
         //    external variables
         External(BOOL_CROSSED_PHYLLO, &IctModel::_bool_crossed_phyllo);
-        External(DAY_DEMAND, &IctModel::_day_demand);
-        External(SEEDRES, &IctModel::_seed_res);
-        External(SUPPLY, &IctModel::_supply);
+        External(IC_plant, &IctModel::_ic_plant);
     }
 
     virtual ~IctModel()
@@ -59,9 +57,6 @@ public:
     void compute(double t, bool /* update */) {
         if (t != _parameters.beginDate) {
             if(_is_computed) {
-                _seed_res_ = _seed_res_;
-                _day_demand_ = _day_demand_;
-                _supply_ = _supply_;
                 _ic_ = _ic_;
                 _ic = _ic;
                 _survived = _survived;
@@ -84,18 +79,14 @@ public:
                     _ic_1 = _ic;
 
                     //ajout des valeurs du jour
-                    _seed_res_.push_back(_seed_res);
-                    _day_demand_.push_back(_day_demand);
-                    _supply_.push_back(_supply);
+                    _ic_.push_back(_ic_plant);
 
                     //calcul ic
-                    for(int i = 0; i < _seed_res_.size(); i++) {
-                        if(_day_demand != 0) {
-                            _ic_.push_back((std::max(0., _seed_res_[i]) + _supply_[i]) /_day_demand_[i]);
-                            total += _ic_[i];
-                            ++n;
-                        }
+                    for(int i = 0; i < _ic_.size(); i++) {
+                        total += _ic_[i];
+                        ++n;
                     }
+
                     if(n != 0) {
                         mean = total/n;
                     } else {
@@ -141,17 +132,11 @@ private:
     double total;
     double n;
 
-    std::vector<double> _seed_res_;
-    std::vector<double> _day_demand_;
-    std::vector<double> _supply_;
     std::vector<double> _ic_;
-
 
     //externals
     double _bool_crossed_phyllo;
-    double _day_demand;
-    double _seed_res;
-    double _supply;
+    double _ic_plant;
 
 
 };

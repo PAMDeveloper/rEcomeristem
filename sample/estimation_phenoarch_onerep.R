@@ -24,7 +24,7 @@ if(length(new.packages)) install.packages(new.packages)
 invisible(lapply(list.of.packages, library, character.only=TRUE))
 
 ###INIT SIMULATIONS###
-setwd(path)
+setwd(paste(path,"/rep2/",sep=""))
 meteo1 <- recomeristem::getMeteo_from_files(paste(path,"/rep1",sep=""))
 meteo2 <- recomeristem::getMeteo_from_files(paste(path,"/rep2",sep=""))
 meteo3 <- recomeristem::getMeteo_from_files(paste(path,"/rep3",sep=""))
@@ -79,24 +79,24 @@ optimEcomeristem <- function(p) {
       return(99999)
     }
   }
-  res1 <- recomeristem::launch_simu("env1", paramOfInterest, p)
+  #res1 <- recomeristem::launch_simu("env1", paramOfInterest, p)
   res2 <- recomeristem::launch_simu("env2", paramOfInterest, p)
-  res3 <- recomeristem::launch_simu("env3", paramOfInterest, p)
-  res4 <- recomeristem::launch_simu("env4", paramOfInterest, p)
+  #res3 <- recomeristem::launch_simu("env3", paramOfInterest, p)
+  #res4 <- recomeristem::launch_simu("env4", paramOfInterest, p)
 
-  diff1 <- ((((obs1 - res1)/obs1)^2))*coeff1
-  diff1 <- sum(sqrt((colSums(diff1, na.rm=T))/(colSums(!is.na(diff1)))),na.rm=T)
+  #diff1 <- ((((obs1 - res1)/obs1)^2))*coeff1
+  #diff1 <- sum(sqrt((colSums(diff1, na.rm=T))/(colSums(!is.na(diff1)))),na.rm=T)
 
   diff2 <- ((((obs2 - res2)/obs2)^2))*coeff2
   diff2 <- sum(sqrt((colSums(diff2, na.rm=T))/(colSums(!is.na(diff2)))),na.rm=T)
 
-  diff3 <- ((((obs3 - res3)/obs3)^2))*coeff3
-  diff3 <- sum(sqrt((colSums(diff3, na.rm=T))/(colSums(!is.na(diff3)))),na.rm=T)
+  #diff3 <- ((((obs3 - res3)/obs3)^2))*coeff3
+  #diff3 <- sum(sqrt((colSums(diff3, na.rm=T))/(colSums(!is.na(diff3)))),na.rm=T)
 
-  diff4 <- ((((obs4 - res4)/obs4)^2))*coeff4
-  diff4 <- sum(sqrt((colSums(diff4, na.rm=T))/(colSums(!is.na(diff4)))),na.rm=T)
+  #diff4 <- ((((obs4 - res4)/obs4)^2))*coeff4
+  #diff4 <- sum(sqrt((colSums(diff4, na.rm=T))/(colSums(!is.na(diff4)))),na.rm=T)
 
-  return((diff1+diff2+diff3+diff4)/4)
+  return(diff2)
 }
 optimisation <- function(Optimizer, maxIter, solTol, bounds) {
   if(clusterA && detectCores() >= 4) {
@@ -131,7 +131,6 @@ resPlot <- function(obs,meteo,param) {
     return(sqrt((sum(diff, na.rm=T))/(sum(!is.na(diff)))))
   }
   VarListP <- VarList[VarList != "day"]
-  VarListP <- VarListP[VarListP != "fcstri"]
   sapply(VarListP, plotF)
 }
 resAPlot <- function() {
@@ -187,7 +186,6 @@ resAPlot <- function() {
     return(c(diff1, diff2, diff3, diff4))
   }
   VarListP <- VarList[VarList != "day"]
-  VarListP <- VarListP[VarListP != "fcstri"]
   sapply(VarListP, plotF)
 }
 savePar <- function(name = Sys.Date()) {
