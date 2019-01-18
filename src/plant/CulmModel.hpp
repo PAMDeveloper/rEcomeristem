@@ -427,6 +427,8 @@ public:
         //nb leaf param2 for specific culm
         if(_plant_phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _plant_stock > 0) {
             _culm_nbleaf_param_2 = _phytomer_models.size();
+        } else if (_plant_phenostage >= _nb_leaf_param2 and _culm_nbleaf_param_2 == _maxleaves + 1) {
+            _culm_nbleaf_param_2 = 1;
         }
 
         //kill leaf

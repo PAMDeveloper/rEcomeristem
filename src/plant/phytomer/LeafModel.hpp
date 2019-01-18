@@ -37,7 +37,7 @@ public:
                      LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL_, PLASTO, PHYLLO, LIGULO, FIRST_DAY,
                      SHEATH_LEN, LAST_BLADE_AREA, LAST_VISIBLE_BLADE_AREA, SHEATH_LLL_CST,
                      IS_APP, IS_DEAD, IS_FIRST, GROWTH_DELAY, POT_LER, RED_LENGTH, POT_PREDIM,
-                     WIDTH_LER, POT_LEN, BLADE_LEN, VISIBLE_LEN, LAST_LEN };
+                     WIDTH_LER, POT_LEN, BLADE_LEN, VISIBLE_LEN, LAST_LEN, TIME, TMP1, TMP2 };
 
     enum externals { DELTA_T, FTSW, FCSTR, FCSTRL, FCSTRLLEN,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
@@ -103,6 +103,9 @@ public:
         Internal(BLADE_LEN, &LeafModel::_blade_len);
         Internal(VISIBLE_LEN, &LeafModel::_visible_len);
         Internal(LAST_LEN, &LeafModel::_last_len);
+        Internal(TIME, &LeafModel::time);
+        Internal(TMP1, &LeafModel::tmp1);
+        Internal(TMP2, &LeafModel::tmp2);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);
@@ -173,12 +176,11 @@ public:
             } else if (not _is_first_leaf and _is_on_mainstem) {
                 _predim =  _predim_leaf_on_mainstem + _MGR * _test_ic * _fcstr;
             } else if (_is_first_leaf and not _is_on_mainstem) {
-                _predim = 0.5 * (_predim_app_leaf_on_mainstem + _Lef1) *
-                        _test_ic * _fcstr;
+                _predim = 0.5 * (_predim_app_leaf_on_mainstem + _Lef1) *_test_ic * _fcstr;
+                //_predim = _Lef1;
             } else {
-                _predim = 0.5 * (_predim_leaf_on_mainstem +
-                                 _predim_previous_leaf) +
-                        _MGR * _test_ic * _fcstr;
+                _predim = 0.5 * (_predim_leaf_on_mainstem + _predim_previous_leaf) + _MGR * _test_ic * _fcstr;
+                //_predim = _predim_previous_leaf + _MGR * _test_ic * _fcstr;
             }
             _pot_predim = _predim;
         }
@@ -203,8 +205,8 @@ public:
 
         //LER & exp time
         //leaves already grown with a specific plasto/phyllo/ligulo or the initial plasto/phyllo/ligulo
-        double tmp1 = std::max(0., _index-(_plasto_nbleaf_param2-1));
-        double tmp2 = std::max(0., _index-(_culm_nbleaf_param2-1));
+        tmp1 = std::max(0., _index-(_plasto_nbleaf_param2-1));
+        tmp2 = std::max(0., _index-(_culm_nbleaf_param2-1));
         if (_leaf_phase == leaf::INITIAL) {
             if(_is_first_leaf) {
                 if(_index <= _culm_nbleaf_param2) {
@@ -214,7 +216,7 @@ public:
                 }
                 _exp_time = (_sheath_LLL_cst-_len)/_ler;
             } else {
-                double time = (((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo))-(((std::max(0.,_index-tmp1-_nbinitleaves))*_plasto_init)+(tmp1*_plasto));
+                time = (((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo))-(((std::max(0.,_index-tmp1-_nbinitleaves))*_plasto_init)+(tmp1*_plasto));
                 if(time <= 0) {
                     time = 1;
                 }
@@ -223,7 +225,7 @@ public:
             }
             _width_ler = _ler;
         } else {
-            double time = (((_index-tmp2)*_ligulo_init)+(tmp2*_ligulo))-(((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo));
+            time = (((_index-tmp2)*_ligulo_init)+(tmp2*_ligulo))-(((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo));
             if(time <= 0) {
                 time = 1;
             }
@@ -245,7 +247,6 @@ public:
 
         if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
             if(_leaf_phase == leaf::INITIAL) {
-                //_len = std::min(_sheath_LLL_cst, _len+_ler*std::min(_delta_t, _exp_time));
                 _len = _len+_ler*_delta_t;
                 _pot_len = _len;
                 _visible_len = _len;
@@ -454,6 +455,9 @@ public:
         _blade_len = 0;
         _last_len = 0;
         _visible_len = 0;
+        time = 1;
+        tmp1 = 0;
+        tmp2 = 0;
     }
 
 private:
@@ -526,6 +530,9 @@ private:
     double _blade_len;
     double _last_len;
     double _visible_len;
+    double time;
+    double tmp1;
+    double tmp2;
 
     // external variables
     double _MGR;

@@ -47,7 +47,7 @@ public:
                      INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, HEIGHT_P,
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, TT_LIG, IH,
-                     LEAF_BIOM_STRUCT, BIOMIN, BIOMINSTRUCT, INTERNODE_STOCK_SUM,
+                     BIOMLEAF, BIOMIN, BIOMINSTRUCT, INTERNODE_STOCK_SUM,
                      REALLOC_BIOMASS_SUM, PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM,
                      CULM_SURPLUS_SUM, QTY, LL_BL, PLANT_STOCK, REALLOC_SUM_SUPPLY,
                      TA, DELTA_T, TT, BOOL_CROSSED_PLASTO, BOOL_CROSSED_PHYLLO, BOOL_CROSSED_LIGULO,
@@ -96,7 +96,7 @@ public:
         Internal( LIGULO_INIT, &PlantModel::_ligulo_init );
         Internal( TT_LIG, &PlantModel::_TT_lig );
         Internal( IH, &PlantModel::_IH );
-        Internal( LEAF_BIOM_STRUCT, &PlantModel::_leaf_biom_struct );
+        Internal( BIOMLEAF, &PlantModel::_biomLeaf );
         Internal( BIOMIN, &PlantModel::_biomin );
         Internal( BIOMINSTRUCT, &PlantModel::_biominstruct );
         Internal( INTERNODE_STOCK_SUM, &PlantModel::_internode_stock_sum );
@@ -566,7 +566,7 @@ public:
         (*_stock_model)(t);
 
         //Variables de visu
-        _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get< double > (t, PlantStockModel::STOCK) - _internode_stock_sum;
+        _biomLeaf = _leaf_biomass_sum + _stock_model->get< double > (t, PlantStockModel::STOCK) - _internode_stock_sum;
         _biomin = _internode_biomass_sum + _internode_stock_sum;
         _biominstruct = _internode_biomass_sum;
 
@@ -605,7 +605,7 @@ public:
         }
         _biomAero2 = _biomAero2 +  _stock_model->get< double >(t, PlantStockModel::STOCK);
         _biomAeroFW = _biomAeroFW + (_internode_stock_sum * _internode_FW_DW) + ((_stock_model->get< double >(t, PlantStockModel::STOCK) - _internode_stock_sum) * _leaf_FW_DW);
-        _tillerleafFW = _tillerleafFW + ((_stock_model->get< double >(t, PlantStockModel::STOCK) - _internode_stock_sum - (_mainstem_stock - _mainstem_stock_IN)) * _leaf_FW_DW) - (_biomLeafMainstem * _leaf_FW_DW);
+        _tillerleafFW = _tillerleafFW + ((_stock_model->get< double >(t, PlantStockModel::STOCK) - _internode_stock_sum) * _leaf_FW_DW) - (_biomLeafMainstem * _leaf_FW_DW);
         _biomAeroTot = _biomAero2 + _senesc_dw_sum;
 
         // VISU
@@ -624,16 +624,17 @@ public:
         _panicleMainstemDW = (*visumainstem)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
         _biomMainstem = _biomLeafMainstem + _biomInMainstem + _panicleMainstemDW;
         _biomMainstemFW = (_biomLeafMainstem * _leaf_FW_DW) + (_biomInMainstem * _internode_FW_DW); //+ _panicleMainstemDW * _panicle_FW_DW;
-        _biomBladeMainstemFW = _biomMainstemFW - (((_biomLeafMainstem * ((1-_G_L)/_G_L)) * _leaf_FW_DW) + (_biomInMainstem * _internode_FW_DW));
+        _biomBladeMainstemFW = _biomLeafMainstem * _G_L * _leaf_FW_DW;
         _tillerFW = _biomAeroFW - _biomMainstemFW;
-        if(_leaf_biom_struct > 0) {
-            _slaplant = _leaf_blade_area_sum / _leaf_biom_struct ;
+        if(_biomLeaf > 0) {
+            _slaplant = _leaf_blade_area_sum / _biomLeaf ;
         } else {
             _slaplant = 0;
         }
-        _biomLeafTot = _leaf_biom_struct + _senesc_dw_sum;
-        _biomInSheathMainstem = (_biomLeafMainstem * ((1-_G_L)/_G_L)) + _biomInMainstem;
-        _biomInSheath = (_leaf_biom_struct * ((1-_G_L)/_G_L)) + _biomin;
+
+        _biomLeafTot = _biomLeaf + _senesc_dw_sum;
+        _biomInSheathMainstem = _biomLeafMainstem - (_biomLeafMainstem * _G_L) + _biomInMainstem;
+        _biomInSheath = _biomLeaf - (_biomLeaf * _G_L) + _biomin;
     }
 
     void create_culm(double t, int n)
@@ -874,7 +875,7 @@ public:
         _MGR = parameters.get("MGR_init");
         _TT_lig = 0;
         _IH = 0;
-        _leaf_biom_struct = 0;
+        _biomLeaf = 0;
         _last_leaf_biomass_sum = 0;
         _is_first_day_pi = false;
         _internode_stock_sum = 0;
@@ -1026,7 +1027,7 @@ private:
     double _lig_1;
     double _TT_lig;
     double _IH;
-    double _leaf_biom_struct;
+    double _biomLeaf;
     double _last_leaf_biomass_sum;
     bool _is_first_day_pi;
     double _internode_stock_sum;
