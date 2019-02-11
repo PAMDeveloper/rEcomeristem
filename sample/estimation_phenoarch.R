@@ -5,12 +5,14 @@
 ###SET INFORMATION FOR ESTIMATION###
 path <- "D:/Workspace/estimworkspace/Sorghum/2017/phenoarch/G23"
 vName <- "vobs_moy.txt"
-paramOfInterest <- c("Epsib","Ict","MGR_init","plasto_init","phyllo_init","ligulo_init","density_IN2","coef_plasto_PI",
-                     "coef_phyllo_PI","coef_ligulo_PI","leaf_length_to_IN_length")
-minValue <- c(6, 0.5, 6, 25, 25, 25, 0.01, 1.0, 1.0, 1.0, 0.1)
-maxValue <- c(20, 2.5, 14, 45, 45, 45, 0.3, 3.0, 3.0, 3.0, 0.2)
-coefIncrease <- 2
-maxIter <- 5000
+paramOfInterest <- c("Epsib","Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
+                     "coef_phyllo_PI","coef_ligulo_PI","leaf_length_to_IN_length","SLAp",
+                     "nb_leaf_param2","coef_MGR_PI","slope_LL_BL_at_PI")
+minValue <- c(6, 0.5, 6, 25, 25, 25, 1.0, 1.0, 0.1, 15, 10, -0.5, 0.0)
+maxValue <- c(20, 2.5, 14, 45, 45, 45, 3.0, 3.0, 0.2, 35, 15, 0.5, 0.25)
+coefIncrease <- 10
+penalty <- 10
+maxIter <- 20000
 solTol <- 0.0 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
 stepTol <- maxIter #see above
@@ -73,11 +75,14 @@ optimEcomeristem <- function(p) {
       return(99999)
     } else if(p[match("ligulo_init",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]) {
       return(99999)
-    } else if(p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]*p[match("coef_plasto_PI",paramOfInterest)]) {
+    } else if(p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]) {
       return(99999)
     } else if(p[match("ligulo_init",paramOfInterest)]*p[match("coef_ligulo_PI",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)]) {
       return(99999)
     }
+  }
+  if("nb_leaf_param2" %in% paramOfInterest) {
+    p[match("nb_leaf_param2",paramOfInterest)] <- round(p[match("nb_leaf_param2",paramOfInterest)])
   }
   res1 <- recomeristem::launch_simu("env1", paramOfInterest, p)
   res2 <- recomeristem::launch_simu("env2", paramOfInterest, p)
@@ -96,7 +101,7 @@ optimEcomeristem <- function(p) {
   diff4 <- ((((obs4 - res4)/obs4)^2))*coeff4
   diff4 <- sum(sqrt((colSums(diff4, na.rm=T))/(colSums(!is.na(diff4)))),na.rm=T)
 
-  return((diff1+diff2+diff3+diff4)/4)
+  return((diff1+diff2+diff3)/3)
 }
 optimisation <- function(Optimizer, maxIter, solTol, bounds) {
   if(clusterA && detectCores() >= 4) {
@@ -237,3 +242,6 @@ result$time <- time
 resOptim <- resOptim[[2]]
 print(paste("End of Estimation. Elapsed time :", time[[3]],"s"))
 stopCluster(cl)
+if("nb_leaf_param2" %in% paramOfInterest) {
+  result$par[match("nb_leaf_param2",paramOfInterest)] <- round(result$par[match("nb_leaf_param2",paramOfInterest)])
+}

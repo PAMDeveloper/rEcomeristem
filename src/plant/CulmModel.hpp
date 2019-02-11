@@ -237,7 +237,7 @@ public:
         }
         case culm::VEGETATIVE: {
             if(_plant_phase == plant::ELONG) {
-                if(_nb_lig > 0) {
+                if(_nb_lig > 0 or _is_first_culm) {
                     _culm_phase  = culm::ELONG;
                     _culm_nbleaf_stem_elong = _culm_ligstage;
                 }

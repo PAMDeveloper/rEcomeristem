@@ -6,10 +6,10 @@
 path <- "D:/Workspace/estimworkspace/Sorghum/2017/phenoarch/G23"
 vName <- "vobs_moy.txt"
 paramOfInterest <- c("Epsib","Ict","MGR_init","plasto_init","phyllo_init","ligulo_init","density_IN2","coef_plasto_PI",
-                     "coef_phyllo_PI","coef_ligulo_PI","leaf_length_to_IN_length")
-minValue <- c(6, 0.5, 6, 25, 25, 25, 0.01, 1.0, 1.0, 1.0, 0.1)
-maxValue <- c(20, 2.5, 14, 45, 45, 45, 0.3, 3.0, 3.0, 3.0, 0.2)
-coefIncrease <- 2
+                     "coef_phyllo_PI","coef_ligulo_PI","leaf_length_to_IN_length","SLAp")
+minValue <- c(6, 0.5, 6, 25, 25, 25, 0.01, 1.0, 1.0, 1.0, 0.1, 15)
+maxValue <- c(20, 2.5, 14, 45, 45, 45, 0.3, 3.0, 3.0, 3.0, 0.2, 35)
+coefIncrease <- 0
 maxIter <- 5000
 solTol <- 0.0 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
@@ -79,6 +79,10 @@ optimEcomeristem <- function(p) {
       return(99999)
     }
   }
+  if("nb_leaf_param2" %in% paramOfInterest) {
+    p[match("nb_leaf_param2",paramOfInterest)] <- round(p[match("nb_leaf_param2",paramOfInterest)])
+  }
+
   #res1 <- recomeristem::launch_simu("env1", paramOfInterest, p)
   res2 <- recomeristem::launch_simu("env2", paramOfInterest, p)
   #res3 <- recomeristem::launch_simu("env3", paramOfInterest, p)
@@ -131,6 +135,7 @@ resPlot <- function(obs,meteo,param) {
     return(sqrt((sum(diff, na.rm=T))/(sum(!is.na(diff)))))
   }
   VarListP <- VarList[VarList != "day"]
+  VarListP <- VarListP[VarListP != "fcstri"]
   sapply(VarListP, plotF)
 }
 resAPlot <- function() {
@@ -186,6 +191,7 @@ resAPlot <- function() {
     return(c(diff1, diff2, diff3, diff4))
   }
   VarListP <- VarList[VarList != "day"]
+  VarListP <- VarListP[VarListP != "fcstri"]
   sapply(VarListP, plotF)
 }
 savePar <- function(name = Sys.Date()) {
@@ -235,3 +241,7 @@ result$time <- time
 resOptim <- resOptim[[2]]
 print(paste("End of Estimation. Elapsed time :", time[[3]],"s"))
 stopCluster(cl)
+if("nb_leaf_param2" %in% paramOfInterest) {
+  result$par[match("nb_leaf_param2",paramOfInterest)] <- round(result$par[match("nb_leaf_param2",paramOfInterest)])
+}
+

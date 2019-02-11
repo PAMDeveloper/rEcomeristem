@@ -627,7 +627,7 @@ public:
         _biomBladeMainstemFW = _biomLeafMainstem * _G_L * _leaf_FW_DW;
         _tillerFW = _biomAeroFW - _biomMainstemFW;
         if(_biomLeaf > 0) {
-            _slaplant = _leaf_blade_area_sum / _biomLeaf ;
+            _slaplant = _leaf_blade_area_sum / (_biomLeaf * _G_L);
         } else {
             _slaplant = 0;
         }
