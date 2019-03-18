@@ -3,14 +3,14 @@
 #-- (PAM, AGAP, BIOS, CIRAD)
 
 ###SET INFORMATION FOR ESTIMATION###
-path <- "D:/Workspace/estimworkspace/Sorghum/2017/phenoarch/G23"
-vName <- "vobs_moy.txt"
+path <- "D:/Workspace/estimworkspace/Sorghum/2017/phenoarch/"
+vName <- "vobs_moy_P46.txt"
 paramOfInterest <- c("Epsib","Ict","MGR_init","plasto_init","phyllo_init","ligulo_init","density_IN2","coef_plasto_PI",
                      "coef_phyllo_PI","coef_ligulo_PI","leaf_length_to_IN_length","SLAp")
 minValue <- c(6, 0.5, 6, 25, 25, 25, 0.01, 1.0, 1.0, 1.0, 0.1, 15)
 maxValue <- c(20, 2.5, 14, 45, 45, 45, 0.3, 3.0, 3.0, 3.0, 0.2, 35)
 coefIncrease <- 0
-maxIter <- 5000
+maxIter <- 20
 solTol <- 0.0 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
 stepTol <- maxIter #see above
@@ -24,21 +24,21 @@ if(length(new.packages)) install.packages(new.packages)
 invisible(lapply(list.of.packages, library, character.only=TRUE))
 
 ###INIT SIMULATIONS###
-setwd(paste(path,"/rep2/",sep=""))
-meteo1 <- recomeristem::getMeteo_from_files(paste(path,"/rep1",sep=""))
-meteo2 <- recomeristem::getMeteo_from_files(paste(path,"/rep2",sep=""))
-meteo3 <- recomeristem::getMeteo_from_files(paste(path,"/rep3",sep=""))
-meteo4 <- recomeristem::getMeteo_from_files(paste(path,"/rep4",sep=""))
+setwd(paste(path,"/rep1/",sep=""))
+meteo1 <- recomeristem::getMeteo_from_files(paste(path,"/rep1/WW",sep=""))
+meteo2 <- recomeristem::getMeteo_from_files(paste(path,"/rep2/WW",sep=""))
+meteo3 <- recomeristem::getMeteo_from_files(paste(path,"/rep3/WW",sep=""))
+meteo4 <- recomeristem::getMeteo_from_files(paste(path,"/rep4/WW",sep=""))
 
-param1 <- recomeristem::getParameters_from_files(paste(path,"/rep1",sep=""))
-param2 <- recomeristem::getParameters_from_files(paste(path,"/rep2",sep=""))
-param3 <- recomeristem::getParameters_from_files(paste(path,"/rep3",sep=""))
-param4 <- recomeristem::getParameters_from_files(paste(path,"/rep4",sep=""))
+param1 <- recomeristem::getParameters_from_files(paste(path,"/rep1/WW",sep=""))
+param2 <- recomeristem::getParameters_from_files(paste(path,"/rep2/WW",sep=""))
+param3 <- recomeristem::getParameters_from_files(paste(path,"/rep3/WW",sep=""))
+param4 <- recomeristem::getParameters_from_files(paste(path,"/rep4/WW",sep=""))
 
-obs1 <- recomeristem::get_clean_obs(paste(path,"/rep1/",vName,sep=""))
-obs2 <- recomeristem::get_clean_obs(paste(path,"/rep2/",vName,sep=""))
-obs3 <- recomeristem::get_clean_obs(paste(path,"/rep3/",vName,sep=""))
-obs4 <- recomeristem::get_clean_obs(paste(path,"/rep4/",vName,sep=""))
+obs1 <- recomeristem::get_clean_obs(paste(path,"/rep1/WW/",vName,sep=""))
+obs2 <- recomeristem::get_clean_obs(paste(path,"/rep2/WW/",vName,sep=""))
+obs3 <- recomeristem::get_clean_obs(paste(path,"/rep3/WW/",vName,sep=""))
+obs4 <- recomeristem::get_clean_obs(paste(path,"/rep4/WW/",vName,sep=""))
 
 obsCoef1 <- rep(1,ncol(obs1))
 obsCoef2 <- rep(1,ncol(obs2))
@@ -68,31 +68,31 @@ optimEcomeristem <- function(p) {
     recomeristem::init_simu(param4, meteo4, obs4, "env4")
     isInit <<- TRUE
   }
-  if("phyllo_init" %in% paramOfInterest && "plasto_init" %in% paramOfInterest && "ligulo_init" %in% paramOfInterest) {
-    if(p[match("phyllo_init",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]) {
-      return(99999)
-    } else if(p[match("ligulo_init",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]) {
-      return(99999)
-    } else if(p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]*p[match("coef_plasto_PI",paramOfInterest)]) {
-      return(99999)
-    } else if(p[match("ligulo_init",paramOfInterest)]*p[match("coef_ligulo_PI",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)]) {
-      return(99999)
-    }
-  }
+  # if("phyllo_init" %in% paramOfInterest && "plasto_init" %in% paramOfInterest && "ligulo_init" %in% paramOfInterest) {
+  #   if(p[match("phyllo_init",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]) {
+  #     return(99999)
+  #   } else if(p[match("ligulo_init",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]) {
+  #     return(99999)
+  #   } else if(p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]*p[match("coef_plasto_PI",paramOfInterest)]) {
+  #     return(99999)
+  #   } else if(p[match("ligulo_init",paramOfInterest)]*p[match("coef_ligulo_PI",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)]) {
+  #     return(99999)
+  #   }
+  # }
   if("nb_leaf_param2" %in% paramOfInterest) {
     p[match("nb_leaf_param2",paramOfInterest)] <- round(p[match("nb_leaf_param2",paramOfInterest)])
   }
 
-  #res1 <- recomeristem::launch_simu("env1", paramOfInterest, p)
-  res2 <- recomeristem::launch_simu("env2", paramOfInterest, p)
+  res1 <<- recomeristem::launch_simu("env1", paramOfInterest, p)
+  #res2 <- recomeristem::launch_simu("env2", paramOfInterest, p)
   #res3 <- recomeristem::launch_simu("env3", paramOfInterest, p)
   #res4 <- recomeristem::launch_simu("env4", paramOfInterest, p)
 
-  #diff1 <- ((((obs1 - res1)/obs1)^2))*coeff1
-  #diff1 <- sum(sqrt((colSums(diff1, na.rm=T))/(colSums(!is.na(diff1)))),na.rm=T)
+  diff1 <- ((((obs1 - res1)/obs1)^2))*coeff1
+  diff1 <- sum(sqrt((colSums(diff1, na.rm=T))/(colSums(!is.na(diff1)))),na.rm=T)
 
-  diff2 <- ((((obs2 - res2)/obs2)^2))*coeff2
-  diff2 <- sum(sqrt((colSums(diff2, na.rm=T))/(colSums(!is.na(diff2)))),na.rm=T)
+  #diff2 <- ((((obs2 - res2)/obs2)^2))*coeff2
+  #diff2 <- sum(sqrt((colSums(diff2, na.rm=T))/(colSums(!is.na(diff2)))),na.rm=T)
 
   #diff3 <- ((((obs3 - res3)/obs3)^2))*coeff3
   #diff3 <- sum(sqrt((colSums(diff3, na.rm=T))/(colSums(!is.na(diff3)))),na.rm=T)
@@ -100,7 +100,7 @@ optimEcomeristem <- function(p) {
   #diff4 <- ((((obs4 - res4)/obs4)^2))*coeff4
   #diff4 <- sum(sqrt((colSums(diff4, na.rm=T))/(colSums(!is.na(diff4)))),na.rm=T)
 
-  return(diff2)
+  return(diff1)
 }
 optimisation <- function(Optimizer, maxIter, solTol, bounds) {
   if(clusterA && detectCores() >= 4) {
@@ -245,3 +245,10 @@ if("nb_leaf_param2" %in% paramOfInterest) {
   result$par[match("nb_leaf_param2",paramOfInterest)] <- round(result$par[match("nb_leaf_param2",paramOfInterest)])
 }
 
+axialS <- axsearch(as.vector(result$par), fn = optimEcomeristem, fmin = result$value, lower = minValue, upper = maxValue, trace = 1)
+
+for(i in 1:100) {
+  ax_par <- axialS$par
+  ax_val <- axialS$bestfn
+  axialS <<- axsearch(ax_par, fn = optimEcomeristem, ax_val, lower = minValue, upper = maxValue, trace = 1)
+}

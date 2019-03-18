@@ -216,7 +216,7 @@ public:
                 }
                 _exp_time = (_sheath_LLL_cst-_len)/_ler;
             } else {
-                time = (((_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo))-(((std::max(0.,_index-tmp1-_nbinitleaves))*_plasto_init)+(tmp1*_plasto));
+                time = ((std::max(0.,_index-tmp2-1)*_phyllo_init)+(tmp2*_phyllo))-(((std::max(0.,_index-tmp1-_nbinitleaves))*_plasto_init)+(tmp1*_plasto));
                 if(time <= 0) {
                     time = 1;
                 }

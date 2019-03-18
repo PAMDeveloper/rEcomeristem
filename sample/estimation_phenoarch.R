@@ -10,9 +10,9 @@ paramOfInterest <- c("Epsib","Ict","MGR_init","plasto_init","phyllo_init","ligul
                      "nb_leaf_param2","coef_MGR_PI","slope_LL_BL_at_PI")
 minValue <- c(6, 0.5, 6, 25, 25, 25, 1.0, 1.0, 0.1, 15, 10, -0.5, 0.0)
 maxValue <- c(20, 2.5, 14, 45, 45, 45, 3.0, 3.0, 0.2, 35, 15, 0.5, 0.25)
-coefIncrease <- 10
+coefIncrease <- 0
 penalty <- 10
-maxIter <- 20000
+maxIter <- 100
 solTol <- 0.0 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
 stepTol <- maxIter #see above
@@ -20,7 +20,7 @@ clusterA <- TRUE  #parallel for machines with at least 4 cores
 pots <- c(154,478,938,1672)
 
 ###START INSTALL AND PACKAGES LOAD###
-list.of.packages <- c("Rcpp","recomeristem","parallel","DEoptim")
+list.of.packages <- c("Rcpp","recomeristem","parallel","DEoptim","optimx")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 invisible(lapply(list.of.packages, library, character.only=TRUE))
@@ -64,11 +64,13 @@ VarList <- names(obs1)
 ###FUNCTIONS###
 optimEcomeristem <- function(p) {
   if(isInit == FALSE) {
+    print(isInit)
     recomeristem::init_simu(param1, meteo1, obs1, "env1")
     recomeristem::init_simu(param2, meteo2, obs2, "env2")
     recomeristem::init_simu(param3, meteo3, obs3, "env3")
     recomeristem::init_simu(param4, meteo4, obs4, "env4")
     isInit <<- TRUE
+    print(isInit)
   }
   if("phyllo_init" %in% paramOfInterest && "plasto_init" %in% paramOfInterest && "ligulo_init" %in% paramOfInterest) {
     if(p[match("phyllo_init",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]) {

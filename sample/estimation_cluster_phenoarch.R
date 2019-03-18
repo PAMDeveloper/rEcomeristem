@@ -3,13 +3,13 @@
 #-- (PAM, AGAP, BIOS, CIRAD)
 
 ###GET ARGUMENTS (for cluster)
-# args = commandArgs(trailingOnly=TRUE)
-# if (length(args)==0) {
-#   stop("At least one argument must be supplied (path).n", call.=FALSE)
-# }
+args = commandArgs(trailingOnly=TRUE)
+if (length(args)==0) {
+  stop("At least one argument must be supplied (path).n", call.=FALSE)
+}
 
 ###START INSTALL AND PACKAGES LOAD###
-#.libPaths('/home/beurier/src/R/library')
+.libPaths('/home/beurier/src/R/library')
 library(recomeristem)
 library(Rcpp)
 library(parallel)
@@ -24,14 +24,14 @@ DataDir <- paste(WorkDir,"phenoarch/rep",FPath,'/WW',sep="")
 setwd(DataDir)
 vName <- "vobs_moy"
 paramOfInterest <- c("Epsib","Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
-                     "coef_phyllo_PI","coef_ligulo_PI","leaf_length_to_IN_length","SLAp",
-                     "coef_MGR_PI","slope_LL_BL_at_PI")
-minValue <- c(6, 0.5, 6, 25, 25, 25, 1.0, 1.0, 0.1, 15, -0.5, 0.0)
-maxValue <- c(20, 2.5, 14, 45, 45, 45, 3.0, 3.0, 0.2, 35, 0.5, 0.25)
-coefIncrease <- 10
-maxIter <- 2
+                     "coef_phyllo_PI","coef_ligulo_PI","leaf_length_to_IN_length",
+                     "coef_MGR_PI")
+minValue <- c(6, 0.5, 6, 25.0, 25.0, 25.0, 1.0, 1.0, 0.1, -0.5)
+maxValue <- c(20, 2.5, 14, 45, 45, 45, 3.0, 3.0, 0.2, 1.0)
+coefIncrease <- 0
+maxIter <- 20000
 relTol <- 0.01 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
-stepTol <- 5000
+stepTol <- 20000
 solTol <- 0.0 #will be multiplied by the number of observed variables
 clusterA <- TRUE  #parallel for machines with at least 4 cores
 
@@ -49,7 +49,14 @@ optimEcomeristem <- function(p) {
       return(99999)
     } else if(p[match("ligulo_init",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]) {
       return(99999)
+    } else if(p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]) {
+      return(99999)
+    } else if(p[match("ligulo_init",paramOfInterest)]*p[match("coef_ligulo_PI",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)]) {
+      return(99999)
     }
+  }
+  if("nb_leaf_param2" %in% paramOfInterest) {
+    p[match("nb_leaf_param2",paramOfInterest)] <- round(p[match("nb_leaf_param2",paramOfInterest)])
   }
   res <- recomeristem::launch_simu("env1", paramOfInterest, p)
   diff <- ((((obs - res)/obs)^2))*coeff
@@ -83,7 +90,7 @@ res0 <- matrix(as.vector(c(NA,NA,minValue)), ncol=length(paramOfInterest)+2)
 res0 <- rbind(res0,as.vector(c(NA,NA,maxValue)))
 write.table(res0, file=paste("par_rep",FPath,".csv",sep=""), sep=",", append=F, dec=".",col.names=c("Plant","RMSE",paramOfInterest),row.names = F)
 #For every plant in one rep
-for(i in 32:33) {
+for(i in 1:420) {
   ###INIT SIMULATIONS###
   pot <- (FPath-1)*420+i
   traitment <- (((pot-1)%/%30)+1)%%2
@@ -116,6 +123,9 @@ for(i in 32:33) {
     stopCluster(cl)
     result <- resOptim[[1]]
     result$par <- (result$par-bounds[,1])/(bounds[,2]-bounds[,1]) * (maxValue-minValue) + minValue
+    if("nb_leaf_param2" %in% paramOfInterest) {
+      result$par[match("nb_leaf_param2",paramOfInterest)] <- round(result$par[match("nb_leaf_param2",paramOfInterest)])
+    }
     savePar(pot)
   }
 }
