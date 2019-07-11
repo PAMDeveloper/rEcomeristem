@@ -245,10 +245,10 @@ if("nb_leaf_param2" %in% paramOfInterest) {
   result$par[match("nb_leaf_param2",paramOfInterest)] <- round(result$par[match("nb_leaf_param2",paramOfInterest)])
 }
 
-axialS <- axsearch(as.vector(result$par), fn = optimEcomeristem, fmin = result$value, lower = minValue, upper = maxValue, trace = 1)
+#axialS <- axsearch(as.vector(result$par), fn = optimEcomeristem, fmin = result$value, lower = minValue, upper = maxValue, trace = 1)
 
-for(i in 1:100) {
-  ax_par <- axialS$par
-  ax_val <- axialS$bestfn
-  axialS <<- axsearch(ax_par, fn = optimEcomeristem, ax_val, lower = minValue, upper = maxValue, trace = 1)
-}
+# for(i in 1:100) {
+#   ax_par <- axialS$par
+#   ax_val <- axialS$bestfn
+#   axialS <<- axsearch(ax_par, fn = optimEcomeristem, ax_val, lower = minValue, upper = maxValue, trace = 1)
+# }

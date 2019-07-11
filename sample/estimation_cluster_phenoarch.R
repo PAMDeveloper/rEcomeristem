@@ -94,7 +94,7 @@ for(i in 1:420) {
   ###INIT SIMULATIONS###
   pot <- (FPath-1)*420+i
   traitment <- (((pot-1)%/%30)+1)%%2
-  bordure <- min(pot%%30,pot%%31)
+  bordure <- min(pot%%30,(pot-1)%%30)
   if(traitment == 0 && bordure != 0 && pot != 1) {
     obsCSV <- read.table(paste(DataDir,"/",vName,"_P",pot,".txt",sep=""), header=T)
     meteo <- recomeristem::getMeteo_from_files(DataDir)

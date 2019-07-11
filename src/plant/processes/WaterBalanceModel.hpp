@@ -65,7 +65,7 @@ public:
         if(_wbmodel == 1) {
             //Waterbalance model
             //FTSW
-            _ftsw = _swc / RU1;
+            _ftsw = (_swc-_pf) / RU1;
 
             //cstr
             _cstr = (_ftsw < ThresTransp) ? std::max(1e-4, _ftsw * 1. / ThresTransp) : 1;
@@ -74,7 +74,11 @@ public:
             _fcstr = std::sqrt(_cstr);
 
             //transpiration
-            _transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) * _interc * _cstr) / Density);
+            //_transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) * _interc * _cstr) / Density);
+
+            // Pour phenoarch pas de densité, ETP exprimé par pot
+            _transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) * _interc * _cstr));
+            //transpiration = kcpot * etp * interc * cstr
 
             //SWC
             _swc = _swc - _transpiration + _water_supply;
@@ -163,8 +167,9 @@ public:
         stressBP = parameters.get("stressBP");
         stressBP2 = parameters.get("stressBP2");
         pot = parameters.get("psib");
-
+        _pf = parameters.get("pf");;
         _wbmodel = parameters.get("wbmodel");
+
         //    computed variables
         _cstr = 1;
         _fcstr = 1;
@@ -199,6 +204,7 @@ private:
     //meteo
     double _etp;
     double _water_supply;
+    double _pf;
 
     //    internals (computed)
     double _transpiration;
