@@ -65,7 +65,7 @@ public:
                      PLASTO_INIT, PHYLLO_INIT, LIGULO_INIT, PLASTO, PHYLLO, LIGULO, TT_PLASTO,
                      TT_PHYLLO, TT_LIGULO, DEL_LEAF_BIOM, IS_COMPUTED, PLASTO_NBLEAF_PARAM2,
                      STEM_APP_LEAF_PREDIM, CULM_MAXLEAVES, GRAIN_NB, SENESC_DW, DELETED_SENESC_DW_SUM,
-                     CULM_NBLEAF_STEM_ELONG, INTER_DIAM_PREDIM_MS };
+                     CULM_NBLEAF_STEM_ELONG, INTER_DIAM_PREDIM_MS, CULM_SURVIVED, LEAF_SENESC_INDEX };
 
     enum externals { PLANT_BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, FCSTRI, FCSTRL, FCSTRLLEN,
                      PLANT_PHENOSTAGE, PLANT_APPSTAGE, PLANT_LIGSTAGE, PREDIM_LEAF_ON_MAINSTEM, SLA,
@@ -149,6 +149,8 @@ public:
         Internal(DELETED_SENESC_DW_SUM, &CulmModel::_deleted_senesc_dw_sum);
         Internal(CULM_NBLEAF_STEM_ELONG, &CulmModel::_culm_nbleaf_stem_elong);
         Internal(INTER_DIAM_PREDIM_MS, &CulmModel::_in_diam_predim_ms);
+        Internal(CULM_SURVIVED, &CulmModel::_culm_survived);
+        Internal(LEAF_SENESC_INDEX, &CulmModel::_leaf_senesc_index);
 
         //    externals
         External(PLANT_BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -286,8 +288,10 @@ public:
         //kill culm if plant ic is < ict over phase 1 of first culm leaf
         if(_is_first_culm) {
             _is_computed = true;
+            _culm_survived = true;
         } else if (t != _creation_date){
             _is_computed = _culm_ictmodel->get < bool >(t, IctModel::IS_COMPUTED);
+            _culm_survived = _culm_ictmodel->get < bool >(t, IctModel::SURVIVED);
         }
         if(t != _creation_date) {
             if(_culm_ictmodel->get < bool >(t, IctModel::IS_COMPUTED)) {
@@ -364,10 +368,11 @@ public:
             _culm_thermaltime_model->put(t, ThermalTimeModel::LIGULO, _ligulo);
             _culm_thermaltime_model->put(t, ThermalTimeModel::PLASTO_DELAY, _leaf_delay);
             _culm_thermaltime_model->put(t, ThermalTimeModel::STOCK, _plant_stock);
+            _culm_thermaltime_model->put(t, ThermalTimeModel::PLANT_STATE, _plant_state);
             compute_thermaltime(t);
         }
 
-        if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE or _is_first_day_pi) {
+        if(/*_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE*/ !(_plant_state & plant::INDIV) or _is_first_day_pi) {
             if(_culm_thermaltime_model) {
                 _culm_DD = _culm_thermaltime_model->get < double >(t, ThermalTimeModel::DD);
                 _culm_EDD = _culm_thermaltime_model->get < double >(t, ThermalTimeModel::EDD);
@@ -389,6 +394,7 @@ public:
         } else {
             if(_creation_date == t) {
                 _culm_thermaltime_modelNG->put(t, ThermalTimeModelNG::DELTA_T, _delta_t);
+                _culm_thermaltime_modelNG->put(t, ThermalTimeModelNG::PLANT_STATE, _plant_state);
                 compute_thermaltimeNG(t);
             }
             _culm_DD = _culm_thermaltime_modelNG->get < double >(t, ThermalTimeModelNG::CULM_DD);
@@ -407,7 +413,7 @@ public:
         }
 
         //phytomer creation
-        if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
+        if(/*_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE*/  !(_plant_state & plant::INDIV)) {
             if( ( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) && is_phytomer_creatable()) {
                 create_phytomer(t);
             }
@@ -436,16 +442,20 @@ public:
         _deleted_senesc_dw = 0;
         _deleted_realloc_biomass = 0;
         _realloc_supply = 0;
-        if(_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
+        _leaf_senesc_index = -1;
+        if(/*_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE*/  (_plant_state & plant::INDIV)) {
             if(_is_first_day_pi or t == _creation_date) {
                 if((_plant_deficit * (_leaf_biomass_sum / _plant_leaf_biomass_sum)) + (_plant_stock * (_leaf_biomass_sum / _plant_leaf_biomass_sum)) < 0) {
-                    delete_leafNG(t, get_first_alive_leaf_index2(t));
-                    _realloc_biomass_sum += _deleted_realloc_biomass;
+                    //delete_leafNG(t, get_first_alive_leaf_index2(t));
+                    //_realloc_biomass_sum += _deleted_realloc_biomass;
+                    _leaf_senesc_index = get_first_alive_leaf_index2(t) + 1;
                 }
             } else if(! _kill_culm) {
                 if((_culm_stock_model->get < double >(t-1, CulmStockModelNG::CULM_STOCK)) + (_culm_stock_model->get < double >(t-1, CulmStockModelNG::CULM_DEFICIT)) < 0) {
-                    delete_leafNG(t, get_first_alive_leaf_index2(t));
-                    _realloc_biomass_sum += _deleted_realloc_biomass;
+                    //delete_leafNG(t, get_first_alive_leaf_index2(t));
+                    //_realloc_biomass_sum += _deleted_realloc_biomass;
+                    _leaf_senesc_index = get_first_alive_leaf_index2(t) + 1;
+
                 }
             }
         }
@@ -564,6 +574,7 @@ public:
         _culm_stock_model->put(t, CulmStockModelNG::LAST_DEMAND, _leaf_last_demand_sum + _internode_last_demand_sum + _peduncle_last_demand);
         _culm_stock_model->put(t, CulmStockModelNG::REALLOC_BIOMASS, _realloc_biomass_sum);
         _culm_stock_model->put(t, CulmStockModelNG::PLANT_PHASE, _plant_phase);
+        _culm_stock_model->put(t, CulmStockModelNG::PLANT_STATE, _plant_state);
         _culm_stock_model->put(t, CulmStockModelNG::PANICLE_DEMAND, _panicle_day_demand);
         _culm_stock_model->put(t, CulmStockModelNG::IS_FIRST_DAY_OF_INDIVIDUALIZATION, _is_first_day_pi);
         _culm_stock_model->put(t, CulmStockModelNG::PEDUNCLE_DEMAND, _peduncle_day_demand);
@@ -612,11 +623,12 @@ public:
         (*it)->put(t, PhytomerModel::SLA, _sla);
         (*it)->put < plant::plant_state >(t, PhytomerModel::PLANT_STATE, _plant_state);
         (*it)->put < plant::plant_phase >(t, PhytomerModel::PLANT_PHASE, _plant_phase);
-        if(_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE and !(_is_first_day_pi)) {
+        if(/*_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE*/ (_plant_state & plant::INDIV) and !_is_first_day_pi) {
             (*it)->put(t, PhytomerModel::TEST_IC, _culm_test_ic);
         } else {
             (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
         }
+        (*it)->leaf()->put(t, LeafModel::LEAF_SENESC_INDEX, _leaf_senesc_index);
         (*it)->leaf()->put(t, LeafModel::MGR, _MGR);
         (*it)->leaf()->put(t, LeafModel::FCSTRL, _fcstrL);
         (*it)->leaf()->put(t, LeafModel::FCSTRLLEN, _fcstrLlen);
@@ -1099,7 +1111,10 @@ public:
         _deleted_senesc_dw_sum = 0;
         _culm_nbleaf_stem_elong = _parameters.get("nb_leaf_stem_elong");
         _in_diam_predim_ms = 0;
+        _culm_survived = false;
+        _leaf_senesc_index = -1;
     }
+
 
 private:
     ecomeristem::ModelParameters _parameters;
@@ -1221,6 +1236,8 @@ private:
     double _deleted_senesc_dw_sum;
     double _culm_nbleaf_stem_elong;
     double _in_diam_predim_ms;
+    bool _culm_survived;
+    int _leaf_senesc_index;
 
     //    externals
     int _plant_phenostage;

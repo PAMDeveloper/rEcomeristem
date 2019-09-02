@@ -90,7 +90,7 @@ static const unsigned int NOGROWTH = 1;
 static const unsigned int NEW_PHYTOMER_AVAILABLE = 2;
 static const unsigned int LIG = 4;
 static const unsigned int KILL = 8;
-
+static const unsigned int INDIV = 16;
 }
 
 #include <utils/juliancalculator.h>
@@ -182,7 +182,8 @@ enum plant_state { NO_STATE = 0,
                    NOGROWTH = 1,
                    NEW_PHYTOMER_AVAILABLE = 2,
                    LIG = 4,
-                   KILL = 8 };
+                   KILL = 8,
+                   INDIV = 16};
 
 enum plant_phase {  INITIAL = 0,
                     VEGETATIVE = 1,

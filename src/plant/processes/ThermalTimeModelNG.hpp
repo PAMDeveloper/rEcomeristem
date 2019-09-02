@@ -41,7 +41,7 @@ public:
     enum externals { PLASTO_DELAY, PLASTO, CULM_STOCK, CULM_DEFICIT, DELTA_T,
                      DD, PLASTO_VISU, LIGULO_VISU,
                      IS_FIRST_DAY_OF_INDIVIDUALIZATION, PHYLLO, LIGULO, DD_PHYLLO,
-                     DD_LIGULO, PHYLLO_VISU };
+                     DD_LIGULO, PHYLLO_VISU, PLANT_STATE };
 
 
     ThermalTimeModelNG() {
@@ -80,6 +80,7 @@ public:
         External(DD_PHYLLO, &ThermalTimeModelNG::_DD_phyllo);
         External(DD_LIGULO, &ThermalTimeModelNG::_DD_ligulo);
         External(PHYLLO_VISU, &ThermalTimeModelNG::_phylloVisu);
+        External(PLANT_STATE, &ThermalTimeModelNG::_plant_state);
     }
 
     virtual ~ThermalTimeModelNG()
@@ -87,7 +88,7 @@ public:
 
     void compute(double t, bool /* update */) {
         if(_is_first_day_of_individualization) {
-            if (_stock + _deficit > 0) {
+            if (!(_plant_state & plant::NOGROWTH) and _stock + _deficit >= 0) {
                 _tempDD = _DD + _deltaT + _plasto_delay;
                 _tempDD_phyllo = _DD_phyllo + _deltaT + _plasto_delay;
                 _tempDD_ligulo = _DD_ligulo + _deltaT + _plasto_delay;
@@ -133,7 +134,7 @@ public:
                 _culm_liguloVisu = _liguloVisu + _EDD_ligulo;
             }
         } else {
-            if (_stock + _deficit > 0) {
+            if (!(_plant_state & plant::NOGROWTH) and _stock + _deficit >= 0) {
                 _tempDD = _culm_DD + _deltaT + _plasto_delay;
                 _tempDD_phyllo = _culm_DD_phyllo + _deltaT + _plasto_delay;
                 _tempDD_ligulo = _culm_DD_ligulo + _deltaT + _plasto_delay;
@@ -260,7 +261,7 @@ private:
     double _liguloVisu;
 
     bool _is_first_day_of_individualization;
-
+    plant::plant_state _plant_state;
 };
 
 } // namespace model

@@ -15,13 +15,13 @@ public:
                      CULM_SUPPLY, CULM_IC, CULM_DEFICIT, CULM_DEFICIT_1,
                      INTERMEDIATE, INTERMEDIATE2, INTERMEDIATE3,
                      NEW_PLANT_SUPPLY, CULM_STOCK, CULM_DEMAND, LEAF_STOCK_INIT,
-                     CULM_SURPLUS, MAX_RESERVOIR_DISPO };
+                     CULM_SURPLUS, MAX_RESERVOIR_DISPO, IS_DEMAND_ZERO };
 
 
     enum externals { LEAF_DEMAND_SUM, INTERNODE_DEMAND_SUM,
                      PANICLE_DEMAND, PEDUNCLE_DEMAND, LAST_DEMAND, REALLOC_BIOMASS,
                      PLANT_LEAF_BIOMASS, PLANT_STOCK, PLANT_SURPLUS, PLANT_SUPPLY,
-                     INTERNODE_BIOMASS_SUM, LEAF_BIOMASS_SUM, PLANT_PHASE,
+                     INTERNODE_BIOMASS_SUM, LEAF_BIOMASS_SUM, PLANT_PHASE, PLANT_STATE,
                      IS_FIRST_DAY_OF_INDIVIDUALIZATION, KILL_CULM };
 
 
@@ -49,6 +49,7 @@ public:
         Internal(LEAF_STOCK_INIT, &CulmStockModelNG::_leaf_stock_init);
         Internal(CULM_SURPLUS, &CulmStockModelNG::_culm_surplus);
         Internal(MAX_RESERVOIR_DISPO, &CulmStockModelNG::_max_reservoir_dispo);
+        Internal(IS_DEMAND_ZERO, &CulmStockModelNG::_is_demand_zero);
 
         External(LEAF_DEMAND_SUM, &CulmStockModelNG::_leaf_demand_sum);
         External(INTERNODE_DEMAND_SUM, &CulmStockModelNG::_internode_demand_sum);
@@ -63,6 +64,7 @@ public:
         External(INTERNODE_BIOMASS_SUM, &CulmStockModelNG::_internode_biomass_sum);
         External(LEAF_BIOMASS_SUM, &CulmStockModelNG::_leaf_biomass_sum);
         External(PLANT_PHASE, &CulmStockModelNG::_plant_phase);
+        External(PLANT_STATE, &CulmStockModelNG::_plant_state);
         External(IS_FIRST_DAY_OF_INDIVIDUALIZATION, &CulmStockModelNG::_is_first_day_of_individualization);
         External(KILL_CULM, &CulmStockModelNG::_kill_culm);
 
@@ -74,7 +76,7 @@ public:
 
     void compute(double t, bool /* update */) {
         //while plant is not at culm_individualisation or if culm is dead, all variables are at their init values
-        if (_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE or _kill_culm) {
+        if (/*_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE*/ _kill_culm or !(_plant_state & plant::INDIV)) {
             _max_reservoir_dispo_internode = 0;
             _reservoir_dispo_internode = 0;
             _max_reservoir_dispo_leaf = 0;
@@ -85,6 +87,7 @@ public:
             _remain_to_store = 0;
             _remain_to_store_1 = 0;
             _culm_demand_sum = 0;
+            _culm_demand = 0;
             _culm_supply = 0;
             _culm_ic = 0;
             _culm_deficit = 0;
@@ -124,36 +127,43 @@ public:
         _culm_supply = std::min(_plant_supply, _culm_demand_sum - _culm_deficit);
 
         //Internal IC computation for current culm (will be 1 if supply is sufficient or less if not)
-        _culm_ic = std::min(_culm_supply / std::max(_culm_demand_sum, 0.00001), 5.);
+        if(_culm_demand_sum - _culm_deficit < 0.000001) {
+            _culm_ic = 1;
+            _is_demand_zero = true;
+        } else {
+            _culm_ic = std::min(_culm_supply / std::max(_culm_demand_sum - _culm_deficit, 0.000001), 5.);
+            _is_demand_zero = false;
+        }
 
         //If supply is sufficient : leaf remobilizable biomass, else : deficit
-        _intermediate = _culm_supply - _culm_demand_sum + _realloc_biomass + _leaf_stock;
+        _intermediate = _culm_supply - _culm_demand_sum + _realloc_biomass + _leaf_stock + _culm_deficit - _demand_internode_storage;
 
-        //Either the rest of non remobilized internode stock or new (and >) stock
-        _intermediate2 = std::max((1 - _coeff_remob) * _internode_stock, //part of internode stock that we can't remobilize
-                                  std::min(_max_reservoir_dispo_internode, //max_reservoir_dispo_internode
-                                           //biomass we can remobilize after filling previous deficit
-                                           _culm_deficit + _internode_stock + _intermediate + _demand_internode_storage
-                                           )
-                                  );
+        if(_intermediate < 0) {
+            _internode_stock = std::max((1 - _coeff_remob) * _internode_stock, _internode_stock + _intermediate);
+        } else {
+            _internode_stock = _internode_stock;
+        }
 
-        _culm_deficit_1 = _culm_deficit;
+        _culm_deficit = std::min(0., _intermediate + (_coeff_remob * _internode_stock));
+        _remaining_supply = std::max(0.,_intermediate);
+
+        //_culm_deficit_1 = _culm_deficit;
 
         //New deficit is previous deficit (culm_deficit_1) + deficit or - remob leaf biomass of day (intermediate) - remob in biomass - day active in storage
-        _culm_deficit = std::min(0., _culm_deficit_1 + _intermediate + (_coeff_remob * _internode_stock) + _demand_internode_storage);
+        //_culm_deficit = std::min(0., _culm_deficit_1 + _intermediate + (_coeff_remob * _internode_stock) + _demand_internode_storage);
 
         //Check this equation
-        _remain_to_store = std::max(0., _intermediate + _demand_internode_storage - _reservoir_dispo_internode + _culm_deficit_1 - _culm_deficit);
-        _remain_to_store_1 = _remain_to_store;
+        //_remain_to_store = std::max(0., _intermediate + _demand_internode_storage - _reservoir_dispo_internode + _culm_deficit_1 - _culm_deficit);
+        //_remain_to_store_1 = _remain_to_store;
 
         //update internode stock
-        _internode_stock = _intermediate2;
+        //_internode_stock = std::min(internode_stock,_intermediate2);
 
         //All remain to store in leaves ? Check this equation
-        _leaf_stock = std::min(_max_reservoir_dispo_leaf, _remain_to_store);
+        //_leaf_stock = std::min(_max_reservoir_dispo_leaf, _remain_to_store);
 
         //update remain to store
-        _remain_to_store = _remain_to_store - _leaf_stock;
+        //_remain_to_store = _remain_to_store - _leaf_stock;
 
         //update reservoir_dispo_internode
         _reservoir_dispo_internode = _max_reservoir_dispo_internode - _internode_stock;
@@ -165,7 +175,7 @@ public:
         _culm_stock = _leaf_stock + _internode_stock;
 
         //remaining plant supply is plant supply - what culm took + (the surplus (?))
-        _new_plant_supply = _plant_supply - _culm_supply + _remain_to_store;
+        _new_plant_supply = _plant_supply - _culm_supply + _remaining_supply;
 
         //culm surplus is all above culm_demand + organ reserves
         _culm_surplus = std::max(0., _culm_stock - _culm_demand + _culm_supply - _max_reservoir_dispo + _realloc_biomass);
@@ -175,7 +185,7 @@ public:
         //fill in internode and leaf stock and update remaining plant_supply
         _internode_stock = _internode_stock + std::min(_reservoir_dispo_internode, _plant_supply);
         _new_plant_supply = _plant_supply - std::min(_reservoir_dispo_internode, _plant_supply);
-        _leaf_stock = _leaf_stock + std::min(_reservoir_dispo_leaf, _new_plant_supply);
+        _leaf_stock = std::min(_reservoir_dispo_leaf, _new_plant_supply);
         _new_plant_supply = _new_plant_supply - std::min(_reservoir_dispo_leaf, _new_plant_supply);
 
         //update available reserve in internode and leaf
@@ -221,6 +231,8 @@ public:
         _leaf_stock_init = 0;
         _culm_surplus = 0;
         _max_reservoir_dispo = 0;
+        _remaining_supply = 0;
+        _is_demand_zero = false;
     }
 
 private:
@@ -257,6 +269,8 @@ private:
     double _leaf_stock_init;
     double _culm_surplus;
     double _max_reservoir_dispo;
+    double _remaining_supply;
+    bool _is_demand_zero;
 
     //Externals
     double _leaf_demand_sum;
@@ -274,6 +288,7 @@ private:
     bool _is_first_day_of_individualization;
     bool _kill_culm;
     plant::plant_phase _plant_phase;
+    plant::plant_state _plant_state;
 
 };
 

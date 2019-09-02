@@ -61,11 +61,12 @@ public:
         //parameters
         _etp = _parameters.get(t).Etp;
         // _etp = computeETP();
-        _water_supply = 0;
-        if(_wbmodel == 1) {
-            //Waterbalance model
+        _water_supply = _parameters.get(t).Irrigation;
+        if(wbmodel == 1) {
+            //Pot Waterbalance model [phenoarch 2017]
+
             //FTSW
-            _ftsw = (_swc-_pf) / RU1;
+            _ftsw = (_swc-pf) / RU1;
 
             //cstr
             _cstr = (_ftsw < ThresTransp) ? std::max(1e-4, _ftsw * 1. / ThresTransp) : 1;
@@ -73,19 +74,31 @@ public:
             //fcstr
             _fcstr = std::sqrt(_cstr);
 
-            //transpiration
-            //_transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) * _interc * _cstr) / Density);
+            //See FAO ETP http://www.fao.org/3/X0490E/x0490e0c.htm#chapter%207
+            if(_De < REW) { //REW and TEW are soil parameters
+                _Kr = 1;
+            } else {
+                _Kr = (TEW - _De)/(TEW - REW);
+            }
+            _Ke = _Kr * (Ke_init); //with _Ke_init = Kcmax - Kcpot; estimate on data
 
-            // Pour phenoarch pas de densité, ETP exprimé par pot
-            _transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) * _interc * _cstr));
-            //transpiration = kcpot * etp * interc * cstr
+            //transpiration
+            _transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) * _interc * _cstr) / Density);
+
+            //evaporation
+            _evaporation = (_Ke * _etp) * 0.0283;
 
             //SWC
-            _swc = _swc - _transpiration + _water_supply;
+            _swc = _swc - _transpiration - _evaporation + _water_supply;
+
+            //De
+            _De = _De + _evaporation - _water_supply;
+
+
         } else {
             _water_supply = _parameters.get(t).Irrigation;
 
-            //Field waterbalance model
+            //Field waterbalance model [BFF 2014-2015-2016]
             _cstr = 1;
             _transpiration = _swc;
             _ftsw = 1;
@@ -105,6 +118,16 @@ public:
             }
         }
     }
+
+    //double computeKe() {
+       // TEW = 1000*(1.7-(0.5*0.34)*0.03);
+       // if(true) {
+       //     Kr = 1;
+       // } else {
+       //     Kr = (TEW - De)/(TEW - REW);
+      //  }
+      //  Ke = Kr(Kcmax - Kcb)
+    //}
 
     double computeETP(double t) {
         // Weather and param variables TODO
@@ -167,14 +190,19 @@ public:
         stressBP = parameters.get("stressBP");
         stressBP2 = parameters.get("stressBP2");
         pot = parameters.get("psib");
-        _pf = parameters.get("pf");;
-        _wbmodel = parameters.get("wbmodel");
+        pf = parameters.get("pf");;
+        swc_init = parameters.get("swc_init");
+        wbmodel = parameters.get("wbmodel");
+        stressD = parameters.get("stressD");
+        TEW = parameters.get("TEW");
+        REW = parameters.get("REW");
+        Ke_init = parameters.get("Ke_init");
 
         //    computed variables
         _cstr = 1;
         _fcstr = 1;
         _ftsw = 1;
-        _swc = RU1;
+        _swc = swc_init;
         _transpiration = 0;
         _psib = 0;
         _stressdays = 0;
@@ -182,6 +210,11 @@ public:
         _fcstrL = 1;
         _fcstrI = 1;
         _fcstrLlen = 1;
+        _De = 0;
+        _evaporation = 0;
+        _Ke = 0;
+        _Kr = 1;
+
     }
 
 private:
@@ -198,13 +231,21 @@ private:
     double thresINER;
     double thresLEN;
     double pot;
-    double _wbmodel;
+    double wbmodel;
     double stressBP;
     double stressBP2;
+    //Pot WB
+    double pf;
+    double swc_init;
+    double stressD;
+    double TEW;
+    double REW;
+    double Ke_init;
+
     //meteo
     double _etp;
     double _water_supply;
-    double _pf;
+
 
     //    internals (computed)
     double _transpiration;
@@ -219,6 +260,11 @@ private:
     //Field WB
     double _psib;
     double _stressdays;
+    //Pot WB
+    double _De;
+    double _evaporation;
+    double _Ke;
+    double _Kr;
 
     //  externals
     double _interc;

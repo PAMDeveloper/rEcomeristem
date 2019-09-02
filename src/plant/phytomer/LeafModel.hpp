@@ -37,12 +37,12 @@ public:
                      LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL_, PLASTO, PHYLLO, LIGULO, FIRST_DAY,
                      SHEATH_LEN, LAST_BLADE_AREA, LAST_VISIBLE_BLADE_AREA, SHEATH_LLL_CST,
                      IS_APP, IS_DEAD, IS_FIRST, GROWTH_DELAY, POT_LER, RED_LENGTH, POT_PREDIM,
-                     WIDTH_LER, POT_LEN, BLADE_LEN, VISIBLE_LEN, LAST_LEN, TIME, TMP1, TMP2 };
+                     WIDTH_LER, POT_LEN, BLADE_LEN, VISIBLE_LEN, LAST_LEN, TIME, TMP1, TMP2, COEFF_SENESC };
 
     enum externals { DELTA_T, FTSW, FCSTR, FCSTRL, FCSTRLLEN,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
                      SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF, CULM_DEFICIT, CULM_STOCK, SHEATH_LLL,
-                     CULM_NBLEAF_PARAM2, PLASTO_NBLEAF_PARAM2, PREDIM_APP_LEAF_MS };
+                     CULM_NBLEAF_PARAM2, PLASTO_NBLEAF_PARAM2, PREDIM_APP_LEAF_MS, LEAF_SENESC_INDEX };
 
 
     virtual ~LeafModel()
@@ -106,6 +106,7 @@ public:
         Internal(TIME, &LeafModel::time);
         Internal(TMP1, &LeafModel::tmp1);
         Internal(TMP2, &LeafModel::tmp2);
+        Internal(COEFF_SENESC, &LeafModel::_coeff_senesc);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);
@@ -126,6 +127,8 @@ public:
         External(SHEATH_LLL, &LeafModel::_sheath_LLL);
         External(CULM_NBLEAF_PARAM2, &LeafModel::_culm_nbleaf_param2);
         External(PLASTO_NBLEAF_PARAM2, &LeafModel::_plasto_nbleaf_param2);
+        External(LEAF_SENESC_INDEX, &LeafModel::_leaf_senesc_index);
+
     }
 
     void compute(double t, bool /* update */)
@@ -176,15 +179,17 @@ public:
             } else if (not _is_first_leaf and _is_on_mainstem) {
                 _predim =  _predim_leaf_on_mainstem + _MGR * _test_ic * _fcstr;
             } else if (_is_first_leaf and not _is_on_mainstem) {
-                _predim = 0.5 * (_predim_app_leaf_on_mainstem + _Lef1) *_test_ic * _fcstr;
+                _predim = _Lef1; //test predim tillers the same way as mainstem
+                //_predim = 0.5 * (_predim_app_leaf_on_mainstem + _Lef1) *_test_ic * _fcstr;
             } else {
+                //_predim =  _predim_previous_leaf + _MGR * _test_ic * _fcstr;
                 _predim = 0.5 * (_predim_leaf_on_mainstem + _predim_previous_leaf) + _MGR * _test_ic * _fcstr;
             }
             _pot_predim = _predim;
         }
 
-        //growth deficit
-        _predim = std::max(0.,std::max(_len,_predim + _red_length));
+        //growth deficit for wb2
+        //_predim = std::max(0.,std::max(_len,_predim + _red_length));
 
         //ReductionLER
         if(t == _first_day && _is_first_leaf && _is_on_mainstem) {
@@ -242,8 +247,7 @@ public:
         }
 
         //LeafLen
-
-        if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
+        if (!(_plant_state & plant::NOGROWTH) /*and (_culm_deficit + _culm_stock >= 0)*/) {
             if(_leaf_phase == leaf::INITIAL) {
                 _len = _len+_ler*_delta_t;
                 _pot_len = _len;
@@ -252,11 +256,11 @@ public:
                 _len = std::min(_predim, _len+_ler*std::min(_delta_t, _exp_time));
                 _pot_len = std::min(_pot_predim, _pot_len+_width_ler*std::min(_delta_t, _exp_time));
                 _visible_len = _len;
-                 if(_len >= _predim and !_is_lig) {
-                     _last_len = _len;
-                 } else if(_is_lig) {
-                     _visible_len = std::max(0.,_last_len * (1 - _TT_Lig / _life_span));
-                 }
+                if(_len >= _predim and !_is_lig) {
+                    _last_len = _len;
+                } else if(_is_lig) {
+                    _visible_len = std::max(0.,_last_len * (1 - _TT_Lig / _life_span));
+                }
             }
         }
 
@@ -267,6 +271,11 @@ public:
         _width = _pot_len * _WLR / _LL_BL;
 
         //ThermalTimeSinceLigulation
+        if(_index == _leaf_senesc_index) {
+            _coeff_senesc = coeff_sen;
+        } else {
+            _coeff_senesc = 1.0;
+        }
         _is_lig_t = false;
         if (not _is_lig) {
             if(_leaf_phase == leaf::LIG) {
@@ -277,7 +286,7 @@ public:
                 }
             }
         } else {
-            _TT_Lig += _delta_t;
+            _TT_Lig += (_delta_t * 1);
         }
 
         //Sheath and blade length
@@ -313,7 +322,7 @@ public:
             _realloc_biomass = 0;
             _sla_cste = _sla;
         } else {
-            if ((!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) or (_is_lig and !(_is_lig_t))) {
+            if ((!(_plant_state & plant::NOGROWTH) /*and (_culm_deficit + _culm_stock >= 0)*/) or (_is_lig and !(_is_lig_t))) {
                 if (not _is_lig || _is_lig_t) {
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
                     _realloc_biomass = 0;
@@ -352,7 +361,7 @@ public:
         if (_first_day == t) {
             _time_from_app = _delta_t;
         } else {
-            if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
+            if (!(_plant_state & plant::NOGROWTH) /*and (_culm_deficit + _culm_stock >= 0)*/) {
                 _time_from_app = _time_from_app + _delta_t;
             }
         }
@@ -405,6 +414,7 @@ public:
         _phyllo_init = parameters.get("phyllo_init");
         _plasto_init = parameters.get("plasto_init");
         _ligulo_init = parameters.get("ligulo_init");
+        coeff_sen = parameters.get("coeff_sen");
 
         //internals
         _realloc_biomass = 0;
@@ -456,6 +466,7 @@ public:
         time = 1;
         tmp1 = 0;
         tmp2 = 0;
+        _coeff_senesc = 1;
     }
 
 private:
@@ -476,6 +487,7 @@ private:
     double _plasto_init;
     double _ligulo_init;
     double _p;
+    double coeff_sen;
 
     // attributes
     int _index;
@@ -531,6 +543,7 @@ private:
     double time;
     double tmp1;
     double tmp2;
+    double _coeff_senesc;
 
     // external variables
     double _MGR;
@@ -551,6 +564,8 @@ private:
     double _culm_nbleaf_param2;
     double _plasto_nbleaf_param2;
     double _fcstrLlen;
+    int _leaf_senesc_index;
+
 };
 
 } // namespace model

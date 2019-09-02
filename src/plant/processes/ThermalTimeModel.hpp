@@ -37,7 +37,7 @@ public:
                      PLASTO_VISU, PHYLLO_VISU, LIGULO_VISU, PHENO_STAGE, APP_STAGE, LIG_STAGE,
                      SLA, TEMP_DD, TEMP_DD_PHYLLO, TEMP_DD_LIGULO, DD, EDD, DD_PHYLLO, DD_LIGULO, EDD_PHYLLO, EDD_LIGULO };
 
-    enum externals {  DELTA_T, PLASTO_DELAY, PLASTO, PHYLLO, LIGULO, STOCK, IS_FIRST_CULM };
+    enum externals {  DELTA_T, PLASTO_DELAY, PLASTO, PHYLLO, LIGULO, STOCK, IS_FIRST_CULM, PLANT_STATE };
 
     ThermalTimeModel() {
         //    computed variables
@@ -68,6 +68,7 @@ public:
         External(STOCK, &ThermalTimeModel::_stock);
         External(DELTA_T, &ThermalTimeModel::_deltaT);
         External(IS_FIRST_CULM, &ThermalTimeModel::_is_first_culm);
+        External(PLANT_STATE, &ThermalTimeModel::_plant_state);
     }
 
     virtual ~ThermalTimeModel()
@@ -76,7 +77,7 @@ public:
 
 
     void compute(double t, bool /* update */) {
-        if (_stock != 0) {
+        if (!(_plant_state & plant::NOGROWTH)) {
             _tempDD = _DD + _deltaT + _plasto_delay;
             _tempDD_phyllo = _DD_phyllo + _deltaT + _plasto_delay;
             _tempDD_ligulo = _DD_ligulo + _deltaT + _plasto_delay;
@@ -203,6 +204,8 @@ private:
     double _stock;
     double _deltaT;
     bool _is_first_culm;
+    plant::plant_state _plant_state;
+
 };
 
 } // namespace model

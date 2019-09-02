@@ -3,7 +3,7 @@
 #-- (PAM, AGAP, BIOS, CIRAD)
 
 ###SET INFORMATION FOR ESTIMATION###
-path <- "D:/Workspace/estimworkspace/2016_tallage/G26_LD"
+path <- "D:/Workspace/estimworkspace/Sorghum/2015/results_article/G5/"
 vName <- "vobs_moy.txt"
 vETName <- "vobs_et.txt"
 paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
@@ -12,14 +12,8 @@ paramOfInterest <- c("Epsib", "Ict","MGR_init","plasto_init","phyllo_init","ligu
 minValue <- c(3, 0.5, 6, 25, 25, 25, -0.5, 0.5, 0.08, 1, 1, 1, 0.0, 0.8)
 maxValue <- c(8, 2.5, 14, 45, 45, 45, 0.5, 1, 0.3, 3.0, 3.0, 3.0, 0.4, 1.0)
 
-#paramOfInterest <- c("Epsib","Ict","plasto_init","phyllo_init","ligulo_init",
-#                     "density_IN2","coef_plasto_PI",
-#                     "coef_phyllo_PI","coef_ligulo_PI","coeff_in_diam")
-#minValue <- c(3, 0.5, 20, 20, 20, 0.08, 1, 1, 1, 0.8)
-#maxValue <- c(8, 2.5, 45, 45, 45, 0.3, 3.0, 3.0, 3.0, 1.0)
-
 coefIncrease <- 10
-maxIter <- 20000
+maxIter <- 1
 penalty <- 10 #Penalty for simulation outside of SD (RMSE * Penalty)
 solTol <- 0.01 #will be multiplied by the number of observed variables
 relTol <- 0.001 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
@@ -159,3 +153,5 @@ result$time <- time
 resOptim <- resOptim[[2]]
 print(paste("End of Estimation. Elapsed time :", time[[3]],"s"))
 stopCluster(cl)
+
+popResult <- data.frame(resOptim[["member"]][["pop"]])

@@ -59,7 +59,7 @@ public:
                      MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
                      BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW, TILLERFW,
-                     MAINSTEMFW, MAINSTEMBLADEFW, TILLERLEAFFW };
+                     MAINSTEMFW, MAINSTEMBLADEFW, TILLERLEAFFW, FIRST_DAY_INDIV, CREATED_TILLERS, CULM_DEFICIT_SUM };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -164,6 +164,9 @@ public:
         Internal( MAINSTEMFW, &PlantModel::_biomMainstemFW);
         Internal( MAINSTEMBLADEFW, &PlantModel::_biomBladeMainstemFW);
         Internal( TILLERLEAFFW, &PlantModel::_tillerleafFW);
+        Internal( FIRST_DAY_INDIV, &PlantModel::_is_first_day_pi);
+        Internal( CREATED_TILLERS, &PlantModel::_createdTillers);
+        Internal( CULM_DEFICIT_SUM, &PlantModel::_culm_deficit_sum);
 
     }
 
@@ -204,13 +207,24 @@ public:
             return;
         }
 
-        //Globals states
         _plant_state >> plant::NEW_PHYTOMER_AVAILABLE;
         if (_stock <= 0) {
             _plant_state << plant::NOGROWTH;
-            return;
         } else {
             _plant_state >> plant::NOGROWTH;
+        }
+        //Globals states
+        if (_ligstage >= _nb_leaf_indiv) {
+            if(!(_plant_state & plant::INDIV)) {
+                _plant_state << plant::INDIV;
+            }
+            if(_ligstage == _nb_leaf_indiv & !_is_first_day_passed) {
+                _is_first_day_pi = true;
+                _is_first_day_passed = true;
+            }
+        }
+        if(_stock <= 0) {
+            return;
         }
 
         switch (_plant_phase) {
@@ -221,10 +235,10 @@ public:
         case plant::VEGETATIVE: {
             if(_ligstage == _nb_leaf_stem_elong and _phenostage < _maxleaves + 1) {
                 _plant_phase = plant::ELONG;
-                _is_first_day_pi = true;
+                //_is_first_day_pi = true;
             } else if (_phenostage == _maxleaves + 1) {
                 _plant_phase = plant::PI;
-                _is_first_day_pi = true;
+                //_is_first_day_pi = true;
             }
             break;
         }
@@ -312,11 +326,12 @@ public:
         while(culms != _culm_models.end()) {
             (*culms)->ictmodel()->put < double >(t, IctModel::IC_plant, _stock_model->get <double> (t-1, PlantStockModel::IC));
             (*culms)->compute_ictmodel(t);
-            if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
+            if(/*(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE)*/ !(_plant_state & plant::INDIV)) {
                 if(!(*culms)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM)) {
                     (*culms)->thermaltime_model()->put < double >(t, ThermalTimeModel::DELTA_T, _deltaT);
                     (*culms)->thermaltime_model()->put < double >(t, ThermalTimeModel::PLASTO_DELAY, _leaf_delay);
                     (*culms)->thermaltime_model()->put < double >(t, ThermalTimeModel::STOCK, _stock);
+                    (*culms)->thermaltime_model()->put < plant::plant_state >(t, ThermalTimeModel::PLANT_STATE, _plant_state);
                     (*culms)->compute_thermaltime(t);
                     if(i == 0) {
                         _bool_crossed_plasto = (*culms)->thermaltime_model()->get< double >(t, ThermalTimeModel::BOOL_CROSSED_PLASTO);
@@ -336,6 +351,8 @@ public:
             } else {
                 if(!(*culms)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM)) {
                     (*culms)->thermaltime_modelNG()->put < double >(t, ThermalTimeModelNG::DELTA_T, _deltaT);
+                    (*culms)->thermaltime_modelNG()->put < double >(t, ThermalTimeModelNG::DELTA_T, _deltaT);
+                    (*culms)->thermaltime_modelNG()->put < plant::plant_state >(t, ThermalTimeModelNG::PLANT_STATE, _plant_state);
                     (*culms)->compute_thermaltimeNG(t);
                     if(i == 0) {
                         _bool_crossed_plasto = (*culms)->thermaltime_modelNG()->get< double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_PLASTO);
@@ -365,9 +382,13 @@ public:
         // Manager
         //std::cout << t - _parameters.beginDate << std::endl;
         //std::cout << "Plant state :" << _plant_state << std::endl;
+        //std::cout << "Plant phase :" << _plant_phase << std::endl;
         step_state(t);
         //std::cout << "Plant state :" << _plant_state << std::endl;
-
+        //std::cout << "Plant phase :" << _plant_phase << std::endl;
+        //if(_is_first_day_pi) {
+        //    std::cout << "FIRST DAY OF PI : " << t - _parameters.beginDate << std::endl;
+        //}
 
         //LLBL - MGR
         if (_phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _stock > 0) {
@@ -385,7 +406,7 @@ public:
         while(it != _culm_models.end()) {
             if(!(*it)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM) and (*it)->get < bool, CulmModel >(t-1, CulmModel::IS_COMPUTED)) {
                 double bcphyllo = -1;
-                if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE or _is_first_day_pi) {
+                if(/*_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE*/ !(_plant_state & plant::INDIV) or _is_first_day_pi) {
                     bcphyllo = (*it)->thermaltime_model()->get< double >(t, ThermalTimeModel::BOOL_CROSSED_PHYLLO);
                 } else {
                     bcphyllo = (*it)->thermaltime_modelNG()->get< double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_PHYLLO);
@@ -402,12 +423,13 @@ public:
         }
         if (_bool_crossed_plasto > 0 and _nb_tillers >= 1) {
             _nb_tillers = std::min(_nb_tillers, _tae);
-            _nbExistingTillers = _nbExistingTillers + _nb_tillers;
-            if(_plant_phase != plant::ELONG and _plant_phase != plant::PI and _plant_phase != plant::PRE_FLO and _plant_phase != plant::FLO and _plant_phase != plant::END_FILLING and _plant_phase != plant::DEAD and _plant_phase != plant::MATURITY) {
-                if(_tillerNb_1 < 50) {
+            if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
+                create_culm(t, _nb_tillers);
+                _nbExistingTillers = _nbExistingTillers + _nb_tillers;
+            } else if(_plant_phase == plant::ELONG or _plant_phase == plant::PI) {
+                if(_culm_deficit_sum >= 0 /*and _createdTillers < 30*/) {
                     create_culm(t, _nb_tillers);
-                } else {
-                    _plant_phase = plant::DEAD;
+                    _nbExistingTillers = _nbExistingTillers + _nb_tillers;
                 }
             }
         }
@@ -465,7 +487,7 @@ public:
         _pari = _assimilation_model->get < double >(t, AssimilationModel::PARI);
 
         //CulmStockModel
-        if(_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
+        if(/*_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE and*/ (_plant_state & plant::INDIV)) {
             _tmp_culm_stock_sum = 0;
             _tmp_culm_deficit_sum = 0;
             _tmp_culm_surplus_sum = 0;
@@ -578,6 +600,7 @@ public:
 
         // NB Alive Culms
         double nbc = 0;
+        double nbtc = 0;
         _biomAero2 = 0;
         _biomAeroFW = 0;
         _deadleafNb = 0;
@@ -589,6 +612,7 @@ public:
             if(!((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM)) and (*itnbc)->get < bool, CulmModel >(t, CulmModel::IS_COMPUTED)) {
                 nbc++;
             }
+            nbtc++;
             _biomAero2 += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
@@ -598,7 +622,9 @@ public:
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) * _internode_FW_DW +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT); //* _panicle_FW_DW;
             _tillerleafFW += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) * _leaf_FW_DW;
-            _deadleafNb += (*itnbc)->get_dead_phytomer_number(t);
+            if((*itnbc)->get < bool, CulmModel >(t, CulmModel::CULM_SURVIVED)) {
+                _deadleafNb += (*itnbc)->get_dead_phytomer_number(t);
+            }
             _panicleDW += (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
             _paniclenb += (*itnbc)->get < double, CulmModel >(t, CulmModel::GRAIN_NB) > 0 ? 1 : 0;
             itnbc++;
@@ -610,6 +636,7 @@ public:
 
         // VISU
         _tillerNb_1 = nbc;
+        _createdTillers = nbtc;
         std::deque < CulmModel* >::const_iterator visumainstem = _culm_models.begin();
         _ms_leaf2_len = (*visumainstem)->get< double, CulmModel >(t, CulmModel::FIRST_LEAF_TOT_LEN); //feuille numéro 2 pour avoir la croissance totale
         _ms_index = (*visumainstem)->get_phytomer_number();
@@ -769,7 +796,7 @@ public:
         _qty = 0;
         if (_stock_model->get < double >(t, PlantStockModel::STOCK) == 0) {
             std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
-            if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
+            if(/*_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE*/ !(_plant_state & plant::INDIV)) {
                 double tmp_date = t;
                 std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
                 int i = 0;
@@ -825,6 +852,7 @@ public:
         _intercmodel = parameters.get("intercmodel");
         _leaf_FW_DW = parameters.get("leaf_FW_DW");
         _internode_FW_DW = parameters.get("internode_FW_DW");
+        _nb_leaf_indiv = parameters.get("nb_leaf_indiv");
 
         //Attributes for culmmodel
         _LL_BL = _LL_BL_init;
@@ -958,6 +986,8 @@ public:
         _tillerFW = 0;
         _biomBladeMainstemFW = 0;
         _tillerleafFW = 0;
+        _is_first_day_passed = false;
+        _createdTillers = 1;
     }
 
 private:
@@ -998,6 +1028,7 @@ private:
     double _intercmodel;
     double _leaf_FW_DW;
     double _internode_FW_DW;
+    double _nb_leaf_indiv;
 
 
     // vars
@@ -1109,6 +1140,8 @@ private:
     double _tillerFW;
     double _biomBladeMainstemFW;
     double _tillerleafFW;
+    bool _is_first_day_passed;
+    double _createdTillers;
 
     // test
     double _interc1;

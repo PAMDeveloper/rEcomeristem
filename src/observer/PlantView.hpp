@@ -65,6 +65,8 @@ public:
                      PlantModel::EDD});
         selector("SLA", artis::kernel::DOUBLE, {
                      PlantModel::SLA});
+        selector("TILLERNB_C", artis::kernel::DOUBLE, {
+                     PlantModel::CREATED_TILLERS});
         selector("TILLERNB_1", artis::kernel::DOUBLE, {
                      PlantModel::TILLERNB_1});
         selector("NBLEAF", artis::kernel::DOUBLE, {
@@ -111,7 +113,7 @@ public:
                      PlantModel::BOOL_CROSSED_PLASTO});
         selector("BOOL_CROSSED_LIGULO", artis::kernel::DOUBLE, {
                      PlantModel::BOOL_CROSSED_LIGULO});
-        selector("BOOL_CROSSED_PHYLOO", artis::kernel::DOUBLE, {
+        selector("BOOL_CROSSED_PHYLLO", artis::kernel::DOUBLE, {
                      PlantModel::BOOL_CROSSED_PHYLLO});
         selector("PANICLENB", artis::kernel::DOUBLE, {
                      PlantModel::PANICLENB});
@@ -143,7 +145,7 @@ public:
                      PlantModel::TILLERFW});
         selector("BLADEFW", artis::kernel::DOUBLE, { //MAINSTEM blade FW
                      PlantModel::MAINSTEMBLADEFW});
-        selector("MAINSTEMFW", artis::kernel::DOUBLE, { //MAINSTEM blade FW
+        selector("MAINSTEMFW", artis::kernel::DOUBLE, {
                      PlantModel::MAINSTEMFW});
         selector("TILLERLEAFFW", artis::kernel::DOUBLE, {
                      PlantModel::TILLERLEAFFW});
@@ -197,12 +199,19 @@ public:
         selector("FCSTRI", artis::kernel::DOUBLE, {
                      PlantModel::WATER_BALANCE,
                      WaterBalanceModel::FCSTRI});
-        selector("FCSTRL", artis::kernel::DOUBLE, {
+        selector("CSTR", artis::kernel::DOUBLE, {
                      PlantModel::WATER_BALANCE,
-                     WaterBalanceModel::FCSTRL});
-        selector("FCSTRA", artis::kernel::DOUBLE, {
+                     WaterBalanceModel::CSTR});
+        selector("FCSTR", artis::kernel::DOUBLE, {
                      PlantModel::WATER_BALANCE,
-                     WaterBalanceModel::FCSTRA});
+                     WaterBalanceModel::FCSTR});
+        selector("SWC", artis::kernel::DOUBLE, {
+                     PlantModel::WATER_BALANCE,
+                     WaterBalanceModel::SWC});
+        selector("TRANSP", artis::kernel::DOUBLE, {
+                     PlantModel::WATER_BALANCE,
+                     WaterBalanceModel::TRANSPIRATION});
+
     }
 
     virtual ~PlantView()
