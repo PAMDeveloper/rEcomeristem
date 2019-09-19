@@ -33,7 +33,7 @@ namespace model {
 class WaterBalanceModel : public AtomicModel < WaterBalanceModel >
 {
 public:
-    enum internals { CSTR, FCSTR, FCSTRA, FCSTRI, FCSTRL, FCSTRLLEN, FTSW, TRANSPIRATION, SWC, PSIB };
+    enum internals { CSTR, FCSTR, FCSTRA, FCSTRI, FCSTRL, FCSTRLLEN, FTSW, TRANSPIRATION, SWC, PSIB, EVAPORATION, KR, DE };
     enum externals { INTERC };
 
 
@@ -49,6 +49,9 @@ public:
         Internal(TRANSPIRATION, &WaterBalanceModel::_transpiration);
         Internal(SWC, &WaterBalanceModel::_swc);
         Internal(PSIB, &WaterBalanceModel::_psib);
+        Internal(EVAPORATION, &WaterBalanceModel::_evaporation);
+        Internal(KR, &WaterBalanceModel::_Kr);
+        Internal(DE, &WaterBalanceModel::_De);
 
         External(INTERC, &WaterBalanceModel::_interc);
     }
@@ -63,38 +66,38 @@ public:
         // _etp = computeETP();
         _water_supply = _parameters.get(t).Irrigation;
         if(wbmodel == 1) {
-            //Pot Waterbalance model [phenoarch 2017]
+            if(t -_parameters.beginDate > 5) {
+                //Pot Waterbalance model [phenoarch 2017]
 
-            //FTSW
-            _ftsw = (_swc-pf) / RU1;
+                //FTSW
+                _ftsw = (_swc-pf) / RU1;
 
-            //cstr
-            _cstr = (_ftsw < ThresTransp) ? std::max(1e-4, _ftsw * 1. / ThresTransp) : 1;
+                //cstr
+                _cstr = (_ftsw < ThresTransp) ? std::max(1e-4, _ftsw * 1. / ThresTransp) : 1;
 
-            //fcstr
-            _fcstr = std::sqrt(_cstr);
+                //fcstr
+                _fcstr = std::sqrt(_cstr);
 
-            //See FAO ETP http://www.fao.org/3/X0490E/x0490e0c.htm#chapter%207
-            if(_De < REW) { //REW and TEW are soil parameters
-                _Kr = 1;
-            } else {
-                _Kr = (TEW - _De)/(TEW - REW);
+                //See FAO ETP http://www.fao.org/3/X0490E/x0490e0c.htm#chapter%207
+                if(_De < REW) { //REW and TEW are soil parameters
+                    _Kr = 1;
+                } else {
+                    _Kr = std::max(0.0,(TEW - _De)/(TEW - REW));
+                }
+                _Ke = _Kr * (Ke_init); //with Ke_init = Kcmax - Kcpot; estimate on data
+
+                //transpiration
+                _transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) * _interc * _cstr) / Density);
+
+                //evaporation
+                _evaporation = (_Ke * _etp) * 0.0283;
+
+                //SWC
+                _swc = _swc - _transpiration - _evaporation + _water_supply;
+
+                //De
+                _De = std::min(TEW,std::max(0.0,_De + _evaporation + (_transpiration/coeff_evaplayer) - std::min(TEW,(_water_supply/coeff_evaplayer))));
             }
-            _Ke = _Kr * (Ke_init); //with _Ke_init = Kcmax - Kcpot; estimate on data
-
-            //transpiration
-            _transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) * _interc * _cstr) / Density);
-
-            //evaporation
-            _evaporation = (_Ke * _etp) * 0.0283;
-
-            //SWC
-            _swc = _swc - _transpiration - _evaporation + _water_supply;
-
-            //De
-            _De = _De + _evaporation - _water_supply;
-
-
         } else {
             _water_supply = _parameters.get(t).Irrigation;
 
@@ -193,10 +196,10 @@ public:
         pf = parameters.get("pf");;
         swc_init = parameters.get("swc_init");
         wbmodel = parameters.get("wbmodel");
-        stressD = parameters.get("stressD");
         TEW = parameters.get("TEW");
         REW = parameters.get("REW");
         Ke_init = parameters.get("Ke_init");
+        coeff_evaplayer = parameters.get("coeff_evaplayer");
 
         //    computed variables
         _cstr = 1;
@@ -205,7 +208,6 @@ public:
         _swc = swc_init;
         _transpiration = 0;
         _psib = 0;
-        _stressdays = 0;
         _fcstrA = 1;
         _fcstrL = 1;
         _fcstrI = 1;
@@ -237,10 +239,10 @@ private:
     //Pot WB
     double pf;
     double swc_init;
-    double stressD;
     double TEW;
     double REW;
     double Ke_init;
+    double coeff_evaplayer;
 
     //meteo
     double _etp;

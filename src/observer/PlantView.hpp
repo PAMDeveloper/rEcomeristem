@@ -211,6 +211,9 @@ public:
         selector("TRANSP", artis::kernel::DOUBLE, {
                      PlantModel::WATER_BALANCE,
                      WaterBalanceModel::TRANSPIRATION});
+        selector("EVAP", artis::kernel::DOUBLE, {
+                     PlantModel::WATER_BALANCE,
+                     WaterBalanceModel::EVAPORATION});
 
     }
 
