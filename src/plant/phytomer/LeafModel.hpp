@@ -366,7 +366,7 @@ public:
             }
         }
 
-        if(_biomass == 0) {
+        if(_biomass == 0 && _is_lig) {
             _is_dead = true;
             _leaf_phase = leaf::DEAD;
         }

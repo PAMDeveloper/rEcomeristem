@@ -59,7 +59,8 @@ public:
                      MS_INDEX, DELETED_LEAF_BIOMASS, VISI, PREDIM_APP_LEAF_MS, NB_CR_TILLERS, TAE, PANICLENB,
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
                      BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW, TILLERFW,
-                     MAINSTEMFW, MAINSTEMBLADEFW, TILLERLEAFFW, FIRST_DAY_INDIV, CREATED_TILLERS, CULM_DEFICIT_SUM };
+                     MAINSTEMFW, MAINSTEMBLADEFW, TILLERLEAFFW, FIRST_DAY_INDIV,
+                     CREATED_TILLERS, CULM_DEFICIT_SUM, CURRENT_DATE };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -167,6 +168,8 @@ public:
         Internal( FIRST_DAY_INDIV, &PlantModel::_is_first_day_pi);
         Internal( CREATED_TILLERS, &PlantModel::_createdTillers);
         Internal( CULM_DEFICIT_SUM, &PlantModel::_culm_deficit_sum);
+        Internal(CURRENT_DATE, &PlantModel::_current_date);
+
 
     }
 
@@ -386,9 +389,10 @@ public:
         step_state(t);
         //std::cout << "Plant state :" << _plant_state << std::endl;
         //std::cout << "Plant phase :" << _plant_phase << std::endl;
-        //if(_is_first_day_pi) {
-        //    std::cout << "FIRST DAY OF PI : " << t - _parameters.beginDate << std::endl;
+        //if(_plant_phase == plant::MATURITY) {
+            //std::cout << "FIRST DAY OF MATURITY : " << t - _parameters.beginDate << std::endl;
         //}
+        _current_date = t - _parameters.beginDate;
 
         //LLBL - MGR
         if (_phenostage == _nb_leaf_param2 and _bool_crossed_plasto >= 0 and _stock > 0) {
@@ -988,6 +992,7 @@ public:
         _tillerleafFW = 0;
         _is_first_day_passed = false;
         _createdTillers = 1;
+        _current_date = t - parameters.beginDate;
     }
 
 private:
@@ -1142,6 +1147,7 @@ private:
     double _tillerleafFW;
     bool _is_first_day_passed;
     double _createdTillers;
+    double _current_date;
 
     // test
     double _interc1;
