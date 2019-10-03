@@ -216,7 +216,7 @@ public:
         }
 
         if(_lag) {
-            if(_culm_phenostage == _culm_phenostage_at_lag + _coeff_pi_lag && get_phytomer_number() >= 3) {
+            if(_culm_phenostage == _culm_phenostage_at_lag + _coeff_pi_lag && get_phytomer_number() >= _nb_leaf_tiller_pi) {
                 _culm_phase = culm::PI;
                 if(_culm_phenostage_at_pi == 0) {
                     _culm_phenostage_at_pi = _culm_phenostage;
@@ -1019,6 +1019,7 @@ public:
         _realocationCoeff = _parameters.get("realocationCoeff");
         _maxleaves = _parameters.get("maxleaves");
         _nb_leaf_stem_elong = _parameters.get("nb_leaf_stem_elong");
+        _nb_leaf_tiller_pi = _parameters.get("nb_leaf_tiller_pi");
 
         //    internals
         _tt_plasto = _plasto_init;
@@ -1146,6 +1147,7 @@ private:
     double _coeff_Phyllo_PI;
     double _coeff_Ligulo_PI;
     double _nb_leaf_stem_elong;
+    double _nb_leaf_tiller_pi;
 
     double first_day;
 
