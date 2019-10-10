@@ -33,7 +33,7 @@ class RootModel : public AtomicModel < RootModel >
 {
 
 public:
-    enum internals { ROOT_DEMAND_COEF, ROOT_DEMAND, SURPLUS, LAST_ROOT_DEMAND, ROOT_BIOMASS };
+    enum internals { ROOT_DEMAND_COEF, ROOT_DEMAND, SURPLUS, LAST_ROOT_DEMAND, ROOT_BIOMASS, LAST_VALUE };
 
     enum externals { LEAF_DEMAND_SUM, LEAF_LAST_DEMAND_SUM, INTERNODE_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, PLANT_PHASE, PLANT_STATE,
@@ -47,6 +47,7 @@ public:
         Internal(SURPLUS, &RootModel::_surplus);
         Internal(LAST_ROOT_DEMAND, &RootModel::_last_root_demand);
         Internal(ROOT_BIOMASS, &RootModel::_root_biomass);
+        Internal(LAST_VALUE, &RootModel::_last_value);
 
 
         //    external variables
@@ -97,9 +98,13 @@ public:
                     } else {
                         _last_value = 0;
                     }
-                    _root_demand = std::min(_culm_surplus_sum, _root_demand);
-                    _surplus = _culm_surplus_sum - _root_demand;
-
+                    if(_plant_phase == plant::PRE_FLO or _plant_phase == plant::FLO or _plant_phase == plant::END_FILLING) {
+                        _root_demand = std::min(_culm_surplus_sum, _root_demand);
+                        _surplus = _culm_surplus_sum - _root_demand;
+                    } else {
+                        _root_demand = _root_demand;
+                        _surplus = 0;
+                    }
                 } else {
                     if (_leaf_demand_sum + _leaf_last_demand_sum == 0) {
                         _root_demand = _last_value * _root_demand_coef;

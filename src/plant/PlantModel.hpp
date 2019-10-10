@@ -563,10 +563,8 @@ public:
         double demand_sum;
         if(_plant_phase == plant::VEGETATIVE) {
             demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _peduncle_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
-        } else if(_plant_phase == plant::ELONG or _plant_phase == plant::PI) {
-            demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _peduncle_demand_sum;// + _root_model->get < double >(t, RootModel::LAST_ROOT_DEMAND);
         } else {
-            demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _peduncle_demand_sum;
+            demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _peduncle_demand_sum + _root_model->get < double >(t, RootModel::LAST_ROOT_DEMAND);
         }
         _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, demand_sum);
         _stock_model->put < double >(t, PlantStockModel::BOOL_CROSSED_PLASTO, _bool_crossed_plasto);

@@ -17,22 +17,20 @@ library(DEoptim)
 library(data.table)
 
 ###SET INFORMATION FOR ESTIMATION###
-FPath <- args[[1]]
+FPath <- as.numeric(args[[1]])
 nbCores <- 30
 WorkDir <- "/homedir/beurier/work/"
-DataDir <- paste(WorkDir,"phenoarch/rep",FPath,'/WW',sep="")
+DataDir <- paste0(WorkDir,"phenoarch/rep",FPath,'/WW')
+MeteoDir <- paste0(WorkDir,"phenoarch/meteo_local")
 setwd(DataDir)
 vName <- "vobs_moy"
 paramOfInterest <- c("Epsib","Ict","MGR_init","plasto_init","phyllo_init","ligulo_init",
-                     "coef_phyllo_PI","coef_ligulo_PI","leaf_length_to_IN_length",
-                     "coef_MGR_PI")
-minValue <- c(6, 0.5, 6, 25.0, 25.0, 25.0, 1.0, 1.0, 0.1, -0.5)
-maxValue <- c(20, 2.5, 14, 45, 45, 45, 3.0, 3.0, 0.2, 1.0)
+                     "leaf_length_to_IN_length","SLAp","gdw")
+minValue <- c(6, 0.5, 6, 30.0, 30.0, 30.0, 0.1, 35, 0.03)
+maxValue <- c(20, 2.5, 14, 40.0, 40.0, 45.0, 0.2, 60, 1.0)
 coefIncrease <- 0
-maxIter <- 20000
-relTol <- 0.01 #estimation stops if unable to reduce RMSE by (reltol * rmse) after steptol steps
-stepTol <- 20000
-solTol <- 0.0 #will be multiplied by the number of observed variables
+maxIter <- 30
+nbplants <- 35
 clusterA <- TRUE  #parallel for machines with at least 4 cores
 
 ###FUNCTIONS###
@@ -49,25 +47,18 @@ optimEcomeristem <- function(p) {
       return(99999)
     } else if(p[match("ligulo_init",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]) {
       return(99999)
-    } else if(p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)] < p[match("plasto_init",paramOfInterest)]) {
-      return(99999)
-    } else if(p[match("ligulo_init",paramOfInterest)]*p[match("coef_ligulo_PI",paramOfInterest)] < p[match("phyllo_init",paramOfInterest)]*p[match("coef_phyllo_PI",paramOfInterest)]) {
-      return(99999)
     }
-  }
-  if("nb_leaf_param2" %in% paramOfInterest) {
-    p[match("nb_leaf_param2",paramOfInterest)] <- round(p[match("nb_leaf_param2",paramOfInterest)])
   }
   res <- recomeristem::launch_simu("env1", paramOfInterest, p)
   diff <- ((((obs - res)/obs)^2))*coeff
-  diff <- sum(sqrt((colSums(diff, na.rm=T))/(colSums(!is.na(diff)))),na.rm=T)
+  diff <- sum((colSums(diff, na.rm=T))/(colSums(!is.na(diff))),na.rm=T)
   return(diff)
 }
 optimisation <- function(maxIter, solTol, relTol, stepTol, bounds) {
   if(clusterA) {
-    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(reltol=relTol,steptol=stepTol,VTR=solTol,itermax=maxIter,strategy=2,cluster=cl,packages=c("recomeristem"),parVar=c("meteo","obs", "paramOfInterest","coeff","isInit","param","bounds","minValue","maxValue")))
+    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(itermax=maxIter,strategy=2,cluster=cl,packages=c("recomeristem"),parVar=c("meteo","obs", "paramOfInterest","coeff","isInit","param","bounds","minValue","maxValue")))
   } else {
-    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(reltol=relTol,steptol=stepTol,VTR=solTol,itermax=maxIter,strategy=2))
+    resOptim <- DEoptim(optimEcomeristem, lower=bounds[,1], upper=bounds[,2], DEoptim.control(itermax=maxIter,strategy=2))
   }
   result$optimizer <- "Diffential Evolution Optimization"
   result$par <- resOptim$optim$bestmem
@@ -86,21 +77,40 @@ savePar <- function(pot) {
   resPar <<- matrix(as.vector(c(pot,result$value, result$par)), ncol=length(paramOfInterest)+2)
   write.table(resPar, file=paste("par_rep",FPath,".csv",sep=""), sep=",", append=T, dec=".",col.names=F,row.names = F)
 }
+
 res0 <- matrix(as.vector(c(NA,NA,minValue)), ncol=length(paramOfInterest)+2)
 res0 <- rbind(res0,as.vector(c(NA,NA,maxValue)))
 write.table(res0, file=paste("par_rep",FPath,".csv",sep=""), sep=",", append=F, dec=".",col.names=c("Plant","RMSE",paramOfInterest),row.names = F)
+
+stemdiamprob <- c()
 #For every plant in one rep
-for(i in 1:420) {
+for(i in 1:nbplants) {
   ###INIT SIMULATIONS###
   pot <- (FPath-1)*420+i
   traitment <- (((pot-1)%/%30)+1)%%2
   bordure <- min(pot%%30,(pot-1)%%30)
   if(traitment == 0 && bordure != 0 && pot != 1) {
-    obsCSV <- read.table(paste(DataDir,"/",vName,"_P",pot,".txt",sep=""), header=T)
-    meteo <- recomeristem::getMeteo_from_files(DataDir)
+    obsCSV <- read.table(paste0(DataDir,"/",vName,"_P",pot,".txt"), header=T)
+
+    meteoCSV <- read.table(paste0(MeteoDir,"/plant_",i,".csv"),sep=";", header=T)
+    meteoCSV <- meteoCSV[!duplicated(meteoCSV$date),c("Temperatured","PARd","ETPd","irrigd","P")]
+    meteoCSV <- meteoCSV[-nrow(meteoCSV),]
+    row.names(meteoCSV) <- NULL
+    colnames(meteoCSV) <- c("Temperature","Par","Etp","Irrigation","P")
+    meteo <- meteoCSV
+
     param <- recomeristem::getParameters_from_files(DataDir)
     obs <- recomeristem::get_clean_obs(paste(DataDir,"/",vName,"_P",pot,".txt",sep=""))
-    param[which(param$Name=="coef_lin_IN_diam"),"Values"] <- obsCSV[nrow(obsCSV),"stemdiam"]
+    if(!is.na(obsCSV[nrow(obsCSV),"stemdiam"])) {
+      param[which(param$Name=="coef_lin_IN_diam"),"Values"] <- obsCSV[nrow(obsCSV),"stemdiam"]
+    } else {
+      param[which(param$Name=="coef_lin_IN_diam"),"Values"] <- 1.5
+      stemdiamprob <- c(stemdiamprob,i)
+    }
+    param[which(param$Name=="RU1"),"Values"] <- obsCSV[nrow(obsCSV),"RU1"]
+    param[which(param$Name=="pf"),"Values"] <- obsCSV[nrow(obsCSV),"PF"]
+    param[which(param$Name=="swc_init"),"Values"] <- obsCSV[1,"swc"]
+
     isInit <- FALSE
     minV <- rep(0,length(minValue))
     maxV <- rep(1,length(maxValue))
@@ -117,15 +127,11 @@ for(i in 1:420) {
       nbCores <- nbCores
       cl <- makeCluster(nbCores)
       clusterEvalQ(cl, library(recomeristem, lib.loc='/homedir/beurier/src/R/library'))
-
     } #parallel
     system.time(resOptim <- optimisation(maxIter, solTol, relTol, stepTol, bounds))
     stopCluster(cl)
     result <- resOptim[[1]]
     result$par <- (result$par-bounds[,1])/(bounds[,2]-bounds[,1]) * (maxValue-minValue) + minValue
-    if("nb_leaf_param2" %in% paramOfInterest) {
-      result$par[match("nb_leaf_param2",paramOfInterest)] <- round(result$par[match("nb_leaf_param2",paramOfInterest)])
-    }
     savePar(pot)
   }
 }
