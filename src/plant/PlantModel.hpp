@@ -60,7 +60,7 @@ public:
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
                      BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW, TILLERFW,
                      MAINSTEMFW, MAINSTEMBLADEFW, TILLERLEAFFW, FIRST_DAY_INDIV,
-                     CREATED_TILLERS, CULM_DEFICIT_SUM/*, CURRENT_DATE*/ };
+                     CREATED_TILLERS, CULM_DEFICIT_SUM, UAT_DEMAND_SUM };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -168,7 +168,7 @@ public:
         Internal( FIRST_DAY_INDIV, &PlantModel::_is_first_day_pi);
         Internal( CREATED_TILLERS, &PlantModel::_createdTillers);
         Internal( CULM_DEFICIT_SUM, &PlantModel::_culm_deficit_sum);
-        //Internal(CURRENT_DATE, &PlantModel::_current_date);
+        Internal( UAT_DEMAND_SUM, &PlantModel::_uat_demand_sum);
 
 
     }
@@ -285,7 +285,6 @@ public:
 
 
     void compute(double t, bool /* update */) {
-        //_current_date = t - _parameters.beginDate;
         //Delete culm and leaf
         std::deque < CulmModel* >::const_iterator nc = _culm_models.begin();
         while(nc != _culm_models.end()) {
@@ -666,8 +665,7 @@ public:
         _biomInSheath = _biomLeaf - (_biomLeaf * _G_L) + _biomin;
     }
 
-    void create_culm(double t, int n)
-    {
+    void create_culm(double t, int n) {
         for (int i = 0; i < n; ++i) {
             CulmModel* meristem = new CulmModel(_culm_models.size() + 1);
             setsubmodel(CULMS, meristem);
@@ -678,8 +676,7 @@ public:
         }
     }
 
-    void compute_culms(double t)
-    {
+    void compute_culms(double t) {
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
         while (it != _culm_models.end()) {
             (*it)->put(t, CulmModel::MS_PHYT_INDEX, _ms_index);
@@ -728,6 +725,7 @@ public:
         _peduncle_last_demand_sum = 0;
         _peduncle_biomass_sum = 0;
         _realloc_sum_supply = 0;
+        _uat_demand_sum = 0;
 
         it = _culm_models.begin();
         _predim_leaf_on_mainstem = (*it)->get < double, CulmModel > (t, CulmModel::STEM_LEAF_PREDIM);
@@ -753,12 +751,51 @@ public:
             _senesc_dw += (*it)->get < double, CulmModel>(t, CulmModel::SENESC_DW) + (*it)->get < double, CulmModel>(t, CulmModel::DELETED_SENESC_DW);
             _realloc_sum_supply += (*it)->get < double, CulmModel >(t, CulmModel::REALLOC_SUPPLY);
             _leaf_delay = (*it)->get< double, CulmModel>(t, CulmModel::LEAF_DELAY);
+            if (!(*it)->get < bool, CulmModel >(t, CulmModel::KILL_CULM) and !(*it)->get < bool, CulmModel >(t, CulmModel::IS_COMPUTED)) {
+                _uat_demand_sum += (*it)->get < double, CulmModel >(t, CulmModel::LEAF_DEMAND_SUM);
+                _uat_demand_sum += (*it)->get < double, CulmModel>(t, CulmModel::LEAF_LAST_DEMAND_SUM);
+            }
             ++it;
         }
     }
 
-    void compute_height(double t)
-    {
+    void compute_uat(double t) {
+        std::deque < CulmModel* >::const_iterator it_uat = _culm_models.begin();
+        while (it_uat != _culm_models.end()) {
+            if(!(*it_uat)->get < bool, CulmModel >(t-1, CulmModel::IS_COMPUTED)) {
+                (*it_uat)->put(t, CulmModel::MS_PHYT_INDEX, _ms_index);
+                (*it_uat)->put(t, CulmModel::PLANT_BOOL_CROSSED_PLASTO, _bool_crossed_plasto);
+                (*it_uat)->put(t, CulmModel::MS_SHEATH_LLL, _sheath_LLL);
+                (*it_uat)->put(t, CulmModel::DD, _DD);
+                (*it_uat)->put(t, CulmModel::EDD, _EDD);
+                (*it_uat)->put(t, CulmModel::DELTA_T, _deltaT);
+                (*it_uat)->put(t, CulmModel::FTSW, _water_balance_model->get < double >(t, WaterBalanceModel::FTSW));
+                (*it_uat)->put(t, CulmModel::FCSTR, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTR));
+                (*it_uat)->put(t, CulmModel::FCSTRI, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTRI));
+                (*it_uat)->put(t, CulmModel::FCSTRL, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTRL));
+                (*it_uat)->put(t, CulmModel::FCSTRLLEN, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTRLLEN));
+                (*it_uat)->put < int > (t, CulmModel::PLANT_PHENOSTAGE, _phenostage);
+                (*it_uat)->put < int > (t, CulmModel::PLANT_APPSTAGE, _appstage);
+                (*it_uat)->put < int > (t, CulmModel::PLANT_LIGSTAGE, _ligstage);
+                (*it_uat)->put(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM, _predim_leaf_on_mainstem);
+                (*it_uat)->put(t, CulmModel::PREDIM_APP_LEAF_MS, _predim_app_leaf_on_mainstem);
+                (*it_uat)->put(t, CulmModel::SLA, _sla);
+                (*it_uat)->put < plant::plant_state >(t, CulmModel::PLANT_STATE, _plant_state);
+                (*it_uat)->put < plant::plant_phase >(t, CulmModel::PLANT_PHASE, _plant_phase);
+                (*it_uat)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t-1, PlantStockModel::TEST_IC));
+                (*it_uat)->put(t, CulmModel::PLANT_STOCK, _stock);
+                (*it_uat)->put(t, CulmModel::PLANT_DEFICIT, _deficit);
+                (*it_uat)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
+                (*it_uat)->put(t, CulmModel::MGR, _MGR);
+                (*it_uat)->put(t, CulmModel::LL_BL, _LL_BL);
+                (*it_uat)->put(t, CulmModel::IS_FIRST_DAY_PI, _is_first_day_pi);
+                (**it_uat)(t);
+                ++it_uat;
+            }
+        }
+    }
+
+    void compute_height(double t) {
         _height = 0;
         if (_culm_models.empty()) {
             return;
@@ -780,16 +817,14 @@ public:
         }
     }
 
-    void delete_leaf(double t)
-    {
+    void delete_leaf(double t) {
         if (_culm_index != -1 and _leaf_index != -1) {
             _culm_models[_culm_index]->delete_leaf(t, _leaf_index, _deleted_leaf_biomass, _deleted_internode_biomass);
             _leaf_blade_area_sum -= _deleted_leaf_blade_area;
         }
     }
 
-    void search_deleted_leaf(double t)
-    {
+    void search_deleted_leaf(double t) {
         _culm_index = -1;
         _leaf_index = -1;
         _deleted_leaf_biomass = 0;
@@ -826,8 +861,7 @@ public:
         }
     }
 
-    void init(double t, const ecomeristem::ModelParameters& parameters)
-    {
+    void init(double t, const ecomeristem::ModelParameters& parameters) {
         //parameters
         _parameters = parameters;
         _nbleaf_enabling_tillering = _parameters.get("nb_leaf_enabling_tillering");
@@ -990,7 +1024,7 @@ public:
         _tillerleafFW = 0;
         _is_first_day_passed = false;
         _createdTillers = 1;
-        //_current_date = t - parameters.beginDate;
+        _uat_demand_sum = 0;
     }
 
 private:
@@ -1145,7 +1179,7 @@ private:
     double _tillerleafFW;
     bool _is_first_day_passed;
     double _createdTillers;
-    //double _current_date;
+    double _uat_demand_sum;
 
     // test
     double _interc1;

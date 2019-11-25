@@ -628,6 +628,7 @@ public:
         } else {
             (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
         }
+        (*it)->leaf()->put(t, LeafModel::PLANT_TEST_IC, _test_ic);
         (*it)->leaf()->put(t, LeafModel::LEAF_SENESC_INDEX, _leaf_senesc_index);
         (*it)->leaf()->put(t, LeafModel::MGR, _MGR);
         (*it)->leaf()->put(t, LeafModel::FCSTRL, _fcstrL);
@@ -709,7 +710,9 @@ public:
             }
 
             if (_index == 1) {
-                _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
+                if((*it)->is_leaf_app(t)) {
+                    _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
+                }
                 _in_diam_predim_ms = (*it)->internode()->get < double >(t, InternodeModel::INTER_DIAMETER);
                 if((*it)->leaf()->get < bool >(t, LeafModel::IS_APP)) {
                     _stem_app_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
@@ -726,7 +729,7 @@ public:
             }
         } else {
             if((*it)->is_leaf_ligged(t)) {
-               ++_nb_lig_tot;
+                ++_nb_lig_tot;
             }
 
             if((*it)->is_leaf_ligged(t) or (*it)->is_leaf_apped(t)) {

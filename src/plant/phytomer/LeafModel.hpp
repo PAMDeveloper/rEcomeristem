@@ -42,7 +42,7 @@ public:
     enum externals { DELTA_T, FTSW, FCSTR, FCSTRL, FCSTRLLEN,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
                      SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF, CULM_DEFICIT, CULM_STOCK, SHEATH_LLL,
-                     CULM_NBLEAF_PARAM2, PLASTO_NBLEAF_PARAM2, PREDIM_APP_LEAF_MS, LEAF_SENESC_INDEX };
+                     CULM_NBLEAF_PARAM2, PLASTO_NBLEAF_PARAM2, PREDIM_APP_LEAF_MS, LEAF_SENESC_INDEX, PLANT_TEST_IC };
 
 
     virtual ~LeafModel()
@@ -128,6 +128,7 @@ public:
         External(CULM_NBLEAF_PARAM2, &LeafModel::_culm_nbleaf_param2);
         External(PLASTO_NBLEAF_PARAM2, &LeafModel::_plasto_nbleaf_param2);
         External(LEAF_SENESC_INDEX, &LeafModel::_leaf_senesc_index);
+        External(PLANT_TEST_IC, &LeafModel::_plant_test_ic);
 
     }
 
@@ -179,8 +180,8 @@ public:
             } else if (not _is_first_leaf and _is_on_mainstem) {
                 _predim =  _predim_leaf_on_mainstem + _MGR * _test_ic * _fcstr;
             } else if (_is_first_leaf and not _is_on_mainstem) {
-                _predim = _Lef1; //test predim tillers the same way as mainstem
-                //_predim = 0.5 * (_predim_app_leaf_on_mainstem + _Lef1) *_test_ic * _fcstr;
+                //_predim = _Lef1; //test predim tillers the same way as mainstem
+                _predim = 0.5 * (_predim_app_leaf_on_mainstem + _Lef1) * _plant_test_ic * _fcstr;
             } else {
                 //_predim =  _predim_previous_leaf + _MGR * _test_ic * _fcstr;
                 _predim = 0.5 * (_predim_leaf_on_mainstem + _predim_previous_leaf) + _MGR * _test_ic * _fcstr;
@@ -286,7 +287,7 @@ public:
                 }
             }
         } else {
-            _TT_Lig += (_delta_t * 1);
+            _TT_Lig += (_delta_t * _coeff_senesc);
         }
 
         //Sheath and blade length
@@ -565,6 +566,7 @@ private:
     double _plasto_nbleaf_param2;
     double _fcstrLlen;
     int _leaf_senesc_index;
+    double _plant_test_ic;
 
 };
 
