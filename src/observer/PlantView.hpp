@@ -43,6 +43,8 @@ public:
         //PlantModel
         selector("BIOMLEAF", artis::kernel::DOUBLE, {
                      PlantModel::BIOMLEAF });
+        selector("BIOMAERO", artis::kernel::DOUBLE, {
+                     PlantModel::BIOMAERO });
         selector("BIOMIN", artis::kernel::DOUBLE, {
                      PlantModel::BIOMIN });
         selector("BIOMINSTRUCT", artis::kernel::DOUBLE, {

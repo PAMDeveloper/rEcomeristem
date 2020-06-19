@@ -36,54 +36,54 @@ map <string, vector <double > > mapFromDF(DataFrame list) {
 // [[Rcpp::export]]
 List getParameters_from_files(Rcpp::String folder)
 {
-    ecomeristem::ModelParameters parameters;
-    utils::ParametersReader reader;
-    reader.loadParametersFromFiles(folder, parameters);
+  ecomeristem::ModelParameters parameters;
+  utils::ParametersReader reader;
+  reader.loadParametersFromFiles(folder, parameters);
 
-    std::map < std::string, double > * paramMap = parameters.getRawParameters();
-    Rcpp::List result(paramMap->size());
-    Rcpp::CharacterVector names;
-    Rcpp::NumericVector values;
-    for(auto const& it: *paramMap){
-        std::string key = it.first;
-        double value = it.second;
-        names.push_back(key);
-        values.push_back(value);
-    }
+  std::map < std::string, double > * paramMap = parameters.getRawParameters();
+  Rcpp::List result(paramMap->size());
+  Rcpp::CharacterVector names;
+  Rcpp::NumericVector values;
+  for(auto const& it: *paramMap){
+    std::string key = it.first;
+    double value = it.second;
+    names.push_back(key);
+    values.push_back(value);
+  }
 
-    DataFrame df = DataFrame::create(Named("Name")=names,Named("Values")=values);
-    return df;
+  DataFrame df = DataFrame::create(Named("Name")=names,Named("Values")=values);
+  return df;
 }
 
 
 // [[Rcpp::export]]
 List getMeteo_from_files(Rcpp::String folder)
 {
-    ecomeristem::ModelParameters parameters;
-    utils::ParametersReader reader;
-    reader.loadParametersFromFiles(folder, parameters);
+  ecomeristem::ModelParameters parameters;
+  utils::ParametersReader reader;
+  reader.loadParametersFromFiles(folder, parameters);
 
-    std::vector < ecomeristem::Climate > * meteoValues = parameters.getMeteoValues();
-    Rcpp::List result(meteoValues->size());
-    CharacterVector names =  CharacterVector::create("Temperature", "Par", "Etp", "Irrigation", "P");
-    NumericVector Temperature, Par, Etp, Irrigation, P;
+  std::vector < ecomeristem::Climate > * meteoValues = parameters.getMeteoValues();
+  Rcpp::List result(meteoValues->size());
+  CharacterVector names =  CharacterVector::create("Temperature", "Par", "Etp", "Irrigation", "P");
+  NumericVector Temperature, Par, Etp, Irrigation, P;
 
-    for(auto const& it: *meteoValues){
-        Temperature.push_back(it.Temperature);
-        Par.push_back(it.Par);
-        Etp.push_back(it.Etp);
-        Irrigation.push_back(it.Irrigation);
-        P.push_back(it.P);
-    }
+  for(auto const& it: *meteoValues){
+    Temperature.push_back(it.Temperature);
+    Par.push_back(it.Par);
+    Etp.push_back(it.Etp);
+    Irrigation.push_back(it.Irrigation);
+    P.push_back(it.P);
+  }
 
-    DataFrame df = DataFrame::create(
-                Named("Temperature")=Temperature,
-                Named("Par")=Par,
-                Named("Etp")=Etp,
-                Named("Irrigation")=Irrigation,
-                Named("P")=P
-            );
-    return df;
+  DataFrame df = DataFrame::create(
+    Named("Temperature")=Temperature,
+    Named("Par")=Par,
+    Named("Etp")=Etp,
+    Named("Irrigation")=Irrigation,
+    Named("P")=P
+  );
+  return df;
 }
 
 
@@ -181,11 +181,6 @@ List get_clean_obs(Rcpp::String vObsPath) {
   return mapOfVectorToDF(vobsMap);
 }
 
-
-
-
-
-
 // [[Rcpp::export]]
 List rcpp_run_from_dataframe(List dfParameters, List dfMeteo)
 {
@@ -262,4 +257,3 @@ List rcpp_reduceResults(List results, List vobs) {
   auto ret = parser.reduceResults(resultMap,vObsMap);
   return mapOfVectorToDF(ret);
 }
-

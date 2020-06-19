@@ -60,7 +60,7 @@ public:
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
                      BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW, TILLERFW,
                      MAINSTEMFW, MAINSTEMBLADEFW, TILLERLEAFFW, FIRST_DAY_INDIV,
-                     CREATED_TILLERS, CULM_DEFICIT_SUM };
+                     CREATED_TILLERS, CULM_DEFICIT_SUM, BIOMAERO };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -168,6 +168,7 @@ public:
         Internal( FIRST_DAY_INDIV, &PlantModel::_is_first_day_pi);
         Internal( CREATED_TILLERS, &PlantModel::_createdTillers);
         Internal( CULM_DEFICIT_SUM, &PlantModel::_culm_deficit_sum);
+        Internal( BIOMAERO, &PlantModel::_biomAero);
     }
 
     virtual ~PlantModel()
@@ -600,6 +601,7 @@ public:
         double nbc = 0;
         double nbtc = 0;
         _biomAero2 = 0;
+        _biomAero = 0;
         _biomAeroFW = 0;
         _deadleafNb = 0;
         _panicleDW = 0;
@@ -615,6 +617,9 @@ public:
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PANICLE_WEIGHT);
+            _biomAero += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) +
+                    (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
+                    (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS);
             _biomAeroFW += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) * _leaf_FW_DW +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) * _internode_FW_DW +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) * _internode_FW_DW +
@@ -628,6 +633,7 @@ public:
             itnbc++;
         }
         _biomAero2 = _biomAero2 +  _stock_model->get< double >(t, PlantStockModel::STOCK);
+        _biomAero = _biomAero +  _stock_model->get< double >(t, PlantStockModel::STOCK);
         _biomAeroFW = _biomAeroFW + (_internode_stock_sum * _internode_FW_DW) + ((_stock_model->get< double >(t, PlantStockModel::STOCK) - _internode_stock_sum) * _leaf_FW_DW);
         _tillerleafFW = _tillerleafFW + ((_stock_model->get< double >(t, PlantStockModel::STOCK) - _internode_stock_sum) * _leaf_FW_DW) - (_biomLeafMainstem * _leaf_FW_DW);
         _biomAeroTot = _biomAero2 + _senesc_dw_sum;
@@ -980,6 +986,7 @@ public:
         _tillerleafFW = 0;
         _is_first_day_passed = false;
         _createdTillers = 1;
+        _biomAero = 0;
     }
 
 private:
@@ -1134,6 +1141,7 @@ private:
     double _tillerleafFW;
     bool _is_first_day_passed;
     double _createdTillers;
+    double _biomAero;
 
     // test
     double _interc1;
