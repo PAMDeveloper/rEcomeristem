@@ -60,7 +60,7 @@ public:
                      TOTAL_LENGTH_MAINSTEM, BIOMMAINSTEM, SLAPLANT, BIOMLEAFTOT, SENESC_DW, BIOMINSHEATHMS,
                      BIOMINSHEATH, BIOMAEROTOT, INTERC1, INTERC2, MS_LEAF2_LEN, PARI, BIOMAEROFW, TILLERFW,
                      MAINSTEMFW, MAINSTEMBLADEFW, TILLERLEAFFW, FIRST_DAY_INDIV,
-                     CREATED_TILLERS, CULM_DEFICIT_SUM, BIOMAERO };
+                     CREATED_TILLERS, CULM_DEFICIT_SUM, BIOMAERO, NBLEAFPLANT };
 
     PlantModel() :
         _water_balance_model(new WaterBalanceModel),
@@ -169,6 +169,7 @@ public:
         Internal( CREATED_TILLERS, &PlantModel::_createdTillers);
         Internal( CULM_DEFICIT_SUM, &PlantModel::_culm_deficit_sum);
         Internal( BIOMAERO, &PlantModel::_biomAero);
+        Internal( NBLEAFPLANT, &PlantModel::_nbleafplant);
     }
 
     virtual ~PlantModel()
@@ -607,12 +608,14 @@ public:
         _panicleDW = 0;
         _paniclenb = 0;
         _tillerleafFW = 0;
+        _nbleafplant = 0;
         std::deque < CulmModel* >::const_iterator itnbc = _culm_models.begin();
         while(itnbc != _culm_models.end()) {
             if(!((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM)) and (*itnbc)->get < bool, CulmModel >(t, CulmModel::IS_COMPUTED)) {
                 nbc++;
             }
             nbtc++;
+            _nbleafplant += (*itnbc)->get < double, CulmModel >(t, CulmModel::NBLEAF); // nombre de feuilles vertes (>= 50% blade area)
             _biomAero2 += (*itnbc)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM) +
                     (*itnbc)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS) +
@@ -637,6 +640,7 @@ public:
         _biomAeroFW = _biomAeroFW + (_internode_stock_sum * _internode_FW_DW) + ((_stock_model->get< double >(t, PlantStockModel::STOCK) - _internode_stock_sum) * _leaf_FW_DW);
         _tillerleafFW = _tillerleafFW + ((_stock_model->get< double >(t, PlantStockModel::STOCK) - _internode_stock_sum) * _leaf_FW_DW) - (_biomLeafMainstem * _leaf_FW_DW);
         _biomAeroTot = _biomAero2 + _senesc_dw_sum;
+        _biomAero = _biomAero + _senesc_dw_sum;
 
         // VISU
         _tillerNb_1 = nbc;
@@ -987,6 +991,7 @@ public:
         _is_first_day_passed = false;
         _createdTillers = 1;
         _biomAero = 0;
+        _nbleafplant = 0;
     }
 
 private:
@@ -1142,6 +1147,7 @@ private:
     bool _is_first_day_passed;
     double _createdTillers;
     double _biomAero;
+    double _nbleafplant;
 
     // test
     double _interc1;

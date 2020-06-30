@@ -151,6 +151,10 @@ public:
                      PlantModel::MAINSTEMFW});
         selector("TILLERLEAFFW", artis::kernel::DOUBLE, {
                      PlantModel::TILLERLEAFFW});
+        selector("LEAF_BIOM_NOSTOCK", artis::kernel::DOUBLE, {
+                     PlantModel::LEAF_BIOMASS_SUM});
+        selector("NBLEAFPLANT", artis::kernel::DOUBLE, {
+                     PlantModel::NBLEAFPLANT});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {
