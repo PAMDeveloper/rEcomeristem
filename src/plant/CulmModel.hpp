@@ -1123,18 +1123,20 @@ public:
 private:
     ecomeristem::ModelParameters _parameters;
 
+    //    attributes
+    double _index;
+    bool _is_first_culm;
+
+    
     //  submodels
     std::unique_ptr < CulmStockModelNG > _culm_stock_model;
-    std::unique_ptr < IctModel > _culm_ictmodel;
     std::unique_ptr < ThermalTimeModel > _culm_thermaltime_model;
+    std::unique_ptr < IctModel > _culm_ictmodel;
     std::unique_ptr < ThermalTimeModelNG > _culm_thermaltime_modelNG;
     std::deque < PhytomerModel* > _phytomer_models;
     std::unique_ptr < PanicleModel > _panicle_model;
     std::unique_ptr < PeduncleModel > _peduncle_model;
 
-    //    attributes
-    double _index;
-    bool _is_first_culm;
 
 
     //parameters

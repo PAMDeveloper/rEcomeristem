@@ -1,5 +1,5 @@
 detach("package:recomeristem", unload=TRUE)
-library(recomeristem)
+library(ecomeristem)
 require(Rcpp)
 require(stats)
 library(compare)

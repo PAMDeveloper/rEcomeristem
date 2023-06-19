@@ -220,7 +220,7 @@ public:
             if(!(_plant_state & plant::INDIV)) {
                 _plant_state << plant::INDIV;
             }
-            if(_ligstage == _nb_leaf_indiv & !_is_first_day_passed) {
+            if( (_ligstage == _nb_leaf_indiv) & !_is_first_day_passed) {
                 _is_first_day_pi = true;
                 _is_first_day_passed = true;
             }
@@ -798,7 +798,7 @@ public:
         _deleted_leaf_blade_area = 0;
         _qty = 0;
         if (_stock_model->get < double >(t, PlantStockModel::STOCK) == 0) {
-            std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
+            //std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
             if(/*_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE*/ !(_plant_state & plant::INDIV)) {
                 double tmp_date = t;
                 std::deque < CulmModel* >::const_iterator it = _culm_models.begin();

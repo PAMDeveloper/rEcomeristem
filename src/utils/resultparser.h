@@ -79,7 +79,7 @@ public:
             delete s;
         }
 
-        for (int i = 0; i < vObs[dayId].size(); ++i) {
+        for (int i = 0; i < (int)vObs[dayId].size(); ++i) {
             bool valid = true;
 
             valid &= vObs[dayId][i] <= dayMax;
@@ -128,9 +128,9 @@ public:
 
 
         for(auto const &r : reducedResults) {
-            for (int i = 0; i < filteredVObs[dayId].size(); ++i) {
+            for (int i = 0; i < (int)filteredVObs[dayId].size(); ++i) {
                 int day = filteredVObs[dayId][i];
-                if(day <= results[r.first].size())
+                if(day <= (int)results[r.first].size())
                     reducedResults[r.first].push_back(results[r.first][day-1]);
             }
         }

@@ -6,6 +6,7 @@
 
 #include "iso646.h"
 #include <type_traits> //necessary for enum type checking on states
+#include <math.h>
 
 class PlantModel;
 
@@ -93,17 +94,17 @@ static const unsigned int KILL = 8;
 static const unsigned int INDIV = 16;
 }
 
-#include <utils/juliancalculator.h>
-#include <artis_lite/simplemodel.h>
+#include "utils/juliancalculator.h"
+#include "artis_lite/simplemodel.h"
 #include <memory>
 #include <deque>
 #include <limits>
 
-namespace artis { namespace utils { namespace DateTime {
-static string toJulianDayFmt(double, int) {
-    return "";
-}
-}}}
+// namespace artis { namespace utils { namespace DateTime {
+// static string toJulianDayFmt(double, int) {
+//     return "";
+// }
+// }}}
 
 struct DoubleTime {
     static constexpr double negative_infinity = -numeric_limits < double >::infinity();
@@ -130,11 +131,11 @@ template < class T > using TraceElements = std::vector < TraceElement <T> >;
 
 #else
 
-#include <utils/juliancalculator.h>
-#include <ModelParameters.hpp>
-#include <artis/kernel/Simulator.hpp>
-#include <artis/kernel/AbstractAtomicModel.hpp>
-#include <artis/utils/Trace.hpp>
+#include "utils/juliancalculator.h"
+#include "ModelParameters.hpp"
+#include "artis/kernel/Simulator.hpp"
+#include "artis/kernel/AbstractAtomicModel.hpp"
+#include "artis/utils/Trace.hpp"
 
 namespace peduncle {
 enum peduncle_phase {   INITIAL = 0,

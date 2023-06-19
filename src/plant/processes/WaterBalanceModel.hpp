@@ -145,7 +145,7 @@ public:
         double Vt;
         double Altitude;
         double TMoyPrec;
-        double VPDCalc;
+        //double VPDCalc;
 
         double eActual; double eSat; double RgRgMax; double TLat; double delta; double KPsy; double Eaero; double Erad; double Rn; double G; double ETo;
         eSat = 0.3054 * (exp(17.27 * TMax * 1.0 / (TMax + 237.3)) + exp(17.27 * TMin * 1.0 / (TMin + 237.3)));
@@ -157,7 +157,7 @@ public:
         }
 
         // VPD calc or weather file ?
-        VPDCalc = eSat - eActual;
+        //VPDCalc = eSat - eActual;
         RgRgMax = min(1.0,RgCalc * 1.0 / RgMax);
         Rn = 0.77 * RgCalc - (1.35 * RgRgMax - 0.35) * (0.34 - 0.14 * std::pow(eActual, 0.5)) * (pow(TMax + 273.16, 4) + std::pow(TMin + 273.16, 4)) * 2.45015 * std::pow(10, -9);
 

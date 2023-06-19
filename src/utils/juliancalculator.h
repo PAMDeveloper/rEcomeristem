@@ -16,7 +16,7 @@ public:
 
     static int toJulianDay(string date, DateFormat format, char sep) {
 //        date = date.substr(10);
-        return (int)round(getJulianDay(parseString(date, format, sep)));
+        return (int)std::round(getJulianDay(parseString(date, format, sep)));
     }
 
     static int toJulianDay(string date, string format, string sep) {

@@ -174,7 +174,7 @@ public:
     string _model_name; double _time; artis::utils::TraceType _type;
     KernelInfo _info;
     SimpleTraceElement(std::string model_name, double time, artis::utils::TraceType type, KernelInfo info) :
-        _time(time), _type(type), _model_name(model_name), _info(info) {}
+         _model_name(model_name), _time(time), _type(type), _info(info) {}
 
     double get_time() const { return _time; }
     const string& get_model_name() const { return _model_name; }

@@ -45,13 +45,13 @@ public:
 
     PhytomerModel(int index, bool is_on_mainstem, double plasto, double phyllo, double ligulo, double LL_BL, bool is_last_phytomer) :
         _index(index),
-        _is_first_phytomer(index == 1),
+        _is_on_mainstem(is_on_mainstem),
         _plasto(plasto),
         _phyllo(phyllo),
         _ligulo(ligulo),
         _LL_BL(LL_BL),
         _is_last_phytomer(is_last_phytomer),
-        _is_on_mainstem(is_on_mainstem),
+        _is_first_phytomer(index == 1),
         _internode_model(new InternodeModel(_index, _is_on_mainstem, _is_last_phytomer)),
         _leaf_model(new LeafModel(_index, _is_on_mainstem, _plasto, _phyllo, _ligulo, _LL_BL))
     {
@@ -200,13 +200,13 @@ public:
 private:
     //  attribute
     int _index;
-    bool _is_first_phytomer;
     bool _is_on_mainstem;
     double _plasto;
     double _phyllo;
     double _ligulo;
     double _LL_BL;
     bool _is_last_phytomer;
+    bool _is_first_phytomer;
 
     // submodels
     std::unique_ptr < InternodeModel > _internode_model;

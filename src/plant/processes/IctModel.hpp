@@ -82,7 +82,7 @@ public:
                     _ic_.push_back(_ic_plant);
 
                     //calcul ic
-                    for(int i = 0; i < _ic_.size(); i++) {
+                    for(int i = 0; i < (int)_ic_.size(); i++) {
                         total += _ic_[i];
                         ++n;
                     }

@@ -191,7 +191,7 @@ public:
             //std::cout << line << "\n";
             //line.erase (line.begin(), line.end()-2);
             vector<string> data = split(line, '\t');
-            for (int i = 0; i < data.size(); ++i) {
+            for (int i = 0; i < (int)data.size(); ++i) {
                 string s = data[i];
                 string * h = new string(headers[i]);
                 //std::cout << s << " " << s.size() << " " << data[i] << " " << data[i].size() << " " << *h << " " << headers[i] << "\n";
@@ -239,7 +239,7 @@ public:
         {
             line.erase( std::remove(line.begin(), line.end(), '\r'), line.end() );
             vector<string> data = split(line, '\t');
-            for (int i = 0; i < data.size(); ++i) {
+            for (int i = 0; i < (int)data.size(); ++i) {
                 string s = data[i];
                 string * h = new string(headers[i]);
                 transform(h->begin(), h->end(), h->begin(), ::tolower);

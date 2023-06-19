@@ -189,8 +189,8 @@ public:
         int step = 0;
         for (double t = context.begin(); t <= context.end(); t++) {
             (*_model)(t);
-            if(selectorIdx < filter.days.size() && filter.days[selectorIdx] == step) {
-                for (int i = 0; i < filter.names.size(); ++i) {
+            if(selectorIdx < (int)filter.days.size() && filter.days[selectorIdx] == step) {
+                for (int i = 0; i < (int)filter.names.size(); ++i) {
                     results[filter.names[i]][selectorIdx] = getVal(i, selectorIdx, &filter);
                 }
                 selectorIdx++;
@@ -237,6 +237,7 @@ public:
         else if(i_int.size() > i && i_int[i] != nullptr) return static_cast<double>(get<int>(0,i));
         else if(i_bool.size() > i && i_bool[i] != nullptr) return static_cast<double>(get<bool>(0,i));
         else if(i_flag.size() > i && i_flag[i] != nullptr) return static_cast<double>(get<flag>(0,i));
+        else return nan("");
     }
 
     virtual void operator()(double t) {this->compute(t);}
